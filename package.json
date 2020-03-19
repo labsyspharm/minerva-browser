@@ -3,7 +3,7 @@
     "openseadragon": "^2.4.2"
   },
   "name": "minerva-browser",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A storytelling interface atop openseadragon",
   "main": "main.js",
   "scripts": {

@@ -126,7 +126,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
 };
 
 
-const build_page = function(exhibit, options) {
+export const build_page = function(exhibit, options) {
 
   // Initialize openseadragon
   const viewer = OpenSeadragon({

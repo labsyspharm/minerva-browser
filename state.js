@@ -1,6 +1,12 @@
+import { CognitoUser } from "amazon-cognito-identity-js"
+import { CognitoUserPool } from "amazon-cognito-identity-js"
+import { AuthenticationDetails } from "amazon-cognito-identity-js"
+
+/*
 const CognitoUser = AmazonCognitoIdentity.CognitoUser;
 const CognitoUserPool = AmazonCognitoIdentity.CognitoUserPool;
 const AuthenticationDetails = AmazonCognitoIdentity.AuthenticationDetails;
+*/
 
 /*
  * from /sorgerlab/minerva-client-js/master/index.js

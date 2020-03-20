@@ -1,3 +1,7 @@
+import * as d3 from "d3"
+import { round4 } from "./render"
+import { greenOrWhite } from "./render"
+
 var lasso_draw_counter = 0;
 var lasso_draw = function(event){
 
@@ -41,7 +45,7 @@ const newMarkers = function(tileSources, group, active_masks) {
 };
 
 
-const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) {
+export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) {
 
   this.svg_overlay = d3.select(viewer.svgOverlay().node());
   this.tileSources = tileSources;
@@ -285,7 +289,7 @@ RenderOSD.prototype = {
       if (prefix == 'waypoint-overlay') {
         overlay = HS.stories[s].Waypoints[w].Overlays[o];
       }
-      el = indices.join('-');
+      var el = indices.join('-');
       this.addOverlay(overlay, el, s, w);
     }, this)
 
@@ -314,7 +318,7 @@ RenderOSD.prototype = {
   },
 
   addPolygon: function(id, polygon) {
-    svg_overlay = this.svg_overlay;
+    var svg_overlay = this.svg_overlay;
 
     d3.select('#' + id).remove();
     var selPoly = svg_overlay.selectAll(id).data([polygon]);

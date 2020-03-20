@@ -1,5 +1,5 @@
 // https://gist.github.com/rproenca/64781c6a1329b48a455b645d361a9aa3
-window.Clipboard = (function(window, document, navigator) {
+export const Clipboard = (function(window, document, navigator) {
   var textArea,
     copy;
 

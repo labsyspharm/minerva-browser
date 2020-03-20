@@ -2,6 +2,13 @@ import { CognitoUser } from "amazon-cognito-identity-js"
 import { CognitoUserPool } from "amazon-cognito-identity-js"
 import { AuthenticationDetails } from "amazon-cognito-identity-js"
 
+import { encode } from './render'
+import { decode } from './render'
+import { unpackGrid } from './render'
+import { remove_undefined } from './render'
+
+import LZString from "lz-string"
+
 /*
 const CognitoUser = AmazonCognitoIdentity.CognitoUser;
 const CognitoUserPool = AmazonCognitoIdentity.CognitoUserPool;
@@ -130,7 +137,7 @@ const oFromWaypoint = function(waypoint) {
 };
 
 var toPolygonURL = function(polygon){
-    pointString='';
+    var pointString='';
     polygon.forEach(function(d){
         pointString += d.x.toFixed(5) + "," + d.y.toFixed(5) + ",";
     })
@@ -191,7 +198,7 @@ const deserialize = function(entries) {
   return query;
 };
 
-const HashState = function(exhibit, options) {
+export const HashState = function(exhibit, options) {
 
   this.trackers = [];
   this.pollycache = {};
@@ -1023,7 +1030,7 @@ HashState.prototype = {
 };
 
 
-const getAjaxHeaders = function(state, image){
+export const getAjaxHeaders = function(state, image){
   if (image.Provider == 'minerva') {
     return state.token.then(function(token){
       return {
@@ -1043,7 +1050,7 @@ const getAjaxHeaders = function(state, image){
 };
 
 
-const getGetTileUrl = function(image, layer, channelSettings) {
+export const getGetTileUrl = function(image, layer, channelSettings) {
 
   const colors = layer.Colors;
   const channels = layer.Channels;
@@ -1121,7 +1128,7 @@ const getGetTileUrl = function(image, layer, channelSettings) {
   }
 };
 
-const index_name = function(list, name) {
+export const index_name = function(list, name) {
   if (!Array.isArray(list)) {
     return -1;
   }
@@ -1131,7 +1138,7 @@ const index_name = function(list, name) {
   return list.indexOf(item);
 };
 
-const index_regex = function(list, re) {
+export const index_regex = function(list, re) {
   if (!Array.isArray(list)) {
     return -1;
   }

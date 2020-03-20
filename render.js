@@ -1,24 +1,30 @@
+import sha1 from 'sha1'
+import { index_name } from './state'
+import { index_regex } from './state'
+import { Clipboard } from './clipboard'
+import infovis from './infovis'
+
 const round1 = function(n) {
   return Math.round(n * 10) / 10;
 };
 
-const round4 = function(n) {
+export const round4 = function(n) {
   const N = Math.pow(10, 4);
   return Math.round(n * N) / N;
 };
 
-const remove_undefined = function(o) {
+export const remove_undefined = function(o) {
   Object.keys(o).forEach(k => {
     o[k] == undefined && delete o[k]
   });
   return o;
 };
 
-const encode = function(txt) {
+export const encode = function(txt) {
   return btoa(encodeURIComponent(txt));
 };
 
-const decode = function(txt) {
+export const decode = function(txt) {
   try {
     return decodeURIComponent(atob(txt));
   }
@@ -56,7 +62,7 @@ const activeOrNot = function(selector, condition) {
   classOrNot(selector, condition, 'active');
 };
 
-const greenOrWhite = function(selector, condition) {
+export const greenOrWhite = function(selector, condition) {
   classOrNot(selector, condition, 'green');
   classOrNot(selector, !condition, 'white');
 };
@@ -121,7 +127,7 @@ const ctrlC = function(str) {
   Clipboard.copy(str);
 };
 
-const unpackGrid = function(layout, images, key) {
+export const unpackGrid = function(layout, images, key) {
   const image_map = images.reduce(function(o, i) {
 
     i.TileSize = i.TileSize || [1024, 1024];
@@ -184,7 +190,7 @@ const newCopyButton = function() {
   });
 };
 
-const Render = function(hashstate, osd, eventHandler) {
+export const Render = function(hashstate, osd, eventHandler) {
 
   this.eventHandler = eventHandler;
   this.trackers = hashstate.trackers;
@@ -356,8 +362,8 @@ Render.prototype = {
       THIS.newView(false);
     });
 
-    z_legend = document.getElementById('depth-legend');
-    z_slider = document.getElementById('z-slider');
+    var z_legend = document.getElementById('depth-legend');
+    var z_slider = document.getElementById('z-slider');
     z_slider.max = HS.cgs.length - 1;
     z_slider.value = HS.g;
     z_slider.min = 0;
@@ -511,7 +517,7 @@ Render.prototype = {
   },
 
   loadPolly: function(txt) {
-    const hash = Sha1.hash(txt);
+    const hash = sha1(txt);
     const polly_url = 'https://s3.amazonaws.com/www.cycif.org/speech/' + hash + '.mp3';
     if (polly_url) {
       document.getElementById('audioSource').src = polly_url;
@@ -656,7 +662,7 @@ Render.prototype = {
     });
     const cg_legend = document.getElementById('channel-groups-legend');
     if (cgs_multi.length > 0) {
-      h = document.createElement('h6');
+      var h = document.createElement('h6');
       h.innerText = 'Channel Groups:'
       h.className = 'm-1'
       cg_legend.appendChild(h);
@@ -667,7 +673,7 @@ Render.prototype = {
       this.addGroup(group, g, 'channel-groups-legend', true);
     }, this);
     if (cgs_single.length > 0) {
-      h = document.createElement('h6');
+      var h = document.createElement('h6');
       h.innerText = 'Channels:'
       h.className = 'm-1'
       cg_legend.appendChild(h);

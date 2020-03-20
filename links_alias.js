@@ -1,8 +1,8 @@
-strip = function(str) {
+const strip = function(str) {
     return str.replace(/^\s+|\s+$/g, '');
 }
 
-get_links_alias = function(data) {
+export const get_links_alias = function(data) {
 
     data = data.map(function(d) {
       if (d["﻿String"]) {

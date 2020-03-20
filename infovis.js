@@ -1,5 +1,8 @@
+import * as d3 from "d3"
+import { legendColor } from 'd3-svg-legend'
+import colorbrewer from 'colorbrewer'
 
-infovis = {};
+var infovis = {};
 
 infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler){
     return d3.csv(visdata)
@@ -155,7 +158,7 @@ infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler)
                 vis.svg.append("g")
                     .attr("class", "colorLegend")
                     .attr("transform", "translate(" + (vis.width+5) + ",0)");
-                var colorLegend = d3.legendColor()
+                var colorLegend = legendColor()
                     .ascending(true)
                     .labelAlign('start')
                     .shapeWidth(5)
@@ -350,7 +353,7 @@ infovis.renderScatterplot = function(wid_waypoint, id, visdata, events, eventHan
         .range(colors);
 
     // the legend shows the clusters in a different order, defined by the user
-    sortedColors = colors.slice().sort(function(a, b){
+    var sortedColors = colors.slice().sort(function(a, b){
         return order.indexOf(labels[colors.indexOf(a)] ) - order.indexOf(labels[colors.indexOf(b)]);
     });
     var sortedColor = d3.scaleOrdinal()
@@ -880,3 +883,5 @@ infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, ev
     };
 
 }
+
+export default infovis;

@@ -1,5 +1,5 @@
 
-class SimpleEventHandler {
+export default class SimpleEventHandler {
 
     constructor(subject) {
         this.subject = subject;

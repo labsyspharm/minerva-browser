@@ -518,8 +518,8 @@ Render.prototype = {
 
   loadPolly: function(txt) {
     const hash = sha1(txt);
-    const polly_url = 'https://s3.amazonaws.com/www.cycif.org/speech/' + hash + '.mp3';
-    if (polly_url) {
+    if (speech_bucket) {
+      const polly_url = 'https://s3.amazonaws.com/'+ speech_bucket +'/speech/' + hash + '.mp3';
       document.getElementById('audioSource').src = polly_url;
       document.getElementById('audioPlayback').load();
     }

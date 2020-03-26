@@ -371,12 +371,18 @@ Render.prototype = {
     if (HS.design.is3d && HS.design.z_scale) {
       z_legend.innerText = round1(HS.g / HS.design.z_scale) + ' μm';
     }
+    else if (HS.design.is3d){
+      z_legend.innerText = HS.group.Name; 
+    }
 
     const THIS = this;
     z_slider.addEventListener('input', function() {
       HS.g = z_slider.value;
       if (HS.design.z_scale) {
         z_legend.innerText = round1(HS.g / HS.design.z_scale) + ' μm';
+      }
+      else {
+        z_legend.innerText = HS.group.Name; 
       }
       THIS.newView(true)
     }, false);

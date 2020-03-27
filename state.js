@@ -1040,6 +1040,15 @@ export const getAjaxHeaders = function(state, image){
       };
     });  
   }
+  if (image.Provider == 'minerva-public') {
+    return Promise.resolve().then(function(){
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Anonymous',
+        'Accept': 'image/png'
+      };
+    });  
+  }
   if (image.Provider == 'omero') {
     /*return state.omero_cookie.then(function(cookie){
       //document.cookie = cookie;

@@ -64,7 +64,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
         const layer = layers[j];
         const channelSettings = hashstate.channelSettings(layer.Channels);
         getAjaxHeaders(hashstate, image).then(function(ajaxHeaders){
-          const useAjax = (image.Provider == 'minerva');
+          const useAjax = (image.Provider == 'minerva' || image.Provider == 'minerva-public');
           viewer.addTiledImage({
             loadTilesWithAjax: useAjax,
             crossOriginPolicy: useAjax? 'Anonymous': undefined,

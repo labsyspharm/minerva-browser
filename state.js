@@ -1069,7 +1069,7 @@ export const getGetTileUrl = function(image, layer, channelSettings) {
     return image.Path + '/' + layer.Path + '/' + (image.MaxLevel - level) + '_' + x + '_' + y + fileExt;
   };
 
-  if (image.Provider == 'minerva') {
+  if (image.Provider == 'minerva' || image.Provider == 'minerva-public') {
     const channelList = channels.reduce(function(list, c, i) {
       const settings = channelSettings[c];
       if (settings == undefined) {

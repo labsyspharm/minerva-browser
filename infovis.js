@@ -21,13 +21,11 @@ infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler)
 
     //discrete color map (from d3 coorbrewer) defined for min 3 and max 9 ticks, so if user specifies more we still have 9.
     ticks = Math.max(3, Math.min(9, ticks));
-    console.log("there are ticks: " + ticks)
 
     //finally load the data
     return d3.csv(visdata.data)
         .then(function(data) {
 
-            console.log('hallo this is data is loaded');
             // SVG drawing area
             if (d3.select("#matrix").empty() ) {
 

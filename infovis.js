@@ -1,13 +1,33 @@
 import * as d3 from "d3"
 import { legendColor } from 'd3-svg-legend'
 import colorbrewer from 'colorbrewer'
-
 var infovis = {};
 
 infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler){
-    return d3.csv(visdata)
+
+    var ticks = 6;
+
+
+    //some additional checks and data wrangling to ensure this add-on is downward compatible
+    if (visdata.colorTicks != null && visdata.colorTicks != undefined){
+        ticks = visdata.colorTicks;
+    }
+    if (typeof visdata === 'string' || visdata instanceof String){
+        console.log('shift datastructure due to old yaml matrix description.')
+        var dat = visdata;
+        visdata = {};
+        visdata.data = dat;
+    } //end additional checks and data wrangling
+
+    //discrete color map (from d3 coorbrewer) defined for min 3 and max 9 ticks, so if user specifies more we still have 9.
+    ticks = Math.max(3, Math.min(9, ticks));
+    console.log("there are ticks: " + ticks)
+
+    //finally load the data
+    return d3.csv(visdata.data)
         .then(function(data) {
 
+            console.log('hallo this is data is loaded');
             // SVG drawing area
             if (d3.select("#matrix").empty() ) {
 
@@ -52,8 +72,18 @@ infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler)
                 vis.height = data.length*(vis.cellWidth+vis.cellPadding)+vis.margin.top + vis.margin.bottom;
 
                 //colorscale (YlGnBu is colorblind safe, print friendly, photocopy safe)
-                var ticks = 6;
-                var myColor = d3.scaleQuantize().domain([vis.min,vis.max]).range(colorbrewer.YlGnBu[ticks])
+
+
+
+                var myColor = null;
+                //some additional checks to ensure this add-on is downward compatible
+                console.log(visdata.colormapInvert)
+                if (visdata.colormapInvert == null || visdata.colormapInvert == undefined || !visdata.colormapInvert){
+                    myColor = d3.scaleQuantize().domain([vis.min,vis.max]).range(colorbrewer.YlGnBu[ticks]);
+                }
+                else{
+                    myColor = d3.scaleQuantize().domain([vis.min,vis.max]).range(colorbrewer.YlGnBu[ticks].reverse());
+                }
 
                 //the svg everything goes into
                 // d3.select("#"+id).style('position', 'relative');

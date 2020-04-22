@@ -698,7 +698,6 @@ Render.prototype = {
       style: 'padding-right: 40px; position: relative;',
       href: 'javascript:;',
       innerText: group.Name,
-      title: group.Path,
       id: group.Path + '_' + el_id,
     });
     aEl.setAttribute('data-toggle', 'pill');

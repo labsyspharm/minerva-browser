@@ -145,8 +145,25 @@ export const build_page = function(exhibit, options) {
     zoomInButton: 'zoom-in',
     immediateRender: true,
     maxZoomPixelRatio: 10,
-    visibilityRatio: .9
+    visibilityRatio: .9,
+    degrees: exhibit.Rotation || 0,
   });
+
+	function updateOverlays() {
+			viewer.currentOverlays.forEach(overlay => {
+          const isArrow = overlay.element.id.slice(0,5) == 'arrow';
+					if (isArrow) {
+						overlay.element.style.transform = '';
+					}
+			});
+	}
+
+	viewer.addHandler("update-viewport", function(){
+			setTimeout(updateOverlays, 1);
+	});
+
+	viewer.addHandler("animation", updateOverlays);
+
   viewer.world.addHandler('add-item', function(addItemEvent) {
       const tiledImage = addItemEvent.item;
       tiledImage.addHandler('fully-loaded-change', function(fullyLoadedChangeEvent) {

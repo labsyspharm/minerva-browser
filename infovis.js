@@ -7,7 +7,6 @@ infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler)
 
     var ticks = 6;
 
-
     //some additional checks and data wrangling to ensure this add-on is downward compatible
     if (visdata.colorTicks != null && visdata.colorTicks != undefined){
         ticks = visdata.colorTicks;
@@ -459,7 +458,7 @@ infovis.renderScatterplot = function(wid_waypoint, id, visdata, events, eventHan
             .attr("cx", xMap)
             .attr("cy", yMap)
             .style("fill", function (d) {
-                return color(cValue(d));
+                return "#" + color(cValue(d));
             })
             .attr('fill-opacity', opacity)
             .on('click', function (d){
@@ -497,7 +496,10 @@ infovis.renderScatterplot = function(wid_waypoint, id, visdata, events, eventHan
             .attr("x", width - 18)
             .attr("width", 18)
             .attr("height", 18)
-            .style("fill", sortedColor);
+            .style("fill", function(d){
+                console.log(sortedColor(d));
+                return "#" + sortedColor(d);
+            })
 
         // draw legend text
         legend.append("text")

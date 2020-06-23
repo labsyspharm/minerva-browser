@@ -877,21 +877,24 @@ Render.prototype = {
     var md = waypoint.Description;
 
     cell_type_links_map.forEach(function(link, type){
-      var re = RegExp(type+'s?', 'gi');
+      var escaped_type = type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var re = RegExp(escaped_type+'s?', 'gi');
       md = md.replace(re, function(m) {
         return '['+m+']('+link+')';
       });
     });
 
     marker_links_map.forEach(function(link, marker){
-      var re = RegExp('(^|[^0-9A-Za-z`])\('+marker+'\)([^0-9A-Za-z`]|$)', 'gi');
+      var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var re = RegExp('(^|[^0-9A-Za-z`])\('+escaped_marker+'\)([^0-9A-Za-z`]|$)', 'gi');
       md = md.replace(re, function(m, pre, m1, post) {
         return m.replace(m1, '`'+m1+'`', 'gi');
       });
     });
 
     marker_links_map.forEach(function(link, marker){
-      var re = RegExp('`'+marker+'`', 'gi');
+      var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var re = RegExp('`'+escaped_marker+'`', 'gi');
       md = md.replace(re, function(m) {
         return '['+m+']('+link+')';
       });
@@ -914,7 +917,8 @@ Render.prototype = {
     }
 
     const maskHandler = function(name) {
-      const re = RegExp(name ,'gi');
+      var escaped_name = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = RegExp(escaped_name,'gi');
       const m = index_regex(HS.masks, re);
       if (m >= 0) {
         HS.m = [m];
@@ -923,7 +927,8 @@ Render.prototype = {
     }
 
     const chanAndMaskHandler = function(mask, chan) {
-      const re_mask = RegExp(mask,'gi');
+      var escaped_mask = mask.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re_mask = RegExp(escaped_mask,'gi');
       const m = index_regex(HS.masks, re_mask);
       if (m >= 0) {
         HS.m = [m];
@@ -934,7 +939,8 @@ Render.prototype = {
         HS.g = c;
       }
       else {
-        const re_chan = RegExp(chan,'gi');
+        var escaped_chan = chan.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re_chan = RegExp(escaped_chan,'gi');
         const r_c = index_regex(HS.cgs, re_chan);
         if (r_c >= 0) {
           HS.g = r_c;
@@ -1031,7 +1037,8 @@ Render.prototype = {
           const c_text = code.innerText;
           const code_marker = marker_alias_map.get(c_text) || c_text;
           const key_marker = marker_alias_map.get(marker) || marker;
-          const re = RegExp('^'+code_marker+'$','gi');
+          var escaped_code_marker = code_marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const re = RegExp('^'+escaped_code_marker+'$','gi');
           if (key_marker != undefined && key_marker.match(re)) {
             index = channelOrders[marker];
           }

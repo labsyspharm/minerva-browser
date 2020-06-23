@@ -24,7 +24,8 @@ export const get_links_alias = function(data) {
         const all_alias = d.Alias.split(',').map(strip);
 
         const dup_alias = all_alias.reduce((arr, a) => {
-          const match_a = RegExp('^'+a+'$', 'gi');
+          const escaped_a = a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const match_a = RegExp('^'+escaped_a+'$', 'gi');
           if (strip(d.String).match(match_a)) {
             return arr.concat([a]);
           }

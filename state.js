@@ -345,6 +345,8 @@ HashState.prototype = {
   /*
    * Control keys
    */
+
+  // Used only for optional OMERO support
   get omero_cookie() {
     const username = 'jth30'
     const pass = new Promise(function(resolve, reject) {
@@ -365,11 +367,11 @@ HashState.prototype = {
     return omero_authenticate(username, pass);
   },
 
-
+  // Used only for optional Cloud login support
   get token() {
     const username = 'john_hoffer@hms.harvard.edu'
     const pass = new Promise(function(resolve, reject) {
-
+      // Hard code password for public account
       resolve('MEETING@lsp2');
       /* 
       const selector = '#password_modal';
@@ -389,6 +391,7 @@ HashState.prototype = {
     return authenticate(username, pass);
   },
 
+  // drawType is lasso, arrow, or box
   get drawType() {
     return this.state.drawType;
   },
@@ -396,6 +399,7 @@ HashState.prototype = {
     this.state.drawType = _l;
   },
 
+  // Stage in multi-step overlay drawing process
   get drawing() {
     return this.state.drawing;
   },
@@ -408,6 +412,7 @@ HashState.prototype = {
    * Hash Keys
    */
 
+  // Viewport
   get v() {
     return this.state.v;
   },
@@ -415,6 +420,7 @@ HashState.prototype = {
     this.state.v = _v.map(parseFloat);
   },
 
+  // Arrow
   get a() {
     return this.state.a;
   },
@@ -422,6 +428,7 @@ HashState.prototype = {
     this.state.a = _a.map(parseFloat);
   },
 
+  // Mask indices
   get m() {
     const m = this.state.m;
     const count = this.masks.length;
@@ -436,9 +443,10 @@ HashState.prototype = {
     }
     else {
       this.state.m = [-1];
-    }
+  }
   },
 
+  // Overlay coordinates
   get g() {
     const g = this.state.g;
     const count = this.cgs.length;
@@ -454,6 +462,7 @@ HashState.prototype = {
    * Exhibit Hash Keys
    */
 
+  // Waypoint index
   get w() {
     const w = this.state.w[this.s] || 0;
     const count = this.waypoints.length;
@@ -485,6 +494,7 @@ HashState.prototype = {
     this.n = nFromWaypoint(waypoint);
   },
 
+  // Story index
   get s() {
     const s = this.state.s;
     const count = this.stories.length;

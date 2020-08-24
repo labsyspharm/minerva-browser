@@ -795,6 +795,7 @@ HashState.prototype = {
    * State manaagement
    */
 
+  // create an exhibit from the configuration file
   newExhibit: function() {
     const exhibit = this.exhibit;
     const cgs = exhibit.Groups || [];
@@ -829,6 +830,8 @@ HashState.prototype = {
     const explore_story = this.newTempStory('explore');
     this.stories = this.stories.concat([explore_story]);
   },
+
+  // Create an empty story from current hash state
   newTempStory: function(mode) {
     const exhibit = this.exhibit;
     const group = this.group;
@@ -840,6 +843,7 @@ HashState.prototype = {
     const header = this.design.header;
     const d = mode == 'outline' ? encode(header) : this.d;
 
+    // Three types of empty story
     const name = {
       'explore': 'Free Explore',
       'tag': 'Shared Link',
@@ -857,6 +861,7 @@ HashState.prototype = {
       'tag': this.active_masks.filter(mask => mask.Name).map(mask => mask.Name),
     }[mode];
 
+    // Empty story object of a single waypoint
     return {
       Mode: mode,
       Description: '',
@@ -884,6 +889,8 @@ HashState.prototype = {
       })]
     }
   },
+
+  // Update the url with the hash state
   pushState: function() {
 
     const url = this.makeUrl(this.hashKeys, this.searchKeys);
@@ -901,6 +908,8 @@ HashState.prototype = {
 
     this.changed = false;
   },
+
+  // Update the hash state from the url
   popState: function(e) {
     if (e && e.state) {
       this.changed = false;
@@ -922,6 +931,7 @@ HashState.prototype = {
       }
     }, this);
 
+    // Handle user-defined shared links
     if (this.isSharedLink) {
       this.d = hash.d;
       const tag_story = this.newTempStory('tag'); 
@@ -930,6 +940,7 @@ HashState.prototype = {
       this.pushState();
       window.onpopstate();
     }
+    // Show welcome page if no hash present
     else if (this.isMissingHash) {
       this.s = 0; 
       const welcome = $('#welcome_modal');
@@ -942,6 +953,7 @@ HashState.prototype = {
     }
   },
 
+  // Make a url from location, hash, and search terms
   makeUrl: function(hashKeys, searchKeys) {
     const root = this.location('pathname');
     const hash = this.makeHash(hashKeys);
@@ -949,16 +961,19 @@ HashState.prototype = {
     return  root + search + hash;
   },
 
+  // Make the hash component of the url
   makeHash: function(hashKeys) {
     const hash = serialize(hashKeys, this, '#');
     return hash? '#' + hash : '';
   },
 
+  // Make the search component of the url
   makeSearch: function(searchKeys) {
     const search = serialize(searchKeys, this, '&');
     return search? '?' + search : '';
   },
 
+  // Editor mode uses a buffer waypoint
   startEditing: function(_waypoint) {
     const bw = _waypoint || this.bufferWaypoint;
     this.bufferWaypoint = bw;
@@ -973,6 +988,7 @@ HashState.prototype = {
     this.g = gFromWaypoint(bw, this.cgs);
   },
 
+  // Exiting editor mode updates the buffer waypoint
   finishEditing: function() {
     const bw = this.bufferWaypoint;
     bw.Group = this.group.Name;
@@ -992,6 +1008,7 @@ HashState.prototype = {
     window.onpopstate();
   },
 
+  // Start drawing in one of three modes
   startDrawing: function() {
     this.drawing = 1;
 
@@ -1007,10 +1024,11 @@ HashState.prototype = {
       this.o = [-100, -100, 1, 1];
     }
   },
+  // Immediately cancel drawing mode
   cancelDrawing: function() {
     this.drawing = 0;
   },
-
+  // Properly complete a drawing
   finishDrawing: function() {
 
     if (this.edit) {
@@ -1024,6 +1042,7 @@ HashState.prototype = {
     }
   },
 
+  // Return both waypoint-defined arrows and user-defined arrows
   get allArrows() {
     return this.stories.reduce((all, story, s) => {
       return all.concat(story.Waypoints.reduce((idx, _, w) => {
@@ -1036,6 +1055,7 @@ HashState.prototype = {
     }, []);
   },
 
+  // Return both waypoint-defined overlays and user-defined overlays
   get allOverlays() {
     return this.stories.reduce((all, story, s) => {
       return all.concat(story.Waypoints.reduce((idx, _, w) => {
@@ -1048,6 +1068,7 @@ HashState.prototype = {
     }, []);
   },
 
+  // map channel names to their rendering settings
   channelSettings: function(channels) {
     const chans = this.chans;
     if (channels == undefined) {
@@ -1062,6 +1083,7 @@ HashState.prototype = {
     }, {});
   },
 
+  // Render current waypoint as configuration-style yaml
   get bufferYaml() {
     const viewport = this.viewport;
     const waypoint = this.waypoint;
@@ -1087,7 +1109,7 @@ HashState.prototype = {
   }
 };
 
-
+// Get headers for various image providers
 export const getAjaxHeaders = function(state, image){
   if (image.Provider == 'minerva') {
     return state.token.then(function(token){
@@ -1116,17 +1138,19 @@ export const getAjaxHeaders = function(state, image){
   return Promise.resolve({});
 };
 
-
+// Return a function for Openseadragon's getTileUrl API
 export const getGetTileUrl = function(image, layer, channelSettings) {
 
   const colors = layer.Colors;
   const channels = layer.Channels;
 
+  // This default function simply requests for rendered jpegs
   const getJpegTile = function(level, x, y) {
     const fileExt = '.' + layer.Format;
     return image.Path + '/' + layer.Path + '/' + (image.MaxLevel - level) + '_' + x + '_' + y + fileExt;
   };
 
+  // Handle Optional AWS lambda functionality rendering images
   if (image.Provider == 'minerva' || image.Provider == 'minerva-public') {
     const channelList = channels.reduce(function(list, c, i) {
       const settings = channelSettings[c];
@@ -1161,6 +1185,7 @@ export const getGetTileUrl = function(image, layer, channelSettings) {
 
     return getMinervaTile;
   }
+  // Handle optional Omero functionality for rendering images
   else if (image.Provider == 'omero') {
     const channelList = channels.reduce(function(list, c, i) {
       const settings = channelSettings[c];
@@ -1190,11 +1215,13 @@ export const getGetTileUrl = function(image, layer, channelSettings) {
 
     return getOmeroTile; 
   }
+  // Default function is returned
   else {
     return getJpegTile; 
   }
 };
 
+// Get index of name in a list of names
 export const index_name = function(list, name) {
   if (!Array.isArray(list)) {
     return -1;
@@ -1205,6 +1232,7 @@ export const index_name = function(list, name) {
   return list.indexOf(item);
 };
 
+// Get index of regex pattern in a list of names
 export const index_regex = function(list, re) {
   if (!Array.isArray(list)) {
     return -1;

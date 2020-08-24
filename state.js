@@ -511,8 +511,10 @@ HashState.prototype = {
 
   /*
    * Tag Hash Keys
+   * for sharable tagged regions
    */
 
+  // Overlay coordinates
   get o() {
     return this.state.o;
   },
@@ -520,6 +522,7 @@ HashState.prototype = {
     this.state.o = _o.map(parseFloat);
   },
 
+  // Polygon definition 
   get p() {
     return toPolygonURL(this.state.p);
   },
@@ -527,6 +530,7 @@ HashState.prototype = {
     this.state.p = fromPolygonURL(_p);
   },
 
+  // Description text 
   get d() {
     return this.state.description;
   },
@@ -534,6 +538,7 @@ HashState.prototype = {
     this.state.description = '' + _d;
   },
 
+  // Name text
   get n() {
     return this.state.name;
   },
@@ -551,6 +556,7 @@ HashState.prototype = {
     this.state.changed = !!_c;
   },
 
+  // The design contains all stories and waypoints
   get design() {
     return this.state.design;
   },
@@ -569,6 +575,7 @@ HashState.prototype = {
     this.state.design = design;
   },
 
+  // The mask definitions
   get masks() {
     return this.design.masks || [];
   },
@@ -579,6 +586,7 @@ HashState.prototype = {
     this.changed = true;
   },
 
+  // The channel groups
   get cgs() {
     return this.design.cgs || [];
   },
@@ -589,6 +597,7 @@ HashState.prototype = {
     this.changed = true;
   },
 
+  // The individual channels
   get chans() {
     return this.design.chans || [];
   },
@@ -599,6 +608,7 @@ HashState.prototype = {
     this.changed = true;
   },
 
+  // The stories (ie collections of waypoints)
   get stories() {
     return this.design.stories || [];
   },
@@ -609,6 +619,7 @@ HashState.prototype = {
     this.changed = true;
   },
 
+  // Layout of multiple images in 2D grid
   get layout() {
     return this.design.layout || {
       Grid: []
@@ -621,6 +632,7 @@ HashState.prototype = {
     this.changed = true;
   },
 
+  // The image addresses
   get images() {
     return this.design.images || [];
   },
@@ -639,6 +651,7 @@ HashState.prototype = {
     return unpackGrid(this.layout, this.images, 'Target');
   },
 
+  // Count the current waypoint index
   get currentCount() {
     const s = this.s;
     const w = this.w;
@@ -655,6 +668,7 @@ HashState.prototype = {
     }, 1);
   },
 
+  // Count the total number of waypoints
   get totalCount() {
     return this.stories.reduce(function(count, story) {
       return count + story.Waypoints.length;
@@ -665,6 +679,7 @@ HashState.prototype = {
    * Derived State
    */
 
+  // Check if the link contains a waypoint defined by the user
   get isSharedLink() {
     const yes_d = this.hash.hasOwnProperty('d');
     const no_s = !this.hash.hasOwnProperty('s');
@@ -674,11 +689,13 @@ HashState.prototype = {
     return yes_d && (no_s || no_shared_link);
   },
 
+  // Check whether there is no hash in the link
   get isMissingHash() {
     const no_s = !this.hash.hasOwnProperty('s');
     return !this.isSharedLink && no_s;
   },
 
+  // Get the current story given by story index
   get story() {
     return this.stories[this.s];
   },
@@ -688,6 +705,7 @@ HashState.prototype = {
     this.stories = stories;
   },
 
+  // Get the active masks given by mask indices
   get active_masks() {
     const masks = this.masks;
     return this.m.map(function(m) {
@@ -695,10 +713,12 @@ HashState.prototype = {
     }).filter(mask => mask != undefined);
   },
 
+  // Get the current group given by group index
   get group() {
     return this.cgs[this.g];
   },
 
+  // Get the colors of the current group's channels
   get colors() {
     const g_colors = this.group.Colors;
     return g_colors.concat(this.active_masks.reduce((c, m) => {
@@ -706,6 +726,7 @@ HashState.prototype = {
     }, []));
   },
 
+  // Get the names of the current group's channels
   get channels() {
     const g_chans = this.group.Channels;
     return g_chans.concat(this.active_masks.reduce((c, m) => {
@@ -713,6 +734,7 @@ HashState.prototype = {
     }, []));
   },
 
+  // Get the waypoints of the current story
   get waypoints() {
     return this.story.Waypoints;
   },
@@ -722,6 +744,7 @@ HashState.prototype = {
     this.story = story;
   },
 
+  // Get the waypoint at the current waypoint index
   get waypoint() {
     if (this.edit) {
       return this.bufferWaypoint;
@@ -748,6 +771,7 @@ HashState.prototype = {
     }
   },
 
+  // Get the viewport object from the current viewport coordinates
   get viewport() {
     const v = this.v;
     return {
@@ -756,6 +780,7 @@ HashState.prototype = {
     };
   },
 
+  // Get the overlay object from the current overlay coordinates
   get overlay() {
     const o = this.o;
     return {

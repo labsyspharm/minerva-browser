@@ -140,6 +140,7 @@ const oFromWaypoint = function(waypoint) {
   ];
 };
 
+// Convert a polygon to a url parameter
 var toPolygonURL = function(polygon){
     var pointString='';
     polygon.forEach(function(d){
@@ -150,6 +151,7 @@ var toPolygonURL = function(polygon){
     return result;
 }
 
+// Convert a url parameter to a polygon
 var fromPolygonURL = function(polygonString){
     var decompressed = LZString.decompressFromEncodedURIComponent(polygonString);
     if (!decompressed){
@@ -174,6 +176,7 @@ var fromPolygonURL = function(polygonString){
     return newPolygon;
 }
 
+// Serialize state to url
 const serialize = function(keys, state, delimit) {
   return keys.reduce(function(h, k) {
     var value = state[k] || 0;
@@ -186,6 +189,7 @@ const serialize = function(keys, state, delimit) {
 
 };
 
+// Deserialize url to state
 const deserialize = function(entries) {
   const query = entries.reduce(function(o, entry) {
     if (entry) {
@@ -202,6 +206,9 @@ const deserialize = function(entries) {
   return query;
 };
 
+/*
+ * The HashState contains all state variables in sync with url hash
+ */
 export const HashState = function(exhibit, options) {
 
   this.trackers = [];
@@ -302,6 +309,18 @@ HashState.prototype = {
     return ['edit'].filter(x => search_keys.includes(x))
   },
 
+  /*
+   * A shared link includes the "d" key for description,
+   * Otherwise, hash keys always include
+   * s: story index
+   * w: waypoint index
+   * g: channel group index
+   * m: mask indices
+   * a: arrow coordinates
+   * v: viewport coordinates
+   * o: overlay coordinates
+   * p: polygon definition
+   */
   get hashKeys() {
     const oldTag = this.waypoint.Mode == 'tag';
     if (oldTag || this.isSharedLink) {

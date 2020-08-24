@@ -2,6 +2,7 @@ const strip = function(str) {
     return str.replace(/^\s+|\s+$/g, '');
 }
 
+// Get the cell-type and protein context links as well as aliased names
 export const get_links_alias = function(data) {
 
     data = data.map(function(d) {
@@ -11,6 +12,7 @@ export const get_links_alias = function(data) {
       return d;
     })
 
+    // Create map of aliases for cell-type and protein names
     const alias_map = new Map();
     data.filter(d => d.Alias).forEach(function(d) {
       d.Alias.split(',').forEach(function(a) {
@@ -18,6 +20,7 @@ export const get_links_alias = function(data) {
       });
     });
 
+    // Create map of context links for cell-type and protein names
     const links_map = new Map();
     data.filter(d => d.Link).forEach(function(d) {
       if (d.Alias) {

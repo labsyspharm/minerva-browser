@@ -3,6 +3,7 @@ import { round4 } from "./render"
 import { greenOrWhite } from "./render"
 
 var lasso_draw_counter = 0;
+// Draw a point of a lasso-style polygon
 var lasso_draw = function(event){
 
   lasso_draw_counter ++;
@@ -12,14 +13,14 @@ var lasso_draw = function(event){
 
   const viewer = this.viewer;
 
-  //add points to polygon and (re)draw
+  // add points to polygon and (re)draw
   var webPoint = event.position;
   var viewportPoint = viewer.viewport.pointFromPixel(webPoint);
   this.hashstate.state.p.push({"x":viewportPoint.x,"y":viewportPoint.y});
 
   this.newView(false);
 }
-
+// Change the spring stiffness for navigation
 const changeSprings = function(viewer, seconds, stiffness) {
   const springs = [
     'centerSpringX', 'centerSpringY', 'zoomSpring'
@@ -32,6 +33,7 @@ const changeSprings = function(viewer, seconds, stiffness) {
   });
 };
 
+// Set the opacity of active channel groups or segmentation masks
 const newMarkers = function(tileSources, group, active_masks) {
 
   const mask_paths = active_masks.map(m => m.Path);
@@ -44,7 +46,7 @@ const newMarkers = function(tileSources, group, active_masks) {
     })
 };
 
-
+// Render openseadragon from given hash state
 export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) {
 
   this.svg_overlay = d3.select(viewer.svgOverlay().node());
@@ -60,6 +62,7 @@ export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) 
 
 RenderOSD.prototype = {
 
+  // Handle mouse position
   get mouseXY() {
     const e = this.mouseEvent;
     const pos = OpenSeadragon.getMousePosition(e);
@@ -69,12 +72,14 @@ RenderOSD.prototype = {
     this.mouseEvent = e;
   },
 
+  // Initialize connection to openseadragon
   init: function () {
   
     const viewer = this.viewer;
     const HS = this.hashstate;
     const THIS = this;
 
+    // Track mouse drag for lasso polygon drawing
     var mouse_drag = new OpenSeadragon.MouseTracker({
         element: viewer.canvas,
         dragHandler: function(event) {
@@ -85,6 +90,7 @@ RenderOSD.prototype = {
         }
     })
 
+    // Track mouse drag end for lasso polygon drawing
     var mouse_up = new OpenSeadragon.MouseTracker({
         element: viewer.canvas,
         dragEndHandler: function(event) {
@@ -95,6 +101,7 @@ RenderOSD.prototype = {
         }
     })
 
+    // Track mouse drag for box overlay drawing
     this.viewer.addHandler('canvas-drag', function(e) {
       const THIS = e.userData;
       const HS = THIS.hashstate;
@@ -115,6 +122,7 @@ RenderOSD.prototype = {
       }
     }, this);
 
+    // Track mouse drag end for box overlay drawing
     this.viewer.addHandler('canvas-drag-end', function(e) {
       const THIS = e.userData;
       const HS = THIS.hashstate;
@@ -133,6 +141,7 @@ RenderOSD.prototype = {
       }
     }, this);
 
+    // Track mouse click for arrow and box  drawing
     this.viewer.addHandler('canvas-click', function(e) {
       const THIS = e.userData;
       const HS = THIS.hashstate;
@@ -157,11 +166,13 @@ RenderOSD.prototype = {
         return;
       }
 
+      // Dragging the lower bounds of the box
       if (HS.drawing == 1) {
         HS.drawing = 2;
         e.preventDefaultAction = true;
         THIS.drawLowerBounds(position);
       }
+      // Dragging the upper bounds of the box
       else if (HS.drawing == 2) {
         e.preventDefaultAction = true;
         THIS.drawUpperBounds(position);
@@ -172,6 +183,7 @@ RenderOSD.prototype = {
       }
     }, this);
 
+    // Track mouse movement for box overlay drawing
     $(this.viewer.element).mousemove(this, function(e) {
       const THIS = e.data;
       const HS = THIS.hashstate;
@@ -185,6 +197,7 @@ RenderOSD.prototype = {
       }
     });
 
+    // Transfer animated viewport into hash state
     this.viewer.addHandler('animation', function(e) {
       const THIS = e.userData;
       const HS = THIS.hashstate;
@@ -197,6 +210,7 @@ RenderOSD.prototype = {
       ];
     }, this);
 
+    // Transfer animated viewport into hash state and url
     this.viewer.addHandler('animation-finish', function(e) {
       const THIS = e.userData;
       const HS = THIS.hashstate;
@@ -218,22 +232,26 @@ RenderOSD.prototype = {
 
   },
   
+  // Immediately set viewport
   finishAnimation: function() {
     const target = this.viewer.viewport.getBounds();
     this.viewer.viewport.fitBounds(target, true);
   },
+  // Make springs faster
   faster: function() {
     changeSprings(this.viewer, 1.2, 6.4);
   },
+  // Make springs slower
   slower: function() {
     changeSprings(this.viewer, 3.2, 6.4);
   },
-
+  // Normalize pixel coordinates to openseadragon viewport coordinates
   normalize: function(pixels) {
     const vp = this.viewer.viewport;
     const norm = vp.viewerElementToViewportCoordinates;
     return norm.call(vp, pixels);
   },
+  // Draw lower bounds of a box overlay
   drawLowerBounds: function(position) {
     const HS = this.hashstate;
     const wh = [0, 0];
@@ -243,6 +261,7 @@ RenderOSD.prototype = {
     HS.o = new_xy.concat(wh);
     this.newView(false);
   },
+  // Compute new bounds in x or y
   computeBounds: function(value, start, len) {
     const center = start + (len / 2);
     const end = start + len;
@@ -259,6 +278,7 @@ RenderOSD.prototype = {
       range: value - start,
     };
   },
+  // Draw upper bounds of a box overlay
   drawUpperBounds: function(position) {
     const HS = this.hashstate;
     const xy = HS.o.slice(0, 2);
@@ -273,8 +293,7 @@ RenderOSD.prototype = {
     this.newView(false);
   },
 
-
-
+  // update openseadragon optionally redrawing
   newView: function(redraw) {
 
     const HS = this.hashstate;
@@ -283,6 +302,7 @@ RenderOSD.prototype = {
 
     this.addPolygon("selection", HS.state.p);
 
+    // Update the box overlays
     HS.allOverlays.forEach(function(indices) {
       const [prefix, s, w, o] = indices;
       var overlay = HS.overlay;
@@ -293,6 +313,7 @@ RenderOSD.prototype = {
       this.addOverlay(overlay, el, s, w);
     }, this)
 
+    // Update the arrow overlays
     const THIS = this;
     $.each($('.arrow-overlay'), function(id, el) {
       const current = THIS.viewer.getOverlayById(el.id);
@@ -303,7 +324,6 @@ RenderOSD.prototype = {
         });
       }
     });
-
     HS.allArrows.forEach(function(indices) {
       this.addArrow(indices);
     }, this);
@@ -317,6 +337,7 @@ RenderOSD.prototype = {
     this.viewer.forceRedraw();
   },
 
+  // add a lasso polygon to svg overlay
   addPolygon: function(id, polygon) {
     var svg_overlay = this.svg_overlay;
 
@@ -329,8 +350,11 @@ RenderOSD.prototype = {
         });
   },
 
+  // add an arrow overlay to openseadragon
   addArrow: function(indices) {
 
+    // prefix: waypoint arrow or user arrow
+    // s_i: story index, w_i: waypoint index, a_i: arrow index
     const [prefix, s_i, w_i, a_i] = indices;
     const HS = this.hashstate;
 
@@ -338,9 +362,11 @@ RenderOSD.prototype = {
       Point: HS.a,
       Text: ''
     }
+    // Take waypoint arrows from waypoint
     if (prefix == 'waypoint-arrow') {
       a = Object.assign({}, HS.stories[s_i].Waypoints[w_i].Arrows[a_i])
     }
+    // Set default angle of 60 degrees
     if (a.Angle == undefined) {
       a.Angle = 60;
     }
@@ -349,17 +375,20 @@ RenderOSD.prototype = {
     const text_el = "arrow-text-" + indices.join('-');
     const el = "arrow-image-" + indices.join('-');
 
+    // Hide arrows not equal to current story and waypoint
     if (s_i != HS.s || w_i != HS.w) {
       a.Point = [-100, -100];
     }
 
     const current = this.viewer.getOverlayById(el);
     const xy = new OpenSeadragon.Point(a.Point[0], a.Point[1]);
+    // Update existing arrows
     if (current) {
       current.update({
         location: xy,
       });
     }
+    // Create new arrows
     else {
       if (el != proto_el) {
         const proto_element = document.getElementById(proto_el);
@@ -377,11 +406,13 @@ RenderOSD.prototype = {
 
     const current_text = this.viewer.getOverlayById(text_el);
     const xy_text = new OpenSeadragon.Point(a.Point[0], a.Point[1]);
+    // Update existing arrow text
     if (current_text) {
       current_text.update({
         location: xy_text,
       });
     }
+    // Create new arrow text
     else {
       if (text_el != proto_text_el) {
         const proto_text_element = document.getElementById(proto_text_el);
@@ -397,6 +428,7 @@ RenderOSD.prototype = {
       });
     }
 
+    // Create specific ids for each arrow subelement
     const a_image_el = $('#'+el);
     const a_svg_el = $('#'+el+' svg');
     const a_text_el = $('#'+text_el);
@@ -405,6 +437,7 @@ RenderOSD.prototype = {
     const a_y = a_radius * Math.sin(a.Angle * Math.PI /180);
     const a_x = a_radius * Math.cos(a.Angle * Math.PI /180);
 
+    // Enable hidden (text-only) arrows
     if (a.HideArrow == true) {
       a_image_el.css('display', 'none');
     }
@@ -417,6 +450,7 @@ RenderOSD.prototype = {
 
     const a_text = a.Text;
     
+    // Position text to endpoint of arrow
     if (a_text) {
       const t_w = a_text_el.width();
       const t_h = a_text_el.height();
@@ -437,6 +471,7 @@ RenderOSD.prototype = {
     }
   },
 
+  // add a box overlay to openseadragon
   addOverlay: function(overlay, el, s, w) {
 
     const current = this.viewer.getOverlayById(el);
@@ -445,6 +480,7 @@ RenderOSD.prototype = {
     const not_outline = (HS.waypoint.Mode != 'outline');
     const not_current = (HS.s != s || HS.w != w);
 
+    // Hide if not part of the outline and not current story/waypoint
     if (not_outline && not_current) {
       if (current) {
         const xy = new OpenSeadragon.Point(-100, -100);
@@ -459,6 +495,7 @@ RenderOSD.prototype = {
 
     var div = document.getElementById(el);
 
+    // Create a new overlay if needed
     if (!div) {
       div = document.createElement("div"); 
       div.className = "white overlay";
@@ -470,6 +507,7 @@ RenderOSD.prototype = {
     const is_green = HS.drawing && HS.drawType == "box";
     greenOrWhite('#' + el, is_green);
 
+    // Update existing overlays
     if (current) {
       current.update({
         location: xy,
@@ -477,6 +515,7 @@ RenderOSD.prototype = {
         height: overlay.height
       });
     }
+    // Add new overlays
     else {
       this.viewer.addOverlay({
         x: overlay.x,
@@ -489,6 +528,7 @@ RenderOSD.prototype = {
 
     const THIS = this;
 
+    // Allow interactive box overlays if in outline mode
     if (HS.waypoint.Mode == 'outline') {
       const tracker = new OpenSeadragon.MouseTracker({
         element: document.getElementById(el),
@@ -508,6 +548,7 @@ RenderOSD.prototype = {
     }
   },
 
+  // Pan to viewport given by hash state
   activateViewport: function() {
     const HS = this.hashstate;
     const viewport = this.viewer.viewport;

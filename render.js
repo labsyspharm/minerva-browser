@@ -4,15 +4,18 @@ import { index_regex } from './state'
 import { Clipboard } from './clipboard'
 import infovis from './infovis'
 
+// Round to one decimal place
 const round1 = function(n) {
   return Math.round(n * 10) / 10;
 };
 
+// Round to four decimal places
 export const round4 = function(n) {
   const N = Math.pow(10, 4);
   return Math.round(n * N) / N;
 };
 
+// Remove keys with undefined values
 export const remove_undefined = function(o) {
   Object.keys(o).forEach(k => {
     o[k] == undefined && delete o[k]
@@ -20,10 +23,12 @@ export const remove_undefined = function(o) {
   return o;
 };
 
+// Encode arbitrary string in url
 export const encode = function(txt) {
   return btoa(encodeURIComponent(txt));
 };
 
+// Decode arbitrary string from url
 export const decode = function(txt) {
   try {
     return decodeURIComponent(atob(txt));
@@ -33,12 +38,14 @@ export const decode = function(txt) {
   }
 };
 
+// Remove all children of a DOM node
 const clearChildren = function(node) {
   while (node.firstChild) {
     node.removeChild(node.firstChild);
   }
 };
 
+// Return object with form values
 const parseForm = function(elem) {
   const formArray = $(elem).serializeArray();
   return formArray.reduce(function(d, i) {
@@ -47,6 +54,7 @@ const parseForm = function(elem) {
   }, {});
 };
 
+// Add or remove a class based on a condition
 const classOrNot = function(selector, condition, cls) {
   if (condition) {
     return $(selector).addClass(cls);
@@ -54,19 +62,23 @@ const classOrNot = function(selector, condition, cls) {
   return $(selector).removeClass(cls);
 };
 
+// Toggle display of none based on condition
 const displayOrNot = function(selector, condition) {
   classOrNot(selector, !condition, 'd-none');
 };
 
+// Toggle 'active' class based on condition
 const activeOrNot = function(selector, condition) {
   classOrNot(selector, condition, 'active');
 };
 
+// Set to green or white based on condition
 export const greenOrWhite = function(selector, condition) {
   classOrNot(selector, condition, 'green');
   classOrNot(selector, !condition, 'white');
 };
 
+// Toggle cursor style based on condition
 const toggleCursor = function(cursor, condition) {
   if (condition) {
     $('#openseadragon1 *').css('cursor', cursor);
@@ -76,6 +88,7 @@ const toggleCursor = function(cursor, condition) {
   }
 };
 
+// encode a polygon as a URL-safe string
 var toPolygonURL = function(polygon){
     pointString='';
     polygon.forEach(function(d){
@@ -86,6 +99,7 @@ var toPolygonURL = function(polygon){
     return result;
 }
 
+// decode a URL-safe string as a polygon
 var fromPolygonURL = function(polygonString){
     var decompressed = LZString.decompressFromEncodedURIComponent(polygonString);
     if (!decompressed){
@@ -110,6 +124,7 @@ var fromPolygonURL = function(polygonString){
     return newPolygon;
 }
 
+// Download a text file
 const download = function(filename, text) {
   var element = document.createElement('a');
   element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
@@ -123,10 +138,12 @@ const download = function(filename, text) {
   document.body.removeChild(element);
 };
 
+// Copy string to clipboard
 const ctrlC = function(str) {
   Clipboard.copy(str);
 };
 
+// return a list of image objects from a flattened layout
 export const unpackGrid = function(layout, images, key) {
   const image_map = images.reduce(function(o, i) {
 
@@ -146,6 +163,7 @@ export const unpackGrid = function(layout, images, key) {
   }, {image_map: image_map});
 };
 
+// Create a button to copy hash state yaml to clipboard
 const newCopyYamlButton = function(THIS) {
   const copy_pre = 'Copy to Clipboard';
   const copy_post = 'Copied';
@@ -167,6 +185,7 @@ const newCopyYamlButton = function(THIS) {
   });
 };
 
+// Create a button to copy form data to clipboard
 const newCopyButton = function() {
   const copy_pre = 'Copy to Clipboard';
   const copy_post = 'Copied';
@@ -190,6 +209,7 @@ const newCopyButton = function() {
   });
 };
 
+// Render the non-openseadragon UI
 export const Render = function(hashstate, osd, eventHandler) {
 
   this.eventHandler = eventHandler;
@@ -221,11 +241,12 @@ Render.prototype = {
     HS.pushState();
     window.onpopstate();
 
-    // Edit name
+    // Exhibit name
     $('#exhibit-name').text(HS.exhibit.Name);
-
+    // Copy buttons
     $('.modal_copy_button').each(newCopyButton);
 
+    // Define button tooltips
     $('#zoom-in').tooltip({
       title: 'Zoom in'
     });
@@ -245,19 +266,23 @@ Render.prototype = {
       title: 'Clone linked view'
     });
 
+    // Modals to copy shareable link and edit description
     $('#copy_link_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
     $('#edit_description_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
 
+    // Button to toggle sidebar
     $('#toggle-sidebar').click(function(e) {
       e.preventDefault();
       $("#sidebar-menu").toggleClass("toggled");
     });
 
+    // Button to toggle legend
     $('#toggle-legend').click(function(e) {
       e.preventDefault();
       $("#legend").toggleClass("toggled");
     });
 
+    // Left arrow decreases waypoint by 1
     $('#leftArrow').click(this, function(e) {
       const HS = e.data.hashstate;
       if (HS.w == 0) {
@@ -271,6 +296,7 @@ Render.prototype = {
       window.onpopstate();
     });
 
+    // Right arrow increases waypoint by 1
     $('#rightArrow').click(this, function(e) {
       const HS = e.data.hashstate;
       const last_w = HS.w == (HS.waypoints.length - 1);
@@ -285,6 +311,7 @@ Render.prototype = {
       window.onpopstate();
     });
 
+    // Toggle edit mode on/off
     $('#edit-switch').click(this, function(e) {
       const HS = e.data.hashstate;
       if (!HS.edit) {
@@ -294,6 +321,7 @@ Render.prototype = {
       }
     });
 
+    // Toggle view mode on/off
     $('#view-switch').click(this, function(e) {
       const HS = e.data.hashstate;
       if (HS.edit) {
@@ -303,6 +331,7 @@ Render.prototype = {
       }
     });
 
+    // Show table of contents
     $('#toc-button').click(this, function(e) {
       const HS = e.data.hashstate;
       if (HS.waypoint.Mode != 'outline') {
@@ -312,6 +341,7 @@ Render.prototype = {
       }
     });
 
+    // Clear current editor buffer
     $('.clear-switch').click(this, function(e) {
       const HS = e.data.hashstate;
       HS.bufferWaypoint = undefined;
@@ -320,6 +350,7 @@ Render.prototype = {
       window.onpopstate();
     });
     
+    // Toggle arrow drawing mode
     $('.arrow-switch').click(this, function(e) {
       const HS = e.data.hashstate;
       const THIS = e.data;
@@ -334,6 +365,7 @@ Render.prototype = {
       THIS.newView(false);
     });
 
+    // Toggle lasso drawing mode
     $('.lasso-switch').click(this, function(e) {
       const HS = e.data.hashstate;
       const THIS = e.data;
@@ -348,6 +380,7 @@ Render.prototype = {
       THIS.newView(false);
     });
 
+    // Toggle box drawing mode
     $('.draw-switch').click(this, function(e) {
       const HS = e.data.hashstate;
       const THIS = e.data;
@@ -362,12 +395,14 @@ Render.prototype = {
       THIS.newView(false);
     });
 
+    // Handle Z-slider when in 3D mode
     var z_legend = document.getElementById('depth-legend');
     var z_slider = document.getElementById('z-slider');
     z_slider.max = HS.cgs.length - 1;
     z_slider.value = HS.g;
     z_slider.min = 0;
 
+    // Show z scale bar when in 3D mode
     if (HS.design.is3d && HS.design.z_scale) {
       z_legend.innerText = round1(HS.g / HS.design.z_scale) + ' μm';
     }
@@ -375,6 +410,7 @@ Render.prototype = {
       z_legend.innerText = HS.group.Name; 
     }
 
+    // Handle z-slider change when in 3D mode
     const THIS = this;
     z_slider.addEventListener('input', function() {
       HS.g = z_slider.value;
@@ -387,6 +423,7 @@ Render.prototype = {
       THIS.newView(true)
     }, false);
 
+    // Handle submission of description for sharable link
     $('#edit_description_modal form').submit(this, function(e){
       const HS = e.data.hashstate;
       const formData = parseForm(e.target);
@@ -404,6 +441,7 @@ Render.prototype = {
       return false;
     });
   },
+  // Rerender only openseadragon UI or all UI if redraw is true
   newView: function(redraw) {
 
     const HS = this.hashstate;
@@ -413,22 +451,28 @@ Render.prototype = {
       // Redraw HTML Menus
       this.addChannelLegends();
 
+      // Hide group menu if in 3D mode
       if (HS.design.is3d) {
         $('#channel-label').hide()
       }
+      // Add group menu if not in 3D mode
       else {
         this.addGroups();
       }
+      // Add segmentation mask menu
       this.addMasks();
+      // Add stories navigation menu
       this.newStories();
 
+      // Render editor if edit
       if (HS.edit) {
         this.fillWaypointEdit();
       }
+      // Render viewer if not edit
       else {
         this.fillWaypointView();
       }
-      // back and forward
+      // back and forward buttons
       $('.step-back').click(this, function(e) {
         const HS = e.data.hashstate;
         HS.w -= 1;
@@ -457,9 +501,11 @@ Render.prototype = {
       });
     }
 
+    // In editor mode
     if (HS.edit) {
       const THIS = this;
 
+      // Enale selection of active mask indices
       $("#mask-picker").off("changed.bs.select");
       $("#mask-picker").on("changed.bs.select", function(e, idx, isSelected, oldValues) {
         const newValue = $(this).find('option').eq(idx).text();
@@ -477,6 +523,7 @@ Render.prototype = {
         THIS.newView(true);
       });
 
+      // Enale selection of active group index
       $("#group-picker").off("changed.bs.select");
       $("#group-picker").on("changed.bs.select", function(e, idx, isSelected, oldValues) {
         const newValue = $(this).find('option').eq(idx).text();
@@ -505,23 +552,29 @@ Render.prototype = {
     activeOrNot('#view-switch', !edit);
     activeOrNot('#edit-switch', edit);
 
+    // Enable home button if in outline mode, otherwise enable table of contents button
     displayOrNot('#home-button', !edit && HS.waypoint.Mode == 'outline');
     displayOrNot('#toc-button', !edit && HS.waypoint.Mode != 'outline');
+    // Enable 3D UI if in 3D mode
     displayOrNot('#channel-groups-legend', !HS.design.is3d);
     displayOrNot('#z-slider-legend', HS.design.is3d);
     displayOrNot('#toggle-legend', !HS.design.is3d);
     displayOrNot('.only-3d', HS.design.is3d);
+    // Enable edit UI if in edit mode
     displayOrNot('.editControls', edit);
+    // Enable standard UI if not in edit mode
     displayOrNot('#waypointControls', !edit);
     displayOrNot('#waypointName', !edit);
-
+    
+    // Show crosshair cursor if drawing
     toggleCursor('crosshair', drawing);
-
+    // Show correct switch state based on drawing mode
     greenOrWhite('.draw-switch *', drawing && (drawType == "box"));
     greenOrWhite('.lasso-switch *', drawing && (drawType == "lasso"));
     greenOrWhite('.arrow-switch *', drawing && (drawType == "arrow"));
   },
 
+  // Load speech-synthesis from AWS Polly
   loadPolly: function(txt) {
     const hash = sha1(txt);
     if (speech_bucket) {
@@ -534,6 +587,7 @@ Render.prototype = {
   /*
    * User intercation
    */
+  // Draw lower bounds of box overlay
   drawLowerBounds: function(position) {
     const HS = this.hashstate;
     const wh = [0, 0];
@@ -543,6 +597,7 @@ Render.prototype = {
     HS.o = new_xy.concat(wh);
     this.newView(false);
   },
+  // Compute new bounds in x or y
   computeBounds: function(value, start, len) {
     const center = start + (len / 2);
     const end = start + len;
@@ -559,6 +614,7 @@ Render.prototype = {
       range: value - start,
     };
   },
+  // Draw upper bounds of box overlay
   drawUpperBounds: function(position) {
     const HS = this.hashstate;
     const xy = HS.o.slice(0, 2);
@@ -577,14 +633,17 @@ Render.prototype = {
    * Display manaagement
    */
 
+  // Add list of mask layers
   addMasks: function() {
     const HS = this.hashstate;
     $('#mask-layers').empty();
     if (HS.edit || HS.waypoint.Mode == 'explore') {
+        // Show as a multi-column
         $('#mask-layers').addClass('flex');
         $('#mask-layers').removeClass('flex-column');
     }
     else {
+        // Show as a single column
         $('#mask-layers').addClass('flex-column');
         $('#mask-layers').removeClass('flex');
     }
@@ -598,15 +657,17 @@ Render.prototype = {
     else {
       $('#mask-label').hide()
     }
-
+    // Add masks with indices
     masks.forEach(function(mask) {
       const m = index_name(HS.masks, mask.Name);
       this.addMask(mask, m);
     }, this);
   },
 
+  // Add mask with index
   addMask: function(mask, m) {
     const HS = this.hashstate;
+    // Create an anchor element with empty href
     var aEl = document.createElement('a');
     aEl = Object.assign(aEl, {
       className: HS.m.includes(m) ? 'nav-link active' : 'nav-link',
@@ -618,20 +679,23 @@ Render.prototype = {
     var ariaSelected = HS.m.includes(m) ? true : false;
     aEl.setAttribute('aria-selected', ariaSelected);
 
-    // Append everything
+    // Append mask layer to mask layers
     document.getElementById('mask-layers').appendChild(aEl);
     
-    // Update Mask Layer
+    // Activate or deactivate Mask Layer
     $(aEl).click(this, function(e) {
       const HS = e.data.hashstate;
+      // Set group to default group
       const group = HS.design.default_group;
       const g = index_name(HS.cgs, group);
       if ( g != -1 ) {
         HS.g = g;
       }
+      // Remove mask index from m
       if (HS.m.includes(m)){
         HS.m = HS.m.filter(i => i != m);
       }
+      // Add mask index to m
       else {
         HS.m.push(m);
       }
@@ -640,6 +704,7 @@ Render.prototype = {
     });
   },
 
+  // Add list of channel groups
   addGroups: function() {
     const HS = this.hashstate;
     $('#channel-groups').empty();
@@ -654,7 +719,7 @@ Render.prototype = {
     else {
       $('#channel-label').hide()
     }
-    // Add some channel groups to waypoint
+    // Add filtered channel groups to waypoint
     cgs.forEach(function(group) {
       const g = index_name(HS.cgs, group.Name);
       this.addGroup(group, g, 'channel-groups', false);
@@ -689,6 +754,7 @@ Render.prototype = {
       this.addGroup(group, g, 'channel-groups-legend', true);
     }, this);
   },
+  // Add a single channel group to an element
   addGroup: function(group, g, el_id, show_more) {
     const HS = this.hashstate;
     var aEl = document.createElement('a');
@@ -736,7 +802,7 @@ Render.prototype = {
       });
     }
 
-    // Append everything
+    // Append channel group to element
     document.getElementById(el_id).appendChild(aEl);
     
     // Update Channel Group
@@ -748,6 +814,7 @@ Render.prototype = {
 
   },
 
+  // Add channel legend labels
   addChannelLegends: function() {
     const HS = this.hashstate;
     $('#channel-legend').empty();
@@ -767,7 +834,7 @@ Render.prototype = {
     badge.className = 'badge legend-color';
     badge.innerText = '\u00a0';
 
-    // Append everything
+    // Append channel legend to list
     var ul = document.getElementById('channel-legend');
     var li = document.createElement('li');
     li.appendChild(badge);
@@ -775,6 +842,7 @@ Render.prototype = {
     ul.appendChild(li);
   },
 
+  // Return map of channels to indices
   channelOrders: function(channels) {
     return channels.reduce(function(map, c, i){
       map[c] = i;
@@ -782,6 +850,7 @@ Render.prototype = {
     }, {});
   },
 
+  // Lookup a color by index
   indexColor: function(i, empty) {
     const HS = this.hashstate;
     const colors = HS.colors;
@@ -791,6 +860,7 @@ Render.prototype = {
     return '#' + colors[i % colors.length];
   },
 
+  // Render all stories
   newStories: function() {
 
     const HS = this.hashstate;
@@ -821,6 +891,7 @@ Render.prototype = {
     items.appendChild(footer);
   },
 
+  // Render one story
   addStory: function(story, sid, sid_list) {
 
 
@@ -831,6 +902,7 @@ Render.prototype = {
 
   },
 
+  // Render one waypoint
   addWaypoint: function(waypoint, wid, sid, sid_list) {
 
     var wid_item = document.createElement('li');
@@ -854,6 +926,7 @@ Render.prototype = {
     sid_list.appendChild(wid_item);
   },
 
+  // Render contents of waypoing during viewer mode
   fillWaypointView: function() {
 
     const HS = this.hashstate;
@@ -864,6 +937,7 @@ Render.prototype = {
 
     waypointCount.innerText = HS.currentCount + '/' + HS.totalCount;
 
+    // Show waypoint name if in outline mode
     if (waypoint.Mode !== 'outline') {
       waypointName.innerText = waypoint.Name;
     }
@@ -874,8 +948,10 @@ Render.prototype = {
     const scroll_dist = $('.waypoint-content').scrollTop();
     $(wid_waypoint).css('height', $(wid_waypoint).height());
 
+    // Waypoint description markdown
     var md = waypoint.Description;
 
+    // Create links for cell types
     cell_type_links_map.forEach(function(link, type){
       var escaped_type = type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       var re = RegExp(escaped_type+'s?', 'gi');
@@ -884,6 +960,7 @@ Render.prototype = {
       });
     });
 
+    // Create code blocks for protein markers
     marker_links_map.forEach(function(link, marker){
       var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       var re = RegExp('(^|[^0-9A-Za-z`])\('+escaped_marker+'\)([^0-9A-Za-z`]|$)', 'gi');
@@ -892,6 +969,7 @@ Render.prototype = {
       });
     });
 
+    // Create links for protein markers
     marker_links_map.forEach(function(link, marker){
       var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       var re = RegExp('`'+escaped_marker+'`', 'gi');
@@ -900,13 +978,14 @@ Render.prototype = {
       });
     });
 
-
+    // All categories of possible visualization types
     const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot"];
     
     const waypointVis = new Set(allVis.filter(v => waypoint[v]));
     const renderedVis = new Set();
 
     const THIS = this;
+    // Scroll to a given scroll distance when waypoint is fully rendered
     const finish_waypoint = function(visType) {
       renderedVis.add(visType);
       if ([...waypointVis].every(v => renderedVis.has(v))) {
@@ -916,6 +995,7 @@ Render.prototype = {
       }
     }
 
+    // Handle click from plot that selects a mask
     const maskHandler = function(name) {
       var escaped_name = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = RegExp(escaped_name,'gi');
@@ -926,6 +1006,7 @@ Render.prototype = {
       THIS.newView(true);
     }
 
+    // Handle click from plot that selects a mask and channel
     const chanAndMaskHandler = function(mask, chan) {
       var escaped_mask = mask.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re_mask = RegExp(escaped_mask,'gi');
@@ -949,37 +1030,43 @@ Render.prototype = {
       THIS.newView(true);
     }
 
-      const arrowHandler = function(cellPosition){
-          var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
-          //change hashstate vars
-          HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
-          //render without menu redraw
-          THIS.osd.newView(true);
-          //delay visible arrow until animation end
-          HS.a = [viewportCoordinates.x,viewportCoordinates.y];
-      }
+    // Handle click from plot that selects a cell position
+    const arrowHandler = function(cellPosition){
+        var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
+        //change hashstate vars
+        HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
+        //render without menu redraw
+        THIS.osd.newView(true);
+        //delay visible arrow until animation end
+        HS.a = [viewportCoordinates.x,viewportCoordinates.y];
+    }
 
 
-    //VIS
+    // Visualization code
     const renderVis = function(visType, el, id) {
+      // Select infovis renderer based on renderer given in markdown
       const renderer = {
         'VisMatrix': infovis.renderMatrix,
         'VisBarChart': infovis.renderBarChart,
         'VisScatterplot': infovis.renderScatterplot,
         'VisCanvasScatterplot': infovis.renderCanvasScatterplot
       }[visType]
+      // Select click handler based on renderer given in markdown
       const clickHandler = {
         'VisMatrix': chanAndMaskHandler,
         'VisBarChart': maskHandler,
         'VisScatterplot': arrowHandler,
         'VisCanvasScatterplot': arrowHandler
       }[visType]
+      // Run infovis renderer
       const tmp = renderer(el, id, waypoint[visType], {
         'clickHandler': clickHandler
       }, THIS.eventHandler);
+      // Finish wayoint after renderer runs
       tmp.then(() => finish_waypoint(visType));
     }
 
+    // Cache the waypoint visualizations
     var cache = document.createElement('div');
     Array.from(waypointVis).forEach(function(visType) {
       var className = visType + '-' + HS.s + '-' + HS.w;
@@ -989,15 +1076,17 @@ Render.prototype = {
       }
     })
 
+    // Set the HTML from the Markdown
     wid_waypoint.innerHTML = this.showdown.makeHtml(md);
 
+    // Add a static image to the waypoint HTML
     if (waypoint.Image) {
       var img = document.createElement("img");
       img.src = waypoint.Image;
       wid_waypoint.appendChild(img);
     }
 
-    //some code to add text in between vis
+    // Allow text in between visualizations
     Array.from(waypointVis).forEach(function(visType) {
       const wid_code = Array.from(wid_waypoint.getElementsByTagName('code'));
       const el = wid_code.filter(code => code.innerText == visType)[0];
@@ -1024,8 +1113,8 @@ Render.prototype = {
     finish_waypoint('');
 
   },
+  // Color all the remaining HTML Code elements
   colorMarkerText: function (wid_waypoint) {
-    // Color code elements
     const HS = this.hashstate;
     const channelOrders = this.channelOrders(HS.channels);
     const wid_code = wid_waypoint.getElementsByTagName('code');
@@ -1049,6 +1138,7 @@ Render.prototype = {
       $(code).css('border-bottom', border);
     }
   },
+  // Fill the waypoint if in editor mode
   fillWaypointEdit: function() {
     const HS = this.hashstate;
     const wid_waypoint = document.getElementById('viewer-waypoint');

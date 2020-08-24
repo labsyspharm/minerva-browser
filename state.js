@@ -10,13 +10,7 @@ import { remove_undefined } from './render'
 import LZString from "lz-string"
 
 /*
-const CognitoUser = AmazonCognitoIdentity.CognitoUser;
-const CognitoUserPool = AmazonCognitoIdentity.CognitoUserPool;
-const AuthenticationDetails = AmazonCognitoIdentity.AuthenticationDetails;
-*/
-
-/*
- * from /sorgerlab/minerva-client-js/master/index.js
+ * Hard-coded authentication functions for connection with optional AWS Cloud Login
  */
 
 const authenticateUser = function(cognitoUser, authenticationDetails) {
@@ -56,6 +50,10 @@ const authenticate = function(username, pass) {
   });
 }
 
+/*
+ * Hard-coded authentication for optional OMERO connection
+ */
+
 const omero_authenticate = function(username, pass) {
 
   return pass.then(function(password) {
@@ -77,20 +75,21 @@ const omero_authenticate = function(username, pass) {
   });
 }
 
-
-
 const pos_modulo = function(i, n) {
   return ((i % n) + n) % n;
 };
 
+// Define d url parameter (description)
 const dFromWaypoint = function(waypoint) {
   return encode(waypoint.Description);
 };
 
+// Define n url parameter (name)
 const nFromWaypoint = function(waypoint) {
   return encode(waypoint.Name);
 };
 
+// Define m url parameter (active mask indices)
 const mFromWaypoint = function(waypoint, masks) {
   const names = waypoint.ActiveMasks || [];
   const m = names.map(name => index_name(masks, name));
@@ -100,6 +99,7 @@ const mFromWaypoint = function(waypoint, masks) {
   return m;
 };
 
+// Define a url parameter (arrow)
 const aFromWaypoint = function(waypoint, masks) {
   const arrows = waypoint.Arrows || [{}]
   const arrow = arrows[0].Point;
@@ -109,11 +109,13 @@ const aFromWaypoint = function(waypoint, masks) {
   return [-100, -100];
 };
 
+// Define g url parameter (channel group index)
 const gFromWaypoint = function(waypoint, cgs) {
   const cg_name = waypoint.Group;
   return index_name(cgs, cg_name);
 };
 
+// Define v url parameter (viewport)
 const vFromWaypoint = function(waypoint) {
   return [
     waypoint.Zoom,
@@ -122,11 +124,13 @@ const vFromWaypoint = function(waypoint) {
   ];
 };
 
+// Define p url parameter (polygon)
 const pFromWaypoint = function(waypoint) {
   const p = waypoint.Polygon;
   return p? p: toPolygonURL([]);
 };
 
+// Define o url parameter (overlay)
 const oFromWaypoint = function(waypoint) {
   return [
     waypoint.Overlays[0].x,

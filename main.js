@@ -6,14 +6,17 @@ import { Render } from './render'
 import { RenderOSD } from './osd'
 import * as d3 from "d3"
 
+// Flatten an array of arrays
 const flatten = function(items) {
   return items.reduce(function(flat, item) {
     return flat.concat(item);
   });
 };
 
+// Arange openseadragon tileSources in a grid on the page and initialize when done
 const arrange_images = function(viewer, tileSources, hashstate, init) {
 
+  // Channel groups and segmentation masks
   const cgs = hashstate.cgs;
   const masks = hashstate.masks;
 
@@ -29,11 +32,13 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
 
   const images = hashstate.images;
 
+  // If only one image, set image name to the first image description
   const imageName = document.getElementById('imageName');
   imageName.innerText = images.length == 1
     ? images[0].Description
     : exhibit.Name
 
+  // Read the grid arangement from the configuration file
   const numRows = grid.length;
   const numColumns = grid[0].length;
 
@@ -51,20 +56,22 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
   const cellHeight = (1 + spacingFraction) / numRows - spacingFraction;
   const cellWidth = cellHeight * maxImageWidth / maxImageHeight;
 
+  // Iterate through the rows
   for (var yi = 0; yi < numRows; yi++) {
     const y = yi * (cellHeight + spacingFraction);
-
+    // Iterate through the columns
     for (var xi = 0; xi < numColumns; xi++) {
       const image = grid[yi][xi];
       const displayHeight = (1 - (numRows-1) * spacingFraction) / numRows * image.Height / maxImageHeight;
       const displayWidth = displayHeight * image.Width / image.Height;
       const x = xi * (cellWidth + spacingFraction) + (cellWidth - displayWidth) / 2;
-
+      // Iterate through the layers
       for (var j=0; j < layers.length; j++) {
         const layer = layers[j];
         const channelSettings = hashstate.channelSettings(layer.Channels);
         getAjaxHeaders(hashstate, image).then(function(ajaxHeaders){
           const useAjax = (image.Provider == 'minerva' || image.Provider == 'minerva-public');
+          // Add an openseadragon tiled image
           viewer.addTiledImage({
             loadTilesWithAjax: useAjax,
             crossOriginPolicy: useAjax? 'Anonymous': undefined,
@@ -89,6 +96,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
               }
               tileSources[layer.Path].push(item);
 
+              // Set preload flags of neighboring layers if in 3D mode
               if (hashstate.design.is3d) {
                 const item_idx = viewer.world.getIndexOfItem(item);
                 item.addHandler('fully-loaded-change', function(e){
@@ -111,7 +119,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
           });
         });
       }
-
+      // Add the image title and white border
       const titleElt = $('<p>');
       const title = image.Description;
       titleElt.addClass('overlay-title').text(title);
@@ -149,6 +157,7 @@ export const build_page = function(exhibit, options) {
     degrees: exhibit.Rotation || 0,
   });
 
+  // Constantly reset each arrow transform property
 	function updateOverlays() {
 			viewer.currentOverlays.forEach(overlay => {
           const isArrow = overlay.element.id.slice(0,5) == 'arrow';
@@ -179,6 +188,8 @@ export const build_page = function(exhibit, options) {
           }
       });
   });
+
+  // Add size scalebar
   viewer.scalebar({
     location: 3,
     minWidth: '100px',

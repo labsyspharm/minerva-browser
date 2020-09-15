@@ -505,6 +505,15 @@ Render.prototype = {
     if (HS.edit) {
       const THIS = this;
 
+      // Set all mask options
+      const mask_picker = document.getElementById('mask-picker');
+      mask_picker.innerHTML = "";
+      HS.masks.forEach(function(mask){
+        const mask_option = document.createElement("option");
+        mask_option.innerText = mask.Name;
+        mask_picker.appendChild(mask_option);
+      })
+
       // Enale selection of active mask indices
       $("#mask-picker").off("changed.bs.select");
       $("#mask-picker").on("changed.bs.select", function(e, idx, isSelected, oldValues) {
@@ -522,6 +531,15 @@ Render.prototype = {
         HS.m = active_names.map(name => index_name(HS.masks, name));
         THIS.newView(true);
       });
+
+      // Set all group options
+      const group_picker = document.getElementById('group-picker');
+      group_picker.innerHTML = "";
+      HS.cgs.forEach(function(group){
+        const group_option = document.createElement("option");
+        group_option.innerText = group.Name;
+        group_picker.appendChild(group_option);
+      })
 
       // Enale selection of active group index
       $("#group-picker").off("changed.bs.select");

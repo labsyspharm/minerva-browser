@@ -595,7 +595,8 @@ Render.prototype = {
   // Load speech-synthesis from AWS Polly
   loadPolly: function(txt) {
     const hash = sha1(txt);
-    if (speech_bucket) {
+    displayOrNot('.audioControls', !!speech_bucket);
+    if (!!speech_bucket) {
       const polly_url = 'https://s3.amazonaws.com/'+ speech_bucket +'/speech/' + hash + '.mp3';
       document.getElementById('audioSource').src = polly_url;
       document.getElementById('audioPlayback').load();

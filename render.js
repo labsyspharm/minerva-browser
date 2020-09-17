@@ -81,10 +81,10 @@ export const greenOrWhite = function(selector, condition) {
 // Toggle cursor style based on condition
 const toggleCursor = function(cursor, condition) {
   if (condition) {
-    $('#openseadragon1 *').css('cursor', cursor);
+    $('#minerva-openseadragon *').css('cursor', cursor);
   }
   else {
-    $('#openseadragon1 *').css('cursor', 'default');
+    $('#minerva-openseadragon *').css('cursor', 'default');
   }
 };
 
@@ -247,43 +247,43 @@ Render.prototype = {
     $('.modal_copy_button').each(newCopyButton);
 
     // Define button tooltips
-    $('#zoom-in').tooltip({
+    $('#minerva-zoom-in').tooltip({
       title: 'Zoom in'
     });
-    $('#zoom-out').tooltip({
+    $('#minerva-zoom-out').tooltip({
       title: 'Zoom out'
     });
-    $('#arrow-switch').tooltip({
+    $('#minerva-arrow-switch').tooltip({
       title: 'Share Arrow'
     });
-    $('#lasso-switch').tooltip({
+    $('#minerva-lasso-switch').tooltip({
       title: 'Share Region'
     });
-    $('#draw-switch').tooltip({
+    $('#minerva-draw-switch').tooltip({
       title: 'Share Box'
     });
-    $('#duplicate-view').tooltip({
+    $('#minerva-duplicate-view').tooltip({
       title: 'Clone linked view'
     });
 
     // Modals to copy shareable link and edit description
     $('#copy_link_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
-    $('#edit_description_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
+    $('#minerva-edit_description_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
 
     // Button to toggle sidebar
-    $('#toggle-sidebar').click(function(e) {
+    $('#minerva-toggle-sidebar').click(function(e) {
       e.preventDefault();
-      $("#sidebar-menu").toggleClass("toggled");
+      $("#minerva-sidebar-menu").toggleClass("toggled");
     });
 
     // Button to toggle legend
-    $('#toggle-legend').click(function(e) {
+    $('#minerva-toggle-legend').click(function(e) {
       e.preventDefault();
-      $("#legend").toggleClass("toggled");
+      $("#minerva-legend").toggleClass("toggled");
     });
 
     // Left arrow decreases waypoint by 1
-    $('#leftArrow').click(this, function(e) {
+    $('#minerva-leftArrow').click(this, function(e) {
       const HS = e.data.hashstate;
       if (HS.w == 0) {
         HS.s = HS.s - 1;
@@ -297,7 +297,7 @@ Render.prototype = {
     });
 
     // Right arrow increases waypoint by 1
-    $('#rightArrow').click(this, function(e) {
+    $('#minerva-rightArrow').click(this, function(e) {
       const HS = e.data.hashstate;
       const last_w = HS.w == (HS.waypoints.length - 1);
       if (last_w) {
@@ -332,7 +332,7 @@ Render.prototype = {
     });
 
     // Show table of contents
-    $('#toc-button').click(this, function(e) {
+    $('#minerva-toc-button').click(this, function(e) {
       const HS = e.data.hashstate;
       if (HS.waypoint.Mode != 'outline') {
         HS.s = 0; 
@@ -351,7 +351,7 @@ Render.prototype = {
     });
     
     // Toggle arrow drawing mode
-    $('.arrow-switch').click(this, function(e) {
+    $('.minerva-arrow-switch').click(this, function(e) {
       const HS = e.data.hashstate;
       const THIS = e.data;
       HS.drawType = "arrow";
@@ -366,7 +366,7 @@ Render.prototype = {
     });
 
     // Toggle lasso drawing mode
-    $('.lasso-switch').click(this, function(e) {
+    $('.minerva-lasso-switch').click(this, function(e) {
       const HS = e.data.hashstate;
       const THIS = e.data;
       HS.drawType = "lasso";
@@ -381,7 +381,7 @@ Render.prototype = {
     });
 
     // Toggle box drawing mode
-    $('.draw-switch').click(this, function(e) {
+    $('.minerva-draw-switch').click(this, function(e) {
       const HS = e.data.hashstate;
       const THIS = e.data;
       HS.drawType = "box";
@@ -396,8 +396,8 @@ Render.prototype = {
     });
 
     // Handle Z-slider when in 3D mode
-    var z_legend = document.getElementById('depth-legend');
-    var z_slider = document.getElementById('z-slider');
+    var z_legend = document.getElementById('minerva-depth-legend');
+    var z_slider = document.getElementById('minerva-z-slider');
     z_slider.max = HS.cgs.length - 1;
     z_slider.value = HS.g;
     z_slider.min = 0;
@@ -424,18 +424,18 @@ Render.prototype = {
     }, false);
 
     // Handle submission of description for sharable link
-    $('#edit_description_modal form').submit(this, function(e){
+    $('#minerva-edit_description_modal form').submit(this, function(e){
       const HS = e.data.hashstate;
       const formData = parseForm(e.target);
       $(this).closest('.modal').modal('hide');
 
       // Get description from form
       HS.d = encode(formData.d);
-      $('#copy_link_modal').modal('show');
+      $('#minerva-copy_link_modal').modal('show');
 
       const root = HS.location('host') + HS.location('pathname');
       const hash = HS.makeHash(['d', 'g', 'm', 'a', 'v', 'o', 'p']);
-      const link = document.getElementById('copy_link');
+      const link = document.getElementById('minerva-copy_link');
       link.value = root + hash;
 
       return false;
@@ -453,7 +453,7 @@ Render.prototype = {
 
       // Hide group menu if in 3D mode
       if (HS.design.is3d) {
-        $('#channel-label').hide()
+        $('#minerva-channel-label').hide()
       }
       // Add group menu if not in 3D mode
       else {
@@ -491,7 +491,7 @@ Render.prototype = {
       $('.edit_copy_button').each(function() {
         newCopyYamlButton.call(this, THIS);
       });
-      $('#edit_toggle_arrow').click(this, function(e) {
+      $('#minerva-edit_toggle_arrow').click(this, function(e) {
         const HS = e.data.hashstate;
         const THIS = e.data;
         const arrow_0 = HS.waypoint.Arrows[0];
@@ -506,7 +506,7 @@ Render.prototype = {
       const THIS = this;
 
       // Set all mask options
-      const mask_picker = document.getElementById('mask-picker');
+      const mask_picker = document.getElementById('minerva-mask-picker');
       mask_picker.innerHTML = "";
       HS.masks.forEach(function(mask){
         const mask_option = document.createElement("option");
@@ -515,8 +515,8 @@ Render.prototype = {
       })
 
       // Enale selection of active mask indices
-      $("#mask-picker").off("changed.bs.select");
-      $("#mask-picker").on("changed.bs.select", function(e, idx, isSelected, oldValues) {
+      $("#minerva-mask-picker").off("changed.bs.select");
+      $("#minerva-mask-picker").on("changed.bs.select", function(e, idx, isSelected, oldValues) {
         const newValue = $(this).find('option').eq(idx).text();
         HS.waypoint.Masks = HS.masks.map(mask => mask.Name).filter(function(name) {
           if (isSelected) {
@@ -533,7 +533,7 @@ Render.prototype = {
       });
 
       // Set all group options
-      const group_picker = document.getElementById('group-picker');
+      const group_picker = document.getElementById('minerva-group-picker');
       group_picker.innerHTML = "";
       HS.cgs.forEach(function(group){
         const group_option = document.createElement("option");
@@ -542,8 +542,8 @@ Render.prototype = {
       })
 
       // Enale selection of active group index
-      $("#group-picker").off("changed.bs.select");
-      $("#group-picker").on("changed.bs.select", function(e, idx, isSelected, oldValues) {
+      $("#minerva-group-picker").off("changed.bs.select");
+      $("#minerva-group-picker").on("changed.bs.select", function(e, idx, isSelected, oldValues) {
         const newValue = $(this).find('option').eq(idx).text();
         HS.waypoint.Groups = HS.cgs.map(group => group.Name).filter(function(name) {
           if (isSelected) {
@@ -571,25 +571,25 @@ Render.prototype = {
     activeOrNot('#edit-switch', edit);
 
     // Enable home button if in outline mode, otherwise enable table of contents button
-    displayOrNot('#home-button', !edit && HS.waypoint.Mode == 'outline');
-    displayOrNot('#toc-button', !edit && HS.waypoint.Mode != 'outline');
+    displayOrNot('#minerva-home-button', !edit && HS.waypoint.Mode == 'outline');
+    displayOrNot('#minerva-toc-button', !edit && HS.waypoint.Mode != 'outline');
     // Enable 3D UI if in 3D mode
-    displayOrNot('#channel-groups-legend', !HS.design.is3d);
-    displayOrNot('#z-slider-legend', HS.design.is3d);
-    displayOrNot('#toggle-legend', !HS.design.is3d);
+    displayOrNot('#minerva-channel-groups-legend', !HS.design.is3d);
+    displayOrNot('#minerva-z-slider-legend', HS.design.is3d);
+    displayOrNot('#minerva-toggle-legend', !HS.design.is3d);
     displayOrNot('.only-3d', HS.design.is3d);
     // Enable edit UI if in edit mode
     displayOrNot('.editControls', edit);
     // Enable standard UI if not in edit mode
-    displayOrNot('#waypointControls', !edit);
-    displayOrNot('#waypointName', !edit);
+    displayOrNot('#minerva-waypointControls', !edit);
+    displayOrNot('#minerva-waypointName', !edit);
     
     // Show crosshair cursor if drawing
     toggleCursor('crosshair', drawing);
     // Show correct switch state based on drawing mode
-    greenOrWhite('.draw-switch *', drawing && (drawType == "box"));
-    greenOrWhite('.lasso-switch *', drawing && (drawType == "lasso"));
-    greenOrWhite('.arrow-switch *', drawing && (drawType == "arrow"));
+    greenOrWhite('.minerva-draw-switch *', drawing && (drawType == "box"));
+    greenOrWhite('.minerva-lasso-switch *', drawing && (drawType == "lasso"));
+    greenOrWhite('.minerva-arrow-switch *', drawing && (drawType == "arrow"));
   },
 
   // Load speech-synthesis from AWS Polly
@@ -598,8 +598,8 @@ Render.prototype = {
     displayOrNot('.audioControls', !!speech_bucket);
     if (!!speech_bucket) {
       const polly_url = 'https://s3.amazonaws.com/'+ speech_bucket +'/speech/' + hash + '.mp3';
-      document.getElementById('audioSource').src = polly_url;
-      document.getElementById('audioPlayback').load();
+      document.getElementById('minerva-audioSource').src = polly_url;
+      document.getElementById('minerva-audioPlayback').load();
     }
   },
 
@@ -655,26 +655,26 @@ Render.prototype = {
   // Add list of mask layers
   addMasks: function() {
     const HS = this.hashstate;
-    $('#mask-layers').empty();
+    $('#minerva-mask-layers').empty();
     if (HS.edit || HS.waypoint.Mode == 'explore') {
         // Show as a multi-column
-        $('#mask-layers').addClass('flex');
-        $('#mask-layers').removeClass('flex-column');
+        $('#minerva-mask-layers').addClass('flex');
+        $('#minerva-mask-layers').removeClass('flex-column');
     }
     else {
         // Show as a single column
-        $('#mask-layers').addClass('flex-column');
-        $('#mask-layers').removeClass('flex');
+        $('#minerva-mask-layers').addClass('flex-column');
+        $('#minerva-mask-layers').removeClass('flex');
     }
     const mask_names = HS.waypoint.Masks || [];
     const masks = HS.masks.filter(mask => {
       return mask_names.includes(mask.Name);
     });
     if (masks.length || HS.edit) {
-      $('#mask-label').show()
+      $('#minerva-mask-label').show()
     }
     else {
-      $('#mask-label').hide()
+      $('#minerva-mask-label').hide()
     }
     // Add masks with indices
     masks.forEach(function(mask) {
@@ -699,7 +699,7 @@ Render.prototype = {
     aEl.setAttribute('aria-selected', ariaSelected);
 
     // Append mask layer to mask layers
-    document.getElementById('mask-layers').appendChild(aEl);
+    document.getElementById('minerva-mask-layers').appendChild(aEl);
     
     // Activate or deactivate Mask Layer
     $(aEl).click(this, function(e) {
@@ -726,22 +726,22 @@ Render.prototype = {
   // Add list of channel groups
   addGroups: function() {
     const HS = this.hashstate;
-    $('#channel-groups').empty();
-    $('#channel-groups-legend').empty();
+    $('#minerva-channel-groups').empty();
+    $('#minerva-channel-groups-legend').empty();
     const cgs_names = HS.waypoint.Groups || [];
     const cgs = HS.cgs.filter(group => {
       return cgs_names.includes(group.Name);
     });
     if (cgs.length || HS.edit) {
-      $('#channel-label').show()
+      $('#minerva-channel-label').show()
     }
     else {
-      $('#channel-label').hide()
+      $('#minerva-channel-label').hide()
     }
     // Add filtered channel groups to waypoint
     cgs.forEach(function(group) {
       const g = index_name(HS.cgs, group.Name);
-      this.addGroup(group, g, 'channel-groups', false);
+      this.addGroup(group, g, 'minerva-channel-groups', false);
     }, this);
 
     const cgs_multi = HS.cgs.filter(group => {
@@ -750,7 +750,7 @@ Render.prototype = {
     const cgs_single = HS.cgs.filter(group => {
       return group.Channels.length == 1;
     });
-    const cg_legend = document.getElementById('channel-groups-legend');
+    const cg_legend = document.getElementById('minerva-channel-groups-legend');
     if (cgs_multi.length > 0) {
       var h = document.createElement('h6');
       h.innerText = 'Channel Groups:'
@@ -760,7 +760,7 @@ Render.prototype = {
     // Add all channel groups to legend
     cgs_multi.forEach(function(group) {
       const g = index_name(HS.cgs, group.Name);
-      this.addGroup(group, g, 'channel-groups-legend', true);
+      this.addGroup(group, g, 'minerva-channel-groups-legend', true);
     }, this);
     if (cgs_single.length > 0) {
       var h = document.createElement('h6');
@@ -770,7 +770,7 @@ Render.prototype = {
     }
     cgs_single.forEach(function(group) {
       const g = index_name(HS.cgs, group.Name);
-      this.addGroup(group, g, 'channel-groups-legend', true);
+      this.addGroup(group, g, 'minerva-channel-groups-legend', true);
     }, this);
   },
   // Add a single channel group to an element
@@ -836,7 +836,7 @@ Render.prototype = {
   // Add channel legend labels
   addChannelLegends: function() {
     const HS = this.hashstate;
-    $('#channel-legend').empty();
+    $('#minerva-channel-legend').empty();
     HS.channels.forEach(this.addChannelLegend, this);
   },
 
@@ -854,7 +854,7 @@ Render.prototype = {
     badge.innerText = '\u00a0';
 
     // Append channel legend to list
-    var ul = document.getElementById('channel-legend');
+    var ul = document.getElementById('minerva-channel-legend');
     var li = document.createElement('li');
     li.appendChild(badge);
     li.appendChild(label);
@@ -883,7 +883,7 @@ Render.prototype = {
   newStories: function() {
 
     const HS = this.hashstate;
-    const items = document.getElementById('story-container');
+    const items = document.getElementById('minerva-story-container');
     // Remove existing stories
     clearChildren(items);
 
@@ -950,9 +950,9 @@ Render.prototype = {
 
     const HS = this.hashstate;
     const waypoint = HS.waypoint;
-    const wid_waypoint = document.getElementById('viewer-waypoint');
-    const waypointName = document.getElementById("waypointName");
-    const waypointCount = document.getElementById("waypointCount");
+    const wid_waypoint = document.getElementById('minerva-viewer-waypoint');
+    const waypointName = document.getElementById("minerva-waypointName");
+    const waypointCount = document.getElementById("minerva-waypointCount");
 
     waypointCount.innerText = HS.currentCount + '/' + HS.totalCount;
 
@@ -1160,7 +1160,7 @@ Render.prototype = {
   // Fill the waypoint if in editor mode
   fillWaypointEdit: function() {
     const HS = this.hashstate;
-    const wid_waypoint = document.getElementById('viewer-waypoint');
+    const wid_waypoint = document.getElementById('minerva-viewer-waypoint');
     $(wid_waypoint).empty();
     const form_proto = document.getElementsByClassName('save_edits_form')[0]
     const form = form_proto.cloneNode(true);
@@ -1168,10 +1168,10 @@ Render.prototype = {
 
     const arrow_0 = HS.waypoint.Arrows[0];
     if (arrow_0.HideArrow == true) {
-       $('#edit_toggle_arrow').css('opacity', '0.5');
+       $('#minerva-edit_toggle_arrow').css('opacity', '0.5');
     }
     else {
-       $('#edit_toggle_arrow').css('opacity', '1');
+       $('#minerva-edit_toggle_arrow').css('opacity', '1');
     }
 
     const wid_txt = $(wid_waypoint).find('.edit_text')[0];

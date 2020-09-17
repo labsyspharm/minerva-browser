@@ -315,7 +315,7 @@ RenderOSD.prototype = {
 
     // Update the arrow overlays
     const THIS = this;
-    $.each($('.arrow-overlay'), function(id, el) {
+    $.each($('.minerva-arrow-overlay'), function(id, el) {
       const current = THIS.viewer.getOverlayById(el.id);
       const xy = new OpenSeadragon.Point(-100, -100);
       if (current) {
@@ -370,10 +370,10 @@ RenderOSD.prototype = {
     if (a.Angle == undefined) {
       a.Angle = 60;
     }
-    const proto_text_el = "arrow-text";
-    const proto_el = a.Arrowhead? "arrowhead-image" : "arrow-image";
-    const text_el = "arrow-text-" + indices.join('-');
-    const el = "arrow-image-" + indices.join('-');
+    const proto_text_el = "minerva-arrow-text";
+    const proto_el = a.Arrowhead? "minerva-arrowhead-image" : "minerva-arrow-image";
+    const text_el = "minerva-arrow-text-" + indices.join('-');
+    const el = "minerva-arrow-image-" + indices.join('-');
 
     // Hide arrows not equal to current story and waypoint
     if (s_i != HS.s || w_i != HS.w) {
@@ -500,7 +500,7 @@ RenderOSD.prototype = {
       div = document.createElement("div"); 
       div.className = "white overlay";
       div.id = el;
-      document.getElementById('all-overlays').appendChild(div); 
+      document.getElementById('minerva-all-overlays').appendChild(div); 
     }
 
     const xy = new OpenSeadragon.Point(overlay.x, overlay.y);

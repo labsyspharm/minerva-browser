@@ -33,7 +33,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
   const images = hashstate.images;
 
   // If only one image, set image name to the first image description
-  const imageName = document.getElementById('imageName');
+  const imageName = document.getElementById('minerva-imageName');
   imageName.innerText = images.length == 1
     ? images[0].Description
     : exhibit.Name
@@ -142,142 +142,142 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
 };
 
 const exhibitHTML = `
-    <div id="content" class="position-fixed w-100" style="top: 0;left: 0;">
+    <div class="position-fixed w-100" style="top: 0;left: 0;">
         <div>
-            <div id="openseadragon1" class="openseadragon"></div>
-            <div id="legend" class="position-absolute"
+            <div id="minerva-openseadragon" class="openseadragon"></div>
+            <div id="minerva-legend" class="position-absolute"
                  style="pointer-events: none; top: 1rem; right: 8px">
                 <div>
                     <div class="btn-group-vertical bg-trans p-2"
                          style="display:inline-block; vertical-align:top;">
-                        <a id="toggle-legend" class="p-1" href="javascript;;">
+                        <a id="minerva-toggle-legend" class="p-1" href="javascript;;">
                             <i class="open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
                             <i class="close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
                         </a>
-                        <ul id="channel-legend" class="list-unstyled m-0"></ul>
+                        <ul id="minerva-channel-legend" class="list-unstyled m-0"></ul>
                         <div class="p-1 only-3d">
                           Depth:
                         </div>
                         <div style="text-align: right;">
-                          <span id="depth-legend"> </span>
+                          <span id="minerva-depth-legend"> </span>
                         </div>
                     </div> 
-                    <div id="channel-groups-legend" class="nav flex-column nav-pills p-2 bg-trans"
+                    <div id="minerva-channel-groups-legend" class="nav flex-column nav-pills p-2 bg-trans"
                          style="display:inline-block; vertical-align:top;
                          pointer-events: all; overflow-y: scroll; max-height: 80vh;">
                     </div>
-                    <div id="z-slider-legend" class="bg-trans"
+                    <div id="minerva-z-slider-legend" class="bg-trans"
                          style="pointer-events: all; display:inline-block; vertical-align:top;">
-                        <input id="z-slider" type="range"/>
+                        <input id="minerva-z-slider" type="range"/>
                     </div>
                 </div>
             </div>
-            <div id="sidebar-menu" class="container position-absolute">
+            <div id="minerva-sidebar-menu" class="container position-absolute">
                 <div class="row">
                     <div class="col-11 bg-trans waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll">
                         <div class="row">
                             <div class="col-10">
-                                <h3 id="imageName" class="m-0"></h3>
+                                <h3 id="minerva-imageName" class="m-0"></h3>
                             </div>
                             <div class="col-2">
-                                <a class="btn text-light d-none" id="home-button"
+                                <a class="btn text-light d-none" id="minerva-home-button"
                                     href="/">
                                     <i class="fas fa-home"></i>
                                 </a>
-                                <a class="btn text-light d-none" id="toc-button">
+                                <a class="btn text-light d-none" id="minerva-toc-button">
                                     <i class="fas fa-list-ul"></i>
                                 </a>
                             </div>
                         </div>
                         <hr class="my-1">
-                        <div id="waypointControls" class="row align-items-center my-1">
-                            <div class="col-2 text-center" id="leftArrow">
+                        <div id="minerva-waypointControls" class="row align-items-center my-1">
+                            <div class="col-2 text-center" id="minerva-leftArrow">
                                 <i class="fas fa-arrow-left" style="font-size: 25px"></i>
                             </div>
                             <div class="col-8">
                               <div class="audioControls">
-                                <audio style="height: 25px; width:100%" id="audioPlayback" controls>
-                                  <source id="audioSource" type="audio/mp3" src="">
+                                <audio style="height: 25px; width:100%" id="minerva-audioPlayback" controls>
+                                  <source id="minerva-audioSource" type="audio/mp3" src="">
                                 </audio> 
                               </div>
                             </div>
-                            <div class="col-2 text-center" id="rightArrow">
+                            <div class="col-2 text-center" id="minerva-rightArrow">
                                 <i class="fas fa-arrow-right" style="font-size: 25px;"></i>
                             </div>
                         </div>
                         <div class="row">
-                            <div id="waypointName" class="col-10 h6 mt-0 mb-3">
+                            <div id="minerva-waypointName" class="col-10 h6 mt-0 mb-3">
                             </div>
-                            <div id="waypointCount" class="col-2"></div>
+                            <div id="minerva-waypointCount" class="col-2"></div>
                         </div>
-                        <div id="viewer-waypoint">
+                        <div id="minerva-viewer-waypoint">
                         </div>
                         <div>
-                            <p id="channel-label" class="mb-1 font-weight-bold pt-2">Select a marker group:</p>
-                            <select id="group-picker" class="editControls selectpicker" multiple>
+                            <p id="minerva-channel-label" class="mb-1 font-weight-bold pt-2">Select a marker group:</p>
+                            <select id="minerva-group-picker" class="editControls selectpicker" multiple>
                             </select>
-                            <div id="channel-groups" class="nav flex nav-pills"></div>
-                            <p id="mask-label" class="mb-1 font-weight-bold pt-2">Add data layer:</p>
-                            <select id="mask-picker" class="editControls selectpicker" multiple>
+                            <div id="minerva-channel-groups" class="nav flex nav-pills"></div>
+                            <p id="minerva-mask-label" class="mb-1 font-weight-bold pt-2">Add data layer:</p>
+                            <select id="minerva-mask-picker" class="editControls selectpicker" multiple>
                             </select>
-                            <div id="mask-layers" class="nav flex nav-pills">
+                            <div id="minerva-mask-layers" class="nav flex nav-pills">
                             </div>
                         </div>
                         <div>
-                            <div id="story-container"></div>
+                            <div id="minerva-story-container"></div>
                         </div>
                     </div>
                     <div class="col-1 p-0">
                         <div class="btn-group-vertical bg-trans"> 
-                            <a id="toggle-sidebar" class="btn" href="javascript;;">
+                            <a id="minerva-toggle-sidebar" class="btn" href="javascript;;">
                                 <i class="close-sidebar fas fa-chevron-left" style="font-size: 25px;"></i>
                                 <i class="open-sidebar fas fa-chevron-right" style="font-size: 25px;"></i>
                             </a>
                         </div> 
                         <div class="btn-group-vertical bg-trans">
-                            <a class="btn text-light" id="zoom-out" href="#zoom-out">
+                            <a class="btn text-light" id="minerva-zoom-out" href="#minerva-zoom-out">
                                 <i class="fas fa-search-minus"></i>
                             </a>
-                            <a class="btn text-light" id="zoom-in" href="#zoom-in">
+                            <a class="btn text-light" id="minerva-zoom-in" href="#minerva-zoom-in">
                                 <i class="fas fa-search-plus"></i>
                             </a>
-                            <span id="arrow-switch" class="nav-item arrow-switch">
+                            <span id="minerva-arrow-switch" class="nav-item minerva-arrow-switch">
                             <a class="btn" href="javascript:;">
                                 <span class=""><i class="fas fa-location-arrow"></i></span>
                             </a>
                             </span>
-                            <span id="lasso-switch" class="nav-item lasso-switch">
+                            <span id="minerva-lasso-switch" class="nav-item minerva-lasso-switch">
                             <a class="btn" href="javascript:;">
                                 <span class=""><i class="fas fa-bullseye"></i></span>
                             </a>
                             </span>
-                            <span id="draw-switch" class="nav-item draw-switch">
+                            <span id="minerva-draw-switch" class="nav-item minerva-draw-switch">
                             <a class="btn" href="javascript:;">
                                 <span class=""><i class="fas fa-crosshairs"></i></span>
                             </a>
                             </span>
-                            <a class="btn" id='duplicate-view'>
+                            <a class="btn" id='minerva-duplicate-view'>
                                 <span class=""><i class="fas fa-clone"></i></span>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
-            <div id="viewer-tool" class="position-absolute bg-trans" style="right:1.5%; top: 40vh;">
+            <div id="minerva-viewer-tool" class="position-absolute bg-trans" style="right:1.5%; top: 40vh;">
             </div>
         </div>
     </div>
 
     <div class="d-none">
-        <input type="file" id="file-upload" class="d-none" />
+        <input type="file" id="minerva-file-upload" class="d-none" />
         <ul>
-            <li class="nav-item rounded-0" id="proto-story-index">
+            <li class="nav-item rounded-0" id="minerva-proto-story-index">
                 <a class="nav-link list-group-item-action font-weight-bold"></a>
             </li>
         </ul>
 
-        <div id="arrow-overlay" class="arrow-overlay">
-          <div id="arrowhead-image">
+        <div id="minerva-arrow-overlay" class="minerva-arrow-overlay">
+          <div id="minerva-arrowhead-image">
             <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
 <svg
@@ -358,7 +358,7 @@ const exhibitHTML = `
 </svg>
 
           </div>
-          <div id="arrow-image">
+          <div id="minerva-arrow-image">
             <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
 <svg
@@ -439,7 +439,7 @@ const exhibitHTML = `
 </svg>
 
           </div>
-          <div id="arrow-text">
+          <div id="minerva-arrow-text">
             <div class="arrow-label p-3 bg-trans" style="max-width: 200px;">
             </div>
           </div>
@@ -455,7 +455,7 @@ const exhibitHTML = `
                     </textarea>
                     <br>
                     <div class="row">
-                        <div id="edit_toggle_arrow" class="col-2 text-center">
+                        <div id="minerva-edit_toggle_arrow" class="col-2 text-center">
                             <i class="fas fa-location-arrow"></i>
                         </div>
                         <div class="col-10">
@@ -473,12 +473,12 @@ const exhibitHTML = `
             </div>
         </form>
 
-        <div id="readme">
+        <div id="minerva-readme">
         </div>
     </div>
 
 
-    <div id="password_modal" class="modal fade" role="dialog">
+    <div id="minerva-password_modal" class="modal fade" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -498,7 +498,7 @@ const exhibitHTML = `
     </div>
 
 
-    <div id="edit_description_modal" class="modal fade" role="dialog">
+    <div id="minerva-edit_description_modal" class="modal fade" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content text-dark">
                 <div class="modal-header">
@@ -522,7 +522,7 @@ const exhibitHTML = `
         </div>
     </div>
 
-    <div id="welcome_modal" class="modal fade" role="dialog">
+    <div id="minerva-welcome_modal" class="modal fade" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content text-dark">
                 <div class="modal-header">
@@ -562,7 +562,7 @@ const exhibitHTML = `
     </div>
 
 
-    <div id="copy_link_modal" class="modal fade" role="dialog">
+    <div id="minerva-copy_link_modal" class="modal fade" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content text-dark">
                 <div class="modal-header">
@@ -574,7 +574,7 @@ const exhibitHTML = `
                 <div class="modal-body">
                     <form class="form">
                         <div class="input-group">
-                            <input type="text" class="form-control" id="copy_link" name="copy_content" placeholder="Some path">
+                            <input type="text" class="form-control" id="minerva-copy_link" name="copy_content" placeholder="Some path">
                             <span class="input-group-btn">
                                 <button class="btn btn-default modal_copy_button" type="submit" data-toggle="tooltip" data-placement="bottom">
                                     Copy
@@ -590,7 +590,7 @@ const exhibitHTML = `
         </div>
     </div>
 
-    <div id="all-overlays" class="d-none">
+    <div id="minerva-all-overlays" class="d-none">
     </div>
 `
 
@@ -636,11 +636,11 @@ const makeTwinViewer = function(e) {
 const build_page_with_exhibit = function(exhibit, options) {
   // Initialize openseadragon
   const viewer = OpenSeadragon({
-    id: 'openseadragon1',
+    id: 'minerva-openseadragon',
     prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.3.1/images/',
     navigatorPosition: 'BOTTOM_RIGHT',
-    zoomOutButton: 'zoom-out',
-    zoomInButton: 'zoom-in',
+    zoomOutButton: 'minerva-zoom-out',
+    zoomInButton: 'minerva-zoom-in',
     immediateRender: true,
     maxZoomPixelRatio: 10,
     visibilityRatio: .9,
@@ -734,6 +734,6 @@ export const build_page = function(options) {
       $('#osd-side-nav').scrollTop(0);
   })
 
-  const duplicateViewButton = document.querySelector('#duplicate-view');
+  const duplicateViewButton = document.querySelector('#minerva-duplicate-view');
   duplicateViewButton.onclick = makeTwinViewer;
 }

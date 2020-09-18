@@ -309,7 +309,7 @@ RenderOSD.prototype = {
       if (prefix == 'waypoint-overlay') {
         overlay = HS.stories[s].Waypoints[w].Overlays[o];
       }
-      var el = indices.join('-');
+      var el = 'minerva-' + indices.join('-');
       this.addOverlay(overlay, el, s, w);
     }, this)
 
@@ -432,7 +432,7 @@ RenderOSD.prototype = {
     const a_image_el = $('#'+el);
     const a_svg_el = $('#'+el+' svg');
     const a_text_el = $('#'+text_el);
-    const a_label_el = $('#'+text_el+' .arrow-label');
+    const a_label_el = $('#'+text_el+' .minerva-arrow-label');
     const a_radius = a_svg_el[0].getAttribute('width') / 2;
     const a_y = a_radius * Math.sin(a.Angle * Math.PI /180);
     const a_x = a_radius * Math.cos(a.Angle * Math.PI /180);
@@ -498,7 +498,7 @@ RenderOSD.prototype = {
     // Create a new overlay if needed
     if (!div) {
       div = document.createElement("div"); 
-      div.className = "white overlay";
+      div.className = "minerva-white minerva-overlay";
       div.id = el;
       document.getElementById('minerva-all-overlays').appendChild(div); 
     }

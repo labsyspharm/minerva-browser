@@ -944,7 +944,7 @@ HashState.prototype = {
     else if (this.isMissingHash) {
       this.s = 0; 
       const welcome = $('#minerva-welcome_modal');
-      const channel_count = welcome.find('.channel_count')[0];
+      const channel_count = welcome.find('.minerva-channel_count')[0];
       channel_count.innerText = this.channels.length;
       welcome.modal('show');
 

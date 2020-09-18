@@ -122,7 +122,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
       // Add the image title and white border
       const titleElt = $('<p>');
       const title = image.Description;
-      titleElt.addClass('overlay-title').text(title);
+      titleElt.addClass('minerva-overlay-title').text(title);
       viewer.addOverlay({
         element: titleElt[0],
         x: x + displayWidth / 2,
@@ -135,7 +135,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
         y: y,
         width: displayWidth,
         height: image.Height / image.Width * displayWidth,
-        className: 'slide-border'
+        className: 'minerva-slide-border'
       });
     }
   }
@@ -144,18 +144,18 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
 const exhibitHTML = `
     <div class="position-fixed w-100" style="top: 0;left: 0;">
         <div>
-            <div id="minerva-openseadragon" class="openseadragon"></div>
+            <div id="minerva-openseadragon"></div>
             <div id="minerva-legend" class="position-absolute"
                  style="pointer-events: none; top: 1rem; right: 8px">
                 <div>
                     <div class="btn-group-vertical bg-trans p-2"
                          style="display:inline-block; vertical-align:top;">
                         <a id="minerva-toggle-legend" class="p-1" href="javascript;;">
-                            <i class="open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
-                            <i class="close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
+                            <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
+                            <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
                         </a>
                         <ul id="minerva-channel-legend" class="list-unstyled m-0"></ul>
-                        <div class="p-1 only-3d">
+                        <div class="p-1 minerva-only-3d">
                           Depth:
                         </div>
                         <div style="text-align: right;">
@@ -174,7 +174,7 @@ const exhibitHTML = `
             </div>
             <div id="minerva-sidebar-menu" class="container position-absolute">
                 <div class="row">
-                    <div class="col-11 bg-trans waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll">
+                    <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll">
                         <div class="row">
                             <div class="col-10">
                                 <h3 id="minerva-imageName" class="m-0"></h3>
@@ -195,7 +195,7 @@ const exhibitHTML = `
                                 <i class="fas fa-arrow-left" style="font-size: 25px"></i>
                             </div>
                             <div class="col-8">
-                              <div class="audioControls">
+                              <div class="minerva-audioControls">
                                 <audio style="height: 25px; width:100%" id="minerva-audioPlayback" controls>
                                   <source id="minerva-audioSource" type="audio/mp3" src="">
                                 </audio> 
@@ -214,11 +214,11 @@ const exhibitHTML = `
                         </div>
                         <div>
                             <p id="minerva-channel-label" class="mb-1 font-weight-bold pt-2">Select a marker group:</p>
-                            <select id="minerva-group-picker" class="editControls selectpicker" multiple>
+                            <select id="minerva-group-picker" class="minerva-editControls selectpicker" multiple>
                             </select>
                             <div id="minerva-channel-groups" class="nav flex nav-pills"></div>
                             <p id="minerva-mask-label" class="mb-1 font-weight-bold pt-2">Add data layer:</p>
-                            <select id="minerva-mask-picker" class="editControls selectpicker" multiple>
+                            <select id="minerva-mask-picker" class="minerva-editControls selectpicker" multiple>
                             </select>
                             <div id="minerva-mask-layers" class="nav flex nav-pills">
                             </div>
@@ -230,8 +230,8 @@ const exhibitHTML = `
                     <div class="col-1 p-0">
                         <div class="btn-group-vertical bg-trans"> 
                             <a id="minerva-toggle-sidebar" class="btn" href="javascript;;">
-                                <i class="close-sidebar fas fa-chevron-left" style="font-size: 25px;"></i>
-                                <i class="open-sidebar fas fa-chevron-right" style="font-size: 25px;"></i>
+                                <i class="minerva-close-sidebar fas fa-chevron-left" style="font-size: 25px;"></i>
+                                <i class="minerva-open-sidebar fas fa-chevron-right" style="font-size: 25px;"></i>
                             </a>
                         </div> 
                         <div class="btn-group-vertical bg-trans">
@@ -440,18 +440,18 @@ const exhibitHTML = `
 
           </div>
           <div id="minerva-arrow-text">
-            <div class="arrow-label p-3 bg-trans" style="max-width: 200px;">
+            <div class="minerva-arrow-label p-3 bg-trans" style="max-width: 200px;">
             </div>
           </div>
         </div>
 
-        <form class="form save_edits_form">
+        <form class="form minerva-save_edits_form">
             <div class="input-group">
                 <div style="width: 100%; margin-bottom: 5px">
-                    <input class="form-control edit_name editable bg-dark text-white rounded-0 border-0" type="text">
+                    <input class="form-control minerva-edit_name bg-dark text-white rounded-0 border-0" type="text">
                     </input>
                     <br>
-                    <textarea class="form-control edit_text editable bg-dark text-white rounded-0 border-0" rows="9">
+                    <textarea class="form-control minerva-edit_text bg-dark text-white rounded-0 border-0" rows="9">
                     </textarea>
                     <br>
                     <div class="row">
@@ -459,12 +459,12 @@ const exhibitHTML = `
                             <i class="fas fa-location-arrow"></i>
                         </div>
                         <div class="col-10">
-                            <input class="form-control edit_arrow_text editable bg-dark text-white rounded-0 border-0" type="text">
+                            <input class="form-control minerva-edit_arrow_text bg-dark text-white rounded-0 border-0" type="text">
                             </input>
                         </div>
                     </div>
                 </div>
-                <button class="btn btn-default edit_copy_button px-1  " data-placement="bottom">
+                <button class="btn btn-default minerva-edit_copy_button px-1" data-placement="bottom">
                     <i class="fas fa-copy fa-lg"></i><br>
                     <span class="mt-2 d-block" style="font-size: 0.7rem">
                                     COPY
@@ -533,7 +533,7 @@ const exhibitHTML = `
                 </div>
                 <div class="modal-body">
                     You're looking at an image layering
-                    <span class="channel_count"></span>
+                    <span class="minerva-channel_count"></span>
                     CyCIF markers.
                     Use the <i class="fas fa-arrow-left"></i>
                     and <i class="fas fa-arrow-right"></i>
@@ -576,7 +576,7 @@ const exhibitHTML = `
                         <div class="input-group">
                             <input type="text" class="form-control" id="minerva-copy_link" name="copy_content" placeholder="Some path">
                             <span class="input-group-btn">
-                                <button class="btn btn-default modal_copy_button" type="submit" data-toggle="tooltip" data-placement="bottom">
+                                <button class="btn btn-default minerva-modal_copy_button" type="submit" data-toggle="tooltip" data-placement="bottom">
                                     Copy
                                 </button>
                             </span>
@@ -650,7 +650,7 @@ const build_page_with_exhibit = function(exhibit, options) {
   // Constantly reset each arrow transform property
 	function updateOverlays() {
 			viewer.currentOverlays.forEach(overlay => {
-          const isArrow = overlay.element.id.slice(0,5) == 'arrow';
+          const isArrow = overlay.element.id.slice(0,13) == 'minerva-arrow';
 					if (isArrow) {
 						overlay.element.style.transform = '';
 					}
@@ -720,13 +720,6 @@ export const build_page = function(options) {
     build_page_with_exhibit(exhibit, options);
   }
 
-  $('#story-board').on('hidden.bs.collapse', function() { 
-      $('#js-story-collapse-indicator')[0].innerHTML = '<span class="px-2">SHOW MORE</span> <i class="fas fa-chevron-down"></i>'
-  });
-  $('#story-board').on('shown.bs.collapse', function() { 
-      $('#js-story-collapse-indicator')[0].innerHTML = '<span class="px-2">SHOW LESS</span> <i class="fas fa-chevron-up"></i>'
-  });
-  
   $('.js-toggle-osd-side-nav').click(function() {
       $('#osd-side-nav').position().top == 0 
           ? $('#osd-side-nav').css('top', '75vh')

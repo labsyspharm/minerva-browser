@@ -74,8 +74,8 @@ const activeOrNot = function(selector, condition) {
 
 // Set to green or white based on condition
 export const greenOrWhite = function(selector, condition) {
-  classOrNot(selector, condition, 'green');
-  classOrNot(selector, !condition, 'white');
+  classOrNot(selector, condition, 'minerva-green');
+  classOrNot(selector, !condition, 'minerva-white');
 };
 
 // Toggle cursor style based on condition
@@ -244,7 +244,7 @@ Render.prototype = {
     // Exhibit name
     $('#exhibit-name').text(HS.exhibit.Name);
     // Copy buttons
-    $('.modal_copy_button').each(newCopyButton);
+    $('.minerva-modal_copy_button').each(newCopyButton);
 
     // Define button tooltips
     $('#minerva-zoom-in').tooltip({
@@ -488,7 +488,7 @@ Render.prototype = {
 
       // Waypoint-specific Copy Buttons
       const THIS = this;
-      $('.edit_copy_button').each(function() {
+      $('.minerva-edit_copy_button').each(function() {
         newCopyYamlButton.call(this, THIS);
       });
       $('#minerva-edit_toggle_arrow').click(this, function(e) {
@@ -577,9 +577,9 @@ Render.prototype = {
     displayOrNot('#minerva-channel-groups-legend', !HS.design.is3d);
     displayOrNot('#minerva-z-slider-legend', HS.design.is3d);
     displayOrNot('#minerva-toggle-legend', !HS.design.is3d);
-    displayOrNot('.only-3d', HS.design.is3d);
+    displayOrNot('.minerva-only-3d', HS.design.is3d);
     // Enable edit UI if in edit mode
-    displayOrNot('.editControls', edit);
+    displayOrNot('.minerva-editControls', edit);
     // Enable standard UI if not in edit mode
     displayOrNot('#minerva-waypointControls', !edit);
     displayOrNot('#minerva-waypointName', !edit);
@@ -595,7 +595,7 @@ Render.prototype = {
   // Load speech-synthesis from AWS Polly
   loadPolly: function(txt) {
     const hash = sha1(txt);
-    displayOrNot('.audioControls', !!speech_bucket);
+    displayOrNot('.minerva-audioControls', !!speech_bucket);
     if (!!speech_bucket) {
       const polly_url = 'https://s3.amazonaws.com/'+ speech_bucket +'/speech/' + hash + '.mp3';
       document.getElementById('minerva-audioSource').src = polly_url;
@@ -964,7 +964,7 @@ Render.prototype = {
       waypointName.innerText = '';
     }
 
-    const scroll_dist = $('.waypoint-content').scrollTop();
+    const scroll_dist = $('.minerva-waypoint-content').scrollTop();
     $(wid_waypoint).css('height', $(wid_waypoint).height());
 
     // Waypoint description markdown
@@ -1008,7 +1008,7 @@ Render.prototype = {
     const finish_waypoint = function(visType) {
       renderedVis.add(visType);
       if ([...waypointVis].every(v => renderedVis.has(v))) {
-        $('.waypoint-content').scrollTop(scroll_dist);
+        $('.minerva-waypoint-content').scrollTop(scroll_dist);
         $(wid_waypoint).css('height', '');
         THIS.colorMarkerText(wid_waypoint);
       }
@@ -1162,7 +1162,7 @@ Render.prototype = {
     const HS = this.hashstate;
     const wid_waypoint = document.getElementById('minerva-viewer-waypoint');
     $(wid_waypoint).empty();
-    const form_proto = document.getElementsByClassName('save_edits_form')[0]
+    const form_proto = document.getElementsByClassName('minerva-save_edits_form')[0]
     const form = form_proto.cloneNode(true);
     wid_waypoint.appendChild(form);
 
@@ -1174,9 +1174,9 @@ Render.prototype = {
        $('#minerva-edit_toggle_arrow').css('opacity', '1');
     }
 
-    const wid_txt = $(wid_waypoint).find('.edit_text')[0];
-    const wid_txt_name = $(wid_waypoint).find('.edit_name')[0];
-    const wid_txt_arrow = $(wid_waypoint).find('.edit_arrow_text')[0];
+    const wid_txt = $(wid_waypoint).find('.minerva-edit_text')[0];
+    const wid_txt_name = $(wid_waypoint).find('.minerva-edit_name')[0];
+    const wid_txt_arrow = $(wid_waypoint).find('.minerva-edit_arrow_text')[0];
     const wid_describe = decode(HS.d);
     const wid_name = decode(HS.n);
 

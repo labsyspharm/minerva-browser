@@ -971,7 +971,7 @@ Render.prototype = {
     var md = waypoint.Description;
 
     // Create links for cell types
-    cell_type_links_map.forEach(function(link, type){
+    HS.cell_type_links_map.forEach(function(link, type){
       var escaped_type = type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       var re = RegExp(escaped_type+'s?', 'gi');
       md = md.replace(re, function(m) {
@@ -980,7 +980,7 @@ Render.prototype = {
     });
 
     // Create code blocks for protein markers
-    marker_links_map.forEach(function(link, marker){
+    HS.marker_links_map.forEach(function(link, marker){
       var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       var re = RegExp('(^|[^0-9A-Za-z`])\('+escaped_marker+'\)([^0-9A-Za-z`]|$)', 'gi');
       md = md.replace(re, function(m, pre, m1, post) {
@@ -989,7 +989,7 @@ Render.prototype = {
     });
 
     // Create links for protein markers
-    marker_links_map.forEach(function(link, marker){
+    HS.marker_links_map.forEach(function(link, marker){
       var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       var re = RegExp('`'+escaped_marker+'`', 'gi');
       md = md.replace(re, function(m) {
@@ -1143,8 +1143,8 @@ Render.prototype = {
       if (!index) {
         Object.keys(channelOrders).forEach(function (marker) {
           const c_text = code.innerText;
-          const code_marker = marker_alias_map.get(c_text) || c_text;
-          const key_marker = marker_alias_map.get(marker) || marker;
+          const code_marker = HS.marker_alias_map.get(c_text) || c_text;
+          const key_marker = HS.marker_alias_map.get(marker) || marker;
           var escaped_code_marker = code_marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const re = RegExp('^'+escaped_code_marker+'$','gi');
           if (key_marker != undefined && key_marker.match(re)) {

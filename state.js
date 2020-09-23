@@ -180,6 +180,10 @@ export const HashState = function(exhibit, options) {
   this.embedded = options.embedded || false;
   this.authenticate = options.authenticate || anon_authenticate;
   this.speech_bucket = options.speech_bucket || "";
+  this.marker_links_map = options.marker_links_map;
+  this.marker_alias_map = options.marker_alias_map;
+  this.cell_type_links_map = options.cell_type_links_map;
+  this.cell_type_alias_map = options.cell_type_alias_map;
   this.exhibit = exhibit;
 
   this.state = {

@@ -3821,8 +3821,12 @@ const build_page_with_exhibit = function(exhibit, options) {
 export const build_page = function(options) {
 
   // define the marker and cell type links table
-  [marker_links_map, marker_alias_map] = get_links_alias(marker_data);
-  [cell_type_links_map, cell_type_alias_map] = get_links_alias(cell_type_data);
+  const marker_maps = get_links_alias(marker_data);
+  options.marker_links_map = marker_maps[0];
+  options.marker_alias_map = marker_maps[1];
+  const cell_type_maps = get_links_alias(cell_type_data);
+  options.cell_type_links_map = cell_type_maps[0];
+  options.cell_type_alias_map = cell_type_maps[1];
 
   // add CSS to the document
   var linkElement = document.createElement('link');

@@ -1,54 +1,9 @@
-import { CognitoUser } from "amazon-cognito-identity-js"
-import { CognitoUserPool } from "amazon-cognito-identity-js"
-import { AuthenticationDetails } from "amazon-cognito-identity-js"
-
 import { encode } from './render'
 import { decode } from './render'
 import { unpackGrid } from './render'
 import { remove_undefined } from './render'
 
 import LZString from "lz-string"
-
-/*
- * Hard-coded authentication functions for connection with optional AWS Cloud Login
- */
-
-const authenticateUser = function(cognitoUser, authenticationDetails) {
-  return new Promise(function(resolve, reject) {
-    cognitoUser.authenticateUser(authenticationDetails, {
-      onSuccess: result => resolve(result),
-      onFailure: err => reject(err),
-      mfaRequired: codeDeliveryDetails => reject(codeDeliveryDetails),
-      newPasswordRequired: (fields, required) => reject({fields, required})
-    });
-  });
-};
-
-const authenticate = function(username, pass) {
-
-  return pass.then(function(password) {
-
-    const minervaPoolId = 'us-east-1_d3Wusx6qp';
-    const minervaClientId = 'cvuuuuogh6nmqm8491iiu1lh5';
-    const minervaPool = new CognitoUserPool({
-      UserPoolId : minervaPoolId,
-      ClientId : minervaClientId
-    });
-
-    const cognitoUser = new CognitoUser({
-      Username: username,
-      Pool: minervaPool
-    });
-
-    const authenticationDetails = new AuthenticationDetails({
-      Username: username,
-      Password: password
-    });
-
-    return authenticateUser(cognitoUser, authenticationDetails)
-      .then(response => response.getIdToken().getJwtToken());
-  });
-}
 
 /*
  * Hard-coded authentication for optional OMERO connection
@@ -207,6 +162,15 @@ const deserialize = function(entries) {
 };
 
 /*
+ * Return an anonymous totken for any username and password
+ */
+const anon_authenticate = function(username, pass) {
+  return pass.then(function(password) {
+    return "Anonymous";  
+  })
+}
+
+/*
  * The HashState contains all state variables in sync with url hash
  */
 export const HashState = function(exhibit, options) {
@@ -214,6 +178,7 @@ export const HashState = function(exhibit, options) {
   this.trackers = [];
   this.pollycache = {};
   this.embedded = options.embedded || false;
+  this.authenticate = options.authenticate || anon_authenticate;
   this.exhibit = exhibit;
 
   this.state = {
@@ -388,7 +353,7 @@ HashState.prototype = {
       });
       */
     });
-    return authenticate(username, pass);
+    return this.authenticate(username, pass);
   },
 
   // drawType is lasso, arrow, or box

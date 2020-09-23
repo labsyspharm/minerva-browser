@@ -3829,11 +3829,16 @@ export const build_page = function(options) {
   options.cell_type_alias_map = cell_type_maps[1];
 
   // add CSS to the document
-  var linkElement = document.createElement('link');
-  linkElement.setAttribute('rel', 'stylesheet');
-  linkElement.setAttribute('type', 'text/css');
-  linkElement.setAttribute('href', 'data:text/css;charset=UTF-8,' + encodeURIComponent(exhibitCSS));
-  document.head.appendChild(linkElement);
+  var linkElement1 = document.createElement('link');
+  linkElement1.setAttribute('rel', 'stylesheet');
+  linkElement1.setAttribute('type', 'text/css');
+  linkElement1.setAttribute('href', 'data:text/css;charset=UTF-8,' + encodeURIComponent(exhibitCSS));
+  document.head.appendChild(linkElement1);
+  var linkElement2 = document.createElement('link');
+  linkElement2.setAttribute('rel', 'stylesheet');
+  linkElement2.setAttribute('type', 'text/css');
+  linkElement2.setAttribute('href', "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css");
+  document.head.appendChild(linkElement2);
 
   // fill the main div with content
   const el = document.getElementById(options.id);

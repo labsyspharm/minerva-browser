@@ -3,7 +3,7 @@ const strip = function(str) {
 }
 
 // Get the cell-type and protein context links as well as aliased names
-export const get_links_alias = function(data) {
+const get_links_alias = function(data) {
 
     data = data.map(function(d) {
       if (d["﻿String"]) {

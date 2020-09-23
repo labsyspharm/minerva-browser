@@ -230,7 +230,7 @@ Render.prototype = {
     // Read hash
     window.onpopstate = (function(e) {
       HS.popState(e);
-      this.loadPolly(HS.waypoint.Description);
+      this.loadPolly(HS.waypoint.Description, HS.speech_bucket);
       this.newView(true);
     }).bind(this);
 
@@ -593,7 +593,7 @@ Render.prototype = {
   },
 
   // Load speech-synthesis from AWS Polly
-  loadPolly: function(txt) {
+  loadPolly: function(txt, speech_bucket) {
     const hash = sha1(txt);
     displayOrNot('.minerva-audioControls', !!speech_bucket);
     if (!!speech_bucket) {

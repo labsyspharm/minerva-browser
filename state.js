@@ -179,6 +179,7 @@ export const HashState = function(exhibit, options) {
   this.pollycache = {};
   this.embedded = options.embedded || false;
   this.authenticate = options.authenticate || anon_authenticate;
+  this.speech_bucket = options.speech_bucket || "";
   this.exhibit = exhibit;
 
   this.state = {

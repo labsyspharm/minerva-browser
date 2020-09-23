@@ -4,7 +4,7 @@ IndexLoader = {
   entry: './index.js',
   output: {
     filename: 'bundle.js',
-    path: path.resolve(__dirname, 'includes'),
+    path: path.resolve(__dirname, 'build'),
     libraryTarget: 'var',
     library: 'MinervaStory'
   }

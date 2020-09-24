@@ -2181,8 +2181,8 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 @media (max-width: 575.98px) { .minerva-root .display-4 { font-size: 2rem; margin-top: 1rem; } }
 .minerva-root .select2-results ul { color: black; }
 
-.minerva-root {
-  background: black;
+.minerva-root > div {
+  background-color: black;
 }
 
 .minerva-root {
@@ -2541,7 +2541,8 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 `
 
 const exhibitHTML = `
-    <div class="minerva-root position-fixed w-100" style="top: 0;left: 0;">
+<div class="minerva-root">
+    <div class="position-fixed w-100" style="top: 0;left: 0;">
         <div>
             <div id="minerva-openseadragon"></div>
             <div id="minerva-legend" class="position-absolute"
@@ -2991,6 +2992,7 @@ const exhibitHTML = `
 
     <div id="minerva-all-overlays" class="d-none">
     </div>
+</div>
 `
 
 const makeTwinViewer = function(e) {

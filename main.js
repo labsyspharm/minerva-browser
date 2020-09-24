@@ -2220,7 +2220,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   background-color: #666;
 }
 
-.minerva-root #minerva-sidebar-menu {
+.minerva-root .minerva-sidebar-menu {
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
@@ -2230,11 +2230,11 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   left: 3px;
   top: 1rem;
 }
-.minerva-root #minerva-sidebar-menu.toggled {
+.minerva-root .minerva-sidebar-menu.toggled {
   margin-left: -366px;
 }
 
-.minerva-root #minerva-legend {
+.minerva-root .minerva-legend {
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
@@ -2246,44 +2246,44 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   transform: rotate(270deg);
 }
 
-.minerva-root #minerva-z-slider-legend {
+.minerva-root .minerva-z-slider-legend {
   padding-top: 127px;
   padding-left: 7px;
   height: 140px;
   width: 15px;
 }
 
-.minerva-root #minerva-channel-groups-legend {
+.minerva-root .minerva-channel-groups-legend {
   width: 200px;
 }
 
-.minerva-root #minerva-legend.toggled {
+.minerva-root .minerva-legend.toggled {
   margin-right: -200px;
 }
 
-.minerva-root #minerva-sidebar-menu .minerva-open-sidebar {
+.minerva-root .minerva-sidebar-menu .minerva-open-sidebar {
   display: none;
 }
-.minerva-root #minerva-sidebar-menu .minerva-close-sidebar {
+.minerva-root .minerva-sidebar-menu .minerva-close-sidebar {
   display: inline;
 }
-.minerva-root #minerva-sidebar-menu.toggled .minerva-open-sidebar {
+.minerva-root .minerva-sidebar-menu.toggled .minerva-open-sidebar {
   display: inline;
 }
-.minerva-root #minerva-sidebar-menu.toggled .minerva-close-sidebar {
+.minerva-root .minerva-sidebar-menu.toggled .minerva-close-sidebar {
   display: none;
 }
 
-.minerva-root #minerva-legend .minerva-open-legend {
+.minerva-root .minerva-legend .minerva-open-legend {
   display: none;
 }
-.minerva-root #minerva-legend .minerva-close-legend {
+.minerva-root .minerva-legend .minerva-close-legend {
   display: inline;
 }
-.minerva-root #minerva-legend.toggled .minerva-open-legend {
+.minerva-root .minerva-legend.toggled .minerva-open-legend {
   display: inline;
 }
-.minerva-root #minerva-legend.toggled .minerva-close-legend {
+.minerva-root .minerva-legend.toggled .minerva-close-legend {
   display: none;
 } 
 /* position: absolute; top: 0; bottom: 0; width: 100%; */
@@ -2545,7 +2545,7 @@ const exhibitHTML = `
     <div class="position-fixed w-100" style="top: 0;left: 0;">
         <div>
             <div id="minerva-openseadragon"></div>
-            <div id="minerva-legend" class="position-absolute"
+            <div class="minerva-legend position-absolute"
                  style="pointer-events: none; top: 1rem; right: 8px">
                 <div>
                     <div class="btn-group-vertical bg-trans p-2"
@@ -2562,17 +2562,17 @@ const exhibitHTML = `
                           <span id="minerva-depth-legend"> </span>
                         </div>
                     </div> 
-                    <div id="minerva-channel-groups-legend" class="nav flex-column nav-pills p-2 bg-trans"
+                    <div class="minerva-channel-groups-legend nav flex-column nav-pills p-2 bg-trans"
                          style="display:inline-block; vertical-align:top;
                          pointer-events: all; overflow-y: scroll; max-height: 80vh;">
                     </div>
-                    <div id="minerva-z-slider-legend" class="bg-trans"
+                    <div class="minerva-z-slider-legend bg-trans"
                          style="pointer-events: all; display:inline-block; vertical-align:top;">
                         <input id="minerva-z-slider" type="range"/>
                     </div>
                 </div>
             </div>
-            <div id="minerva-sidebar-menu" class="container position-absolute">
+            <div class="minerva-sidebar-menu container position-absolute">
                 <div class="row">
                     <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll">
                         <div class="row">
@@ -2616,7 +2616,7 @@ const exhibitHTML = `
                             <p id="minerva-channel-label" class="mb-1 font-weight-bold pt-2">Select a marker group:</p>
                             <select id="minerva-group-picker" class="minerva-editControls selectpicker" multiple>
                             </select>
-                            <div id="minerva-channel-groups" class="nav flex nav-pills"></div>
+                            <div class="minerva-channel-groups nav flex nav-pills"></div>
                             <p id="minerva-mask-label" class="mb-1 font-weight-bold pt-2">Add data layer:</p>
                             <select id="minerva-mask-picker" class="minerva-editControls selectpicker" multiple>
                             </select>

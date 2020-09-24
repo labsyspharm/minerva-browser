@@ -273,13 +273,13 @@ Render.prototype = {
     // Button to toggle sidebar
     $('#minerva-toggle-sidebar').click(function(e) {
       e.preventDefault();
-      $("#minerva-sidebar-menu").toggleClass("toggled");
+      $(".minerva-sidebar-menu").toggleClass("toggled");
     });
 
     // Button to toggle legend
     $('#minerva-toggle-legend').click(function(e) {
       e.preventDefault();
-      $("#minerva-legend").toggleClass("toggled");
+      $(".minerva-legend").toggleClass("toggled");
     });
 
     // Left arrow decreases waypoint by 1
@@ -574,8 +574,8 @@ Render.prototype = {
     displayOrNot('#minerva-home-button', !edit && HS.waypoint.Mode == 'outline');
     displayOrNot('#minerva-toc-button', !edit && HS.waypoint.Mode != 'outline');
     // Enable 3D UI if in 3D mode
-    displayOrNot('#minerva-channel-groups-legend', !HS.design.is3d);
-    displayOrNot('#minerva-z-slider-legend', HS.design.is3d);
+    displayOrNot('.minerva-channel-groups-legend', !HS.design.is3d);
+    displayOrNot('.minerva-z-slider-legend', HS.design.is3d);
     displayOrNot('#minerva-toggle-legend', !HS.design.is3d);
     displayOrNot('.minerva-only-3d', HS.design.is3d);
     // Enable edit UI if in edit mode
@@ -726,8 +726,8 @@ Render.prototype = {
   // Add list of channel groups
   addGroups: function() {
     const HS = this.hashstate;
-    $('#minerva-channel-groups').empty();
-    $('#minerva-channel-groups-legend').empty();
+    $('.minerva-channel-groups').empty();
+    $('.minerva-channel-groups-legend').empty();
     const cgs_names = HS.waypoint.Groups || [];
     const cgs = HS.cgs.filter(group => {
       return cgs_names.includes(group.Name);
@@ -738,10 +738,12 @@ Render.prototype = {
     else {
       $('#minerva-channel-label').hide()
     }
+    const cg_el = document.getElementsByClassName('minerva-channel-groups')[0];
+
     // Add filtered channel groups to waypoint
     cgs.forEach(function(group) {
       const g = index_name(HS.cgs, group.Name);
-      this.addGroup(group, g, 'minerva-channel-groups', false);
+      this.addGroup(group, g, cg_el, false);
     }, this);
 
     const cgs_multi = HS.cgs.filter(group => {
@@ -750,7 +752,7 @@ Render.prototype = {
     const cgs_single = HS.cgs.filter(group => {
       return group.Channels.length == 1;
     });
-    const cg_legend = document.getElementById('minerva-channel-groups-legend');
+    const cg_legend = document.getElementsByClassName('minerva-channel-groups-legend')[0];
     if (cgs_multi.length > 0) {
       var h = document.createElement('h6');
       h.innerText = 'Channel Groups:'
@@ -760,7 +762,7 @@ Render.prototype = {
     // Add all channel groups to legend
     cgs_multi.forEach(function(group) {
       const g = index_name(HS.cgs, group.Name);
-      this.addGroup(group, g, 'minerva-channel-groups-legend', true);
+      this.addGroup(group, g, cg_legend, true);
     }, this);
     if (cgs_single.length > 0) {
       var h = document.createElement('h6');
@@ -770,11 +772,11 @@ Render.prototype = {
     }
     cgs_single.forEach(function(group) {
       const g = index_name(HS.cgs, group.Name);
-      this.addGroup(group, g, 'minerva-channel-groups-legend', true);
+      this.addGroup(group, g, cg_legend, true);
     }, this);
   },
   // Add a single channel group to an element
-  addGroup: function(group, g, el_id, show_more) {
+  addGroup: function(group, g, el, show_more) {
     const HS = this.hashstate;
     var aEl = document.createElement('a');
     var selected = HS.g === g ? true : false;
@@ -782,8 +784,7 @@ Render.prototype = {
       className: selected ? 'nav-link active' : 'nav-link',
       style: 'padding-right: 40px; position: relative;',
       href: 'javascript:;',
-      innerText: group.Name,
-      id: group.Path + '_' + el_id,
+      innerText: group.Name
     });
     aEl.setAttribute('data-toggle', 'pill');
 
@@ -822,7 +823,7 @@ Render.prototype = {
     }
 
     // Append channel group to element
-    document.getElementById(el_id).appendChild(aEl);
+    el.appendChild(aEl);
     
     // Update Channel Group
     $(aEl).click(this, function(e) {

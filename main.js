@@ -34,7 +34,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
   const images = hashstate.images;
 
   // If only one image, set image name to the first image description
-  const imageName = document.getElementById('minerva-imageName');
+  const imageName = document.getElementsByClassName('minerva-imageName')[0];
   imageName.innerText = images.length == 1
     ? images[0].Description
     : exhibit.Name
@@ -2509,7 +2509,7 @@ const exhibitHTML = `
                           Depth:
                         </div>
                         <div style="text-align: right;">
-                          <span id="minerva-depth-legend"> </span>
+                          <span class="minerva-depth-legend"> </span>
                         </div>
                     </div> 
                     <div class="minerva-channel-groups-legend nav flex-column nav-pills p-2 bg-trans"
@@ -2518,7 +2518,7 @@ const exhibitHTML = `
                     </div>
                     <div class="minerva-z-slider-legend bg-trans"
                          style="pointer-events: all; display:inline-block; vertical-align:top;">
-                        <input id="minerva-z-slider" type="range"/>
+                        <input class="minerva-z-slider" type="range"/>
                     </div>
                 </div>
             </div>
@@ -2527,68 +2527,68 @@ const exhibitHTML = `
                     <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll">
                         <div class="row">
                             <div class="col-10">
-                                <h3 id="minerva-imageName" class="m-0"></h3>
+                                <h3 class="minerva-imageName m-0"></h3>
                             </div>
                             <div class="col-2">
-                                <a class="btn text-light d-none" id="minerva-home-button"
+                                <a class="btn text-light d-none minerva-home-button"
                                     href="/">
                                     <i class="fas fa-home"></i>
                                 </a>
-                                <a class="btn text-light d-none" id="minerva-toc-button">
+                                <a class="btn text-light d-none minerva-toc-button">
                                     <i class="fas fa-list-ul"></i>
                                 </a>
                             </div>
                         </div>
                         <hr class="my-1">
-                        <div id="minerva-waypointControls" class="row align-items-center my-1">
-                            <div class="col-2 text-center" id="minerva-leftArrow">
+                        <div class="minerva-waypointControls row align-items-center my-1">
+                            <div class="col-2 text-center minerva-leftArrow">
                                 <i class="fas fa-arrow-left" style="font-size: 25px"></i>
                             </div>
                             <div class="col-8">
                               <div class="minerva-audioControls">
-                                <audio style="height: 25px; width:100%" id="minerva-audioPlayback" controls>
-                                  <source id="minerva-audioSource" type="audio/mp3" src="">
+                                <audio style="height: 25px; width:100% minerva-audioPlayback" controls>
+                                  <source class="minerva-audioSource" type="audio/mp3" src="">
                                 </audio> 
                               </div>
                             </div>
-                            <div class="col-2 text-center" id="minerva-rightArrow">
+                            <div class="col-2 text-center minerva-rightArrow">
                                 <i class="fas fa-arrow-right" style="font-size: 25px;"></i>
                             </div>
                         </div>
                         <div class="row">
-                            <div id="minerva-waypointName" class="col-10 h6 mt-0 mb-3">
+                            <div class="minerva-waypointName col-10 h6 mt-0 mb-3">
                             </div>
-                            <div id="minerva-waypointCount" class="col-2"></div>
+                            <div class="minerva-waypointCount col-2"></div>
                         </div>
-                        <div id="minerva-viewer-waypoint">
+                        <div class="minerva-viewer-waypoint">
                         </div>
                         <div>
-                            <p id="minerva-channel-label" class="mb-1 font-weight-bold pt-2">Select a marker group:</p>
-                            <select id="minerva-group-picker" class="minerva-editControls selectpicker" multiple>
+                            <p class="minerva-channel-label mb-1 font-weight-bold pt-2">Select a marker group:</p>
+                            <select class="minerva-group-picker minerva-editControls selectpicker" multiple>
                             </select>
                             <div class="minerva-channel-groups nav flex nav-pills"></div>
-                            <p id="minerva-mask-label" class="mb-1 font-weight-bold pt-2">Add data layer:</p>
-                            <select id="minerva-mask-picker" class="minerva-editControls selectpicker" multiple>
+                            <p class="minerva-mask-label mb-1 font-weight-bold pt-2">Add data layer:</p>
+                            <select class="minerva-mask-picker minerva-editControls selectpicker" multiple>
                             </select>
-                            <div id="minerva-mask-layers" class="nav flex nav-pills">
+                            <div class="minerva-mask-layers nav flex nav-pills">
                             </div>
                         </div>
                         <div>
-                            <div id="minerva-story-container"></div>
+                            <div class="minerva-story-container"></div>
                         </div>
                     </div>
                     <div class="col-1 p-0">
                         <div class="btn-group-vertical bg-trans"> 
-                            <a id="minerva-toggle-sidebar" class="btn" href="javascript;;">
+                            <a class="minerva-toggle-sidebar btn" href="javascript;;">
                                 <i class="minerva-close-sidebar fas fa-chevron-left" style="font-size: 25px;"></i>
                                 <i class="minerva-open-sidebar fas fa-chevron-right" style="font-size: 25px;"></i>
                             </a>
                         </div> 
                         <div class="btn-group-vertical bg-trans">
-                            <a class="btn text-light" id="minerva-zoom-out" href="#minerva-zoom-out">
+                            <a class="btn text-light minerva-zoom-out" href="javascript;;">
                                 <i class="fas fa-search-minus"></i>
                             </a>
-                            <a class="btn text-light" id="minerva-zoom-in" href="#minerva-zoom-in">
+                            <a class="btn text-light minerva-zoom-in" href="javascript;;">
                                 <i class="fas fa-search-plus"></i>
                             </a>
                             <span id="minerva-arrow-switch" class="nav-item minerva-arrow-switch">
@@ -2990,8 +2990,8 @@ const build_page_with_exhibit = function(exhibit, options) {
     id: options.id + '-openseadragon',
     prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.3.1/images/',
     navigatorPosition: 'BOTTOM_RIGHT',
-    zoomOutButton: 'minerva-zoom-out',
-    zoomInButton: 'minerva-zoom-in',
+    zoomOutButton: options.id + '-zoom-out',
+    zoomInButton: options.id + '-zoom-in',
     immediateRender: true,
     maxZoomPixelRatio: 10,
     visibilityRatio: .9,
@@ -3080,7 +3080,11 @@ export const build_page = function(options) {
   const el = document.getElementById(options.id);
   el.innerHTML = exhibitHTML;
   const osd_el = el.getElementsByClassName('minerva-openseadragon')[0];
+  const zoom_out_el = el.getElementsByClassName('minerva-zoom-out')[0];
+  const zoom_in_el = el.getElementsByClassName('minerva-zoom-in')[0];
   osd_el.id = options.id + '-openseadragon';
+  zoom_out_el.id = options.id + '-zoom-out';
+  zoom_in_el.id = options.id + '-zoom-in';
 
   var exhibit = options.exhibit;
 

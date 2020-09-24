@@ -81,10 +81,10 @@ export const greenOrWhite = function(selector, condition) {
 // Toggle cursor style based on condition
 const toggleCursor = function(cursor, condition) {
   if (condition) {
-    $('#minerva-openseadragon *').css('cursor', cursor);
+    $('.minerva-openseadragon *').css('cursor', cursor);
   }
   else {
-    $('#minerva-openseadragon *').css('cursor', 'default');
+    $('.minerva-openseadragon *').css('cursor', 'default');
   }
 };
 
@@ -277,7 +277,7 @@ Render.prototype = {
     });
 
     // Button to toggle legend
-    $('#minerva-toggle-legend').click(function(e) {
+    $('.minerva-toggle-legend').click(function(e) {
       e.preventDefault();
       $(".minerva-legend").toggleClass("toggled");
     });
@@ -576,7 +576,7 @@ Render.prototype = {
     // Enable 3D UI if in 3D mode
     displayOrNot('.minerva-channel-groups-legend', !HS.design.is3d);
     displayOrNot('.minerva-z-slider-legend', HS.design.is3d);
-    displayOrNot('#minerva-toggle-legend', !HS.design.is3d);
+    displayOrNot('.minerva-toggle-legend', !HS.design.is3d);
     displayOrNot('.minerva-only-3d', HS.design.is3d);
     // Enable edit UI if in edit mode
     displayOrNot('.minerva-editControls', edit);
@@ -837,7 +837,7 @@ Render.prototype = {
   // Add channel legend labels
   addChannelLegends: function() {
     const HS = this.hashstate;
-    $('#minerva-channel-legend').empty();
+    $('.minerva-channel-legend').empty();
     HS.channels.forEach(this.addChannelLegend, this);
   },
 
@@ -855,7 +855,7 @@ Render.prototype = {
     badge.innerText = '\u00a0';
 
     // Append channel legend to list
-    var ul = document.getElementById('minerva-channel-legend');
+    var ul = document.getElementsByClassName('minerva-channel-legend')[0];
     var li = document.createElement('li');
     li.appendChild(badge);
     li.appendChild(label);

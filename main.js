@@ -2287,7 +2287,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   display: none;
 } 
 /* position: absolute; top: 0; bottom: 0; width: 100%; */
-.minerva-root #minerva-openseadragon {
+.minerva-root .minerva-openseadragon {
   /* position: absolute;
   top: 0;
   left: 0;
@@ -2370,52 +2370,8 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     padding: .5rem 1rem;
 }
 
-.minerva-root .exhibit-content > .nav {
-    background-color: hsla(0, 0%, 0%, 0.5);
-}
-.minerva-root .exhibit-content > .round-nav { 
-    border-radius: 20px .25rem 0 0;
-}
-.minerva-root #edit-switches {
-    position: absolute;
-    height: 35px;
-    bottom: 0;
-    left: 0;
-}
-
-.minerva-root .exhibit-content .nav .nav-link {
-    background-color: transparent;
-    border: none;
-    color: gray; 
-}
-.minerva-root .exhibit-content .nav .nav-link.active {
-    background-color: transparent;
-    border: none;
-    color: white; 
-}
-.minerva-root .exhibit-content .nav-tabs .nav-link.active {
-    border: 1px solid white;
-}
-
 .minerva-root .minerva-waypoint-content code {
     color: inherit;
-}
-
-.minerva-root .waypoint-indices .btn {
-    background-color: black;
-    vertical-align: center;
-    -moz-user-select: text;
-    -webkit-user-select: text;
-    user-select: text;
-    text-align: right;
-    padding: 0 5px 0 0;
-    border: none;
-    color: gray; 
-}
-.minerva-root .waypoint-indices .btn.active {
-    background-color: black;
-    border: none;
-    color: white; 
 }
 
 .minerva-root .minerva-waypoint-content img {
@@ -2481,11 +2437,6 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     border-right-width: 1px;
 }
 
-.minerva-root #story-title-sticky {
-  position: fixed;
-  z-index: 999;
-}
-
 .minerva-root polygon {
     fill: rgba(70, 130, 180, 0.0);
     stroke: white;
@@ -2537,24 +2488,23 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 .minerva-root .axis--x path {
     display: none;
 }
-
 `
 
 const exhibitHTML = `
 <div class="minerva-root">
     <div class="position-fixed w-100" style="top: 0;left: 0;">
         <div>
-            <div id="minerva-openseadragon"></div>
+            <div class="minerva-openseadragon"></div>
             <div class="minerva-legend position-absolute"
                  style="pointer-events: none; top: 1rem; right: 8px">
                 <div>
                     <div class="btn-group-vertical bg-trans p-2"
                          style="display:inline-block; vertical-align:top;">
-                        <a id="minerva-toggle-legend" class="p-1" href="javascript;;">
+                        <a class="minerva-toggle-legend p-1" href="javascript;;">
                             <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
                             <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
                         </a>
-                        <ul id="minerva-channel-legend" class="list-unstyled m-0"></ul>
+                        <ul class="minerva-channel-legend list-unstyled m-0"></ul>
                         <div class="p-1 minerva-only-3d">
                           Depth:
                         </div>
@@ -3037,7 +2987,7 @@ const makeTwinViewer = function(e) {
 const build_page_with_exhibit = function(exhibit, options) {
   // Initialize openseadragon
   const viewer = OpenSeadragon({
-    id: 'minerva-openseadragon',
+    id: options.id + '-openseadragon',
     prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.3.1/images/',
     navigatorPosition: 'BOTTOM_RIGHT',
     zoomOutButton: 'minerva-zoom-out',
@@ -3129,6 +3079,8 @@ export const build_page = function(options) {
   // fill the main div with content
   const el = document.getElementById(options.id);
   el.innerHTML = exhibitHTML;
+  const osd_el = el.getElementsByClassName('minerva-openseadragon')[0];
+  osd_el.id = options.id + '-openseadragon';
 
   var exhibit = options.exhibit;
 

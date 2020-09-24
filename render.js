@@ -253,22 +253,22 @@ Render.prototype = {
     $('.minerva-zoom-out').tooltip({
       title: 'Zoom out'
     });
-    $('#minerva-arrow-switch').tooltip({
+    $('.minerva-arrow-switch').tooltip({
       title: 'Share Arrow'
     });
-    $('#minerva-lasso-switch').tooltip({
+    $('.minerva-lasso-switch').tooltip({
       title: 'Share Region'
     });
-    $('#minerva-draw-switch').tooltip({
+    $('.minerva-draw-switch').tooltip({
       title: 'Share Box'
     });
-    $('#minerva-duplicate-view').tooltip({
+    $('.minerva-duplicate-view').tooltip({
       title: 'Clone linked view'
     });
 
     // Modals to copy shareable link and edit description
     $('#copy_link_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
-    $('#minerva-edit_description_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
+    $('.minerva-edit_description_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
 
     // Button to toggle sidebar
     $('.minerva-toggle-sidebar').click(function(e) {
@@ -404,18 +404,18 @@ Render.prototype = {
     }, false);
 
     // Handle submission of description for sharable link
-    $('#minerva-edit_description_modal form').submit(this, function(e){
+    $('.minerva-edit_description_modal form').submit(this, function(e){
       const HS = e.data.hashstate;
       const formData = parseForm(e.target);
       $(this).closest('.modal').modal('hide');
 
       // Get description from form
       HS.d = encode(formData.d);
-      $('#minerva-copy_link_modal').modal('show');
+      $('.minerva-copy_link_modal').modal('show');
 
       const root = HS.location('host') + HS.location('pathname');
       const hash = HS.makeHash(['d', 'g', 'm', 'a', 'v', 'o', 'p']);
-      const link = document.getElementById('minerva-copy_link');
+      const link = document.getElementsByClassName('minerva-copy_link')[0];
       link.value = root + hash;
 
       return false;
@@ -471,7 +471,7 @@ Render.prototype = {
       $('.minerva-edit_copy_button').each(function() {
         newCopyYamlButton.call(this, THIS);
       });
-      $('#minerva-edit_toggle_arrow').click(this, function(e) {
+      $('.minerva-edit_toggle_arrow').click(this, function(e) {
         const HS = e.data.hashstate;
         const THIS = e.data;
         const arrow_0 = HS.waypoint.Arrows[0];
@@ -1145,10 +1145,10 @@ Render.prototype = {
 
     const arrow_0 = HS.waypoint.Arrows[0];
     if (arrow_0.HideArrow == true) {
-       $('#minerva-edit_toggle_arrow').css('opacity', '0.5');
+       $('.minerva-edit_toggle_arrow').css('opacity', '0.5');
     }
     else {
-       $('#minerva-edit_toggle_arrow').css('opacity', '1');
+       $('.minerva-edit_toggle_arrow').css('opacity', '1');
     }
 
     const wid_txt = $(wid_waypoint).find('.minerva-edit_text')[0];

@@ -370,8 +370,8 @@ RenderOSD.prototype = {
     if (a.Angle == undefined) {
       a.Angle = 60;
     }
-    const proto_text_el = "minerva-arrow-text";
-    const proto_el = a.Arrowhead? "minerva-arrowhead-image" : "minerva-arrow-image";
+    const text_class = "minerva-arrow-text";
+    const arrow_class = a.Arrowhead? "minerva-arrowhead-image" : "minerva-arrow-image";
     const text_el = "minerva-arrow-text-" + indices.join('-');
     const el = "minerva-arrow-image-" + indices.join('-');
 
@@ -390,12 +390,10 @@ RenderOSD.prototype = {
     }
     // Create new arrows
     else {
-      if (el != proto_el) {
-        const proto_element = document.getElementById(proto_el);
-        const element = proto_element.cloneNode(true);
-        element.id = el;
-        document.body.appendChild(element);
-      }
+      const proto_element = document.getElementsByClassName(arrow_class)[0];
+      const element = proto_element.cloneNode(true);
+      element.id = el;
+      document.body.appendChild(element);
       this.viewer.addOverlay({
         x: a.Point[0],
         y: a.Point[1],
@@ -414,12 +412,10 @@ RenderOSD.prototype = {
     }
     // Create new arrow text
     else {
-      if (text_el != proto_text_el) {
-        const proto_text_element = document.getElementById(proto_text_el);
-        const text_element = proto_text_element.cloneNode(true);
-        text_element.id = text_el;
-        document.body.appendChild(text_element);
-      }
+      const proto_text_element = document.getElementsByClassName(text_class)[0];
+      const text_element = proto_text_element.cloneNode(true);
+      text_element.id = text_el;
+      document.body.appendChild(text_element);
       this.viewer.addOverlay({
         x: a.Point[0],
         y: a.Point[1],
@@ -500,7 +496,7 @@ RenderOSD.prototype = {
       div = document.createElement("div"); 
       div.className = "minerva-white minerva-overlay";
       div.id = el;
-      document.getElementById('minerva-all-overlays').appendChild(div); 
+      document.getElementsByClassName('minerva-all-overlays')[0].appendChild(div); 
     }
 
     const xy = new OpenSeadragon.Point(overlay.x, overlay.y);

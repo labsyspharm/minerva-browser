@@ -321,7 +321,7 @@ HashState.prototype = {
     const username = 'jth30'
     const pass = new Promise(function(resolve, reject) {
 
-      const selector = '#minerva-password_modal';
+      const selector = '.minerva-password_modal';
       $(selector).modal('show');
       $(selector).find('form').submit(function(e){
         $(selector).find('form').off();
@@ -344,7 +344,7 @@ HashState.prototype = {
       // Hard code password for public account
       resolve('MEETING@lsp2');
       /* 
-      const selector = '#minerva-password_modal';
+      const selector = '.minerva-password_modal';
       $(selector).modal('show');
       $(selector).find('form').submit(function(e){
         $(selector).find('form').off();
@@ -913,7 +913,7 @@ HashState.prototype = {
     // Show welcome page if no hash present
     else if (this.isMissingHash) {
       this.s = 0; 
-      const welcome = $('#minerva-welcome_modal');
+      const welcome = $('.minerva-welcome_modal');
       const channel_count = welcome.find('.minerva-channel_count')[0];
       channel_count.innerText = this.channels.length;
       welcome.modal('show');
@@ -1008,7 +1008,7 @@ HashState.prototype = {
       this.pushState();
     }
     else {
-      $('#minerva-edit_description_modal').modal('show');
+      $('.minerva-edit_description_modal').modal('show');
     }
   },
 

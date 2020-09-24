@@ -2591,43 +2591,34 @@ const exhibitHTML = `
                             <a class="btn text-light minerva-zoom-in" href="javascript;;">
                                 <i class="fas fa-search-plus"></i>
                             </a>
-                            <span id="minerva-arrow-switch" class="nav-item minerva-arrow-switch">
+                            <span class="nav-item minerva-arrow-switch">
                             <a class="btn" href="javascript:;">
                                 <span class=""><i class="fas fa-location-arrow"></i></span>
                             </a>
                             </span>
-                            <span id="minerva-lasso-switch" class="nav-item minerva-lasso-switch">
+                            <span class="nav-item minerva-lasso-switch">
                             <a class="btn" href="javascript:;">
                                 <span class=""><i class="fas fa-bullseye"></i></span>
                             </a>
                             </span>
-                            <span id="minerva-draw-switch" class="nav-item minerva-draw-switch">
+                            <span class="nav-item minerva-draw-switch">
                             <a class="btn" href="javascript:;">
                                 <span class=""><i class="fas fa-crosshairs"></i></span>
                             </a>
                             </span>
-                            <a class="btn" id='minerva-duplicate-view'>
+                            <a class="btn minerva-duplicate-view">
                                 <span class=""><i class="fas fa-clone"></i></span>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
-            <div id="minerva-viewer-tool" class="position-absolute bg-trans" style="right:1.5%; top: 40vh;">
-            </div>
         </div>
     </div>
 
     <div class="d-none">
-        <input type="file" id="minerva-file-upload" class="d-none" />
-        <ul>
-            <li class="nav-item rounded-0" id="minerva-proto-story-index">
-                <a class="nav-link list-group-item-action font-weight-bold"></a>
-            </li>
-        </ul>
-
-        <div id="minerva-arrow-overlay" class="minerva-arrow-overlay">
-          <div id="minerva-arrowhead-image">
+        <div class="minerva-arrow-overlay">
+          <div class="minerva-arrowhead-image">
             <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
 <svg
@@ -2708,7 +2699,7 @@ const exhibitHTML = `
 </svg>
 
           </div>
-          <div id="minerva-arrow-image">
+          <div class="minerva-arrow-image">
             <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
 <svg
@@ -2789,7 +2780,7 @@ const exhibitHTML = `
 </svg>
 
           </div>
-          <div id="minerva-arrow-text">
+          <div class="minerva-arrow-text">
             <div class="minerva-arrow-label p-3 bg-trans" style="max-width: 200px;">
             </div>
           </div>
@@ -2805,7 +2796,7 @@ const exhibitHTML = `
                     </textarea>
                     <br>
                     <div class="row">
-                        <div id="minerva-edit_toggle_arrow" class="col-2 text-center">
+                        <div class="minerva-edit_toggle_arrow col-2 text-center">
                             <i class="fas fa-location-arrow"></i>
                         </div>
                         <div class="col-10">
@@ -2822,13 +2813,10 @@ const exhibitHTML = `
                 </button>
             </div>
         </form>
-
-        <div id="minerva-readme">
-        </div>
     </div>
 
 
-    <div id="minerva-password_modal" class="modal fade" role="dialog">
+    <div class="minerva-password_modal modal fade" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -2848,7 +2836,7 @@ const exhibitHTML = `
     </div>
 
 
-    <div id="minerva-edit_description_modal" class="modal fade" role="dialog">
+    <div class="minerva-edit_description_modal modal fade" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content text-dark">
                 <div class="modal-header">
@@ -2872,7 +2860,7 @@ const exhibitHTML = `
         </div>
     </div>
 
-    <div id="minerva-welcome_modal" class="modal fade" role="dialog">
+    <div class="minerva-welcome_modal modal fade" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content text-dark">
                 <div class="modal-header">
@@ -2911,8 +2899,7 @@ const exhibitHTML = `
         </div>
     </div>
 
-
-    <div id="minerva-copy_link_modal" class="modal fade" role="dialog">
+    <div class="minerva-copy_link_modal modal fade" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content text-dark">
                 <div class="modal-header">
@@ -2924,7 +2911,7 @@ const exhibitHTML = `
                 <div class="modal-body">
                     <form class="form">
                         <div class="input-group">
-                            <input type="text" class="form-control" id="minerva-copy_link" name="copy_content" placeholder="Some path">
+                            <input type="text" class="form-control minerva-copy_link" name="copy_content" placeholder="Some path">
                             <span class="input-group-btn">
                                 <button class="btn btn-default minerva-modal_copy_button" type="submit" data-toggle="tooltip" data-placement="bottom">
                                     Copy
@@ -2940,7 +2927,7 @@ const exhibitHTML = `
         </div>
     </div>
 
-    <div id="minerva-all-overlays" class="d-none">
+    <div class="minerva-all-overlays d-none">
     </div>
 </div>
 `

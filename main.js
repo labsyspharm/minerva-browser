@@ -2462,7 +2462,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     fill : white;
 }
 
-.minerva-root .tooltip {
+body .tooltip {
     position: absolute;
     margin-top: 3px;
     text-align: center;

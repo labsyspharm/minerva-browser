@@ -2181,11 +2181,11 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 @media (max-width: 575.98px) { .minerva-root .display-4 { font-size: 2rem; margin-top: 1rem; } }
 .minerva-root .select2-results ul { color: black; }
 
-body {
+.minerva-root {
   background: black;
 }
 
-html {
+.minerva-root {
   scrollbar-face-color: #646464;
   scrollbar-base-color: #646464;
   scrollbar-3dlight-color: #646464;
@@ -2195,32 +2195,32 @@ html {
   scrollbar-shadow-color: #646464;
   scrollbar-dark-shadow-color: #646464;
 }
-::-webkit-scrollbar { 
+.minerva-root ::-webkit-scrollbar { 
   width: 8px;
   height: 3px;
 }
-::-webkit-scrollbar-button {
+.minerva-root ::-webkit-scrollbar-button {
   background-color: #666;
 }
-::-webkit-scrollbar-track {
+.minerva-root ::-webkit-scrollbar-track {
   background-color: #646464;
 }
-::-webkit-scrollbar-track-piece {
+.minerva-root ::-webkit-scrollbar-track-piece {
   background-color: #000;
 }
-::-webkit-scrollbar-thumb {
+.minerva-root ::-webkit-scrollbar-thumb {
   height: 50px;
   background-color: #666;
   border-radius: 3px;
 }
-::-webkit-scrollbar-corner {
+.minerva-root ::-webkit-scrollbar-corner {
   background-color: #646464;
 }
-::-webkit-resizer {
+.minerva-root ::-webkit-resizer {
   background-color: #666;
 }
 
-#minerva-sidebar-menu {
+.minerva-root #minerva-sidebar-menu {
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
@@ -2230,64 +2230,64 @@ html {
   left: 3px;
   top: 1rem;
 }
-#minerva-sidebar-menu.toggled {
+.minerva-root #minerva-sidebar-menu.toggled {
   margin-left: -366px;
 }
 
-#minerva-legend {
+.minerva-root #minerva-legend {
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
 }
 
-input[type="range"] {
+.minerva-root input[type="range"] {
   transform-origin: left;
   transform: rotate(270deg);
 }
 
-#minerva-z-slider-legend {
+.minerva-root #minerva-z-slider-legend {
   padding-top: 127px;
   padding-left: 7px;
   height: 140px;
   width: 15px;
 }
 
-#minerva-channel-groups-legend {
+.minerva-root #minerva-channel-groups-legend {
   width: 200px;
 }
 
-#minerva-legend.toggled {
+.minerva-root #minerva-legend.toggled {
   margin-right: -200px;
 }
 
-#minerva-sidebar-menu .minerva-open-sidebar {
+.minerva-root #minerva-sidebar-menu .minerva-open-sidebar {
   display: none;
 }
-#minerva-sidebar-menu .minerva-close-sidebar {
+.minerva-root #minerva-sidebar-menu .minerva-close-sidebar {
   display: inline;
 }
-#minerva-sidebar-menu.toggled .minerva-open-sidebar {
+.minerva-root #minerva-sidebar-menu.toggled .minerva-open-sidebar {
   display: inline;
 }
-#minerva-sidebar-menu.toggled .minerva-close-sidebar {
+.minerva-root #minerva-sidebar-menu.toggled .minerva-close-sidebar {
   display: none;
 }
 
-#minerva-legend .minerva-open-legend {
+.minerva-root #minerva-legend .minerva-open-legend {
   display: none;
 }
-#minerva-legend .minerva-close-legend {
+.minerva-root #minerva-legend .minerva-close-legend {
   display: inline;
 }
-#minerva-legend.toggled .minerva-open-legend {
+.minerva-root #minerva-legend.toggled .minerva-open-legend {
   display: inline;
 }
-#minerva-legend.toggled .minerva-close-legend {
+.minerva-root #minerva-legend.toggled .minerva-close-legend {
   display: none;
 } 
 /* position: absolute; top: 0; bottom: 0; width: 100%; */
-#minerva-openseadragon {
+.minerva-root #minerva-openseadragon {
   /* position: absolute;
   top: 0;
   left: 0;
@@ -2298,114 +2298,110 @@ input[type="range"] {
   /* border: 1px solid #444; */
 }
 
-.openseadragon-canvas canvas {
+.minerva-root .openseadragon-canvas canvas {
   z-index: -2;
 }
 
-.openseadragon-canvas svg {
+.minerva-root .openseadragon-canvas svg {
   z-index: -1;
 }
 
-.overlap {
+.minerva-root .overlap {
   position: relative;
   pointer-events: none;
 }
 
-.btn:focus, .btn:active {
+.minerva-root .btn:focus, .minerva-root .btn:active {
   outline: none !important;
   box-shadow: none !important;
 }
 
-a, .navbar-toggler {
+.minerva-root a, .minerva-root .navbar-toggler {
   pointer-events: auto;
 }
 
-.bg-trans {
+.minerva-root .bg-trans {
     background: hsla(0, 0%, 0%, 0.8);
 }
 
-.bg-black {
+.minerva-root .bg-black {
     background: #000;
 }
 
-#minerva-legend ul {
-   /* margin-bottom: 0; */
-}
-
-.legend-label {
+.minerva-root .legend-label {
     display: inline-block;
     min-width: 4.5em;
 }
 
-.legend-color {
+.minerva-root .legend-color {
     margin-left: 0.5em;
     width: 1.5em;
     border-radius: 0;
     vertical-align: middle;
 }
 
-.minerva-overlay-title {
+.minerva-root .minerva-overlay-title {
     color: white;
     text-align: center;
 }
 
-.nav-color-dark {
+.minerva-root .nav-color-dark {
     color:  #495057 !important;
 }
-.minerva-green {
+.minerva-root .minerva-green {
     color: palegreen;
 }
-.minerva-white {
+.minerva-root .minerva-white {
     color: white;
 }
-.minerva-slide-border {
+.minerva-root .minerva-slide-border {
     border: 1px solid hsl(0, 0%, 20%);
 }
-.minerva-white.minerva-overlay {
+.minerva-root .minerva-white.minerva-overlay {
     border: 2px solid white;
     background: none;
 }
-.minerva-green.minerva-overlay {
+.minerva-root .minerva-green.minerva-overlay {
     border: 4px solid palegreen;
     background: none;
 }
 
-.right-padding {
+.minerva-root .right-padding {
     padding: .5rem 1rem;
 }
 
-.exhibit-content > .nav {
+.minerva-root .exhibit-content > .nav {
     background-color: hsla(0, 0%, 0%, 0.5);
 }
-.exhibit-content > .round-nav { 
+.minerva-root .exhibit-content > .round-nav { 
     border-radius: 20px .25rem 0 0;
 }
-#edit-switches {
+.minerva-root #edit-switches {
     position: absolute;
     height: 35px;
     bottom: 0;
     left: 0;
 }
 
-.exhibit-content .nav .nav-link {
+.minerva-root .exhibit-content .nav .nav-link {
     background-color: transparent;
     border: none;
     color: gray; 
 }
-.exhibit-content .nav .nav-link.active {
+.minerva-root .exhibit-content .nav .nav-link.active {
     background-color: transparent;
     border: none;
     color: white; 
 }
-.exhibit-content .nav-tabs .nav-link.active {
+.minerva-root .exhibit-content .nav-tabs .nav-link.active {
     border: 1px solid white;
 }
 
-.minerva-waypoint-content code {
+.minerva-root .minerva-waypoint-content code {
     color: inherit;
 }
 
-.waypoint-indices .btn {
+.minerva-root .waypoint-indices .btn {
     background-color: black;
     vertical-align: center;
     -moz-user-select: text;
@@ -2416,52 +2412,52 @@ a, .navbar-toggler {
     border: none;
     color: gray; 
 }
-.waypoint-indices .btn.active {
+.minerva-root .waypoint-indices .btn.active {
     background-color: black;
     border: none;
     color: white; 
 }
 
-.minerva-waypoint-content img {
+.minerva-root .minerva-waypoint-content img {
     max-width: 100%;
 }
-.minerva-waypoint-content h1 {
+.minerva-root .minerva-waypoint-content h1 {
     font-size: 1.25rem;
     margin: 0 0 1rem 0;
 }
-.minerva-waypoint-content h2 {
+.minerva-root .minerva-waypoint-content h2 {
     font-size: 1.25rem;
     margin: 0 0 1rem 0;
 }
-.minerva-waypoint-content h3 {
+.minerva-root .minerva-waypoint-content h3 {
     font-size: 1.1rem;
     margin: 0 0 1rem 0;
 }
-.minerva-waypoint-content h4 {
+.minerva-root .minerva-waypoint-content h4 {
     font-size: 1.1rem;
     margin: 0 0 1rem 0;
 }
-.minerva-waypoint-content h5 {
+.minerva-root .minerva-waypoint-content h5 {
     font-size: 1rem;
     margin: 0 0 1rem 0;
 }
-.minerva-waypoint-content h6 {
+.minerva-root .minerva-waypoint-content h6 {
     font-size: 1rem;
     margin: 0 0 1rem 0;
 }
 
-.minerva-waypoint-content .edit_code {
+.minerva-root .minerva-waypoint-content .edit_code {
     font-family: monospace;
 }
 
-.minerva-waypoint-content .copy_yaml_input {
+.minerva-root .minerva-waypoint-content .copy_yaml_input {
     position: absolute;
     z-index: 100;
     bottom: 0;
     right: 0;
 }
 
-.copy_yaml_input button {
+.minerva-root .copy_yaml_input button {
     background-color: black; 
     /* border: 1px solid white; */
     /* padding: 0 5px 0 5px; */
@@ -2471,51 +2467,51 @@ a, .navbar-toggler {
     color: white; 
 }
 
-.channel-picker {
+.minerva-root .channel-picker {
     border-style: solid;
     border-color: hsl(0, 0%, 70%);
     border-width: 1px 0;
 }
 
-.channel-picker:first-child {
+.minerva-root .channel-picker:first-child {
     border-left-width: 1px;
 }
 
-.channel-picker:last-child {
+.minerva-root .channel-picker:last-child {
     border-right-width: 1px;
 }
 
-#story-title-sticky {
+.minerva-root #story-title-sticky {
   position: fixed;
   z-index: 999;
 }
 
-polygon {
+.minerva-root polygon {
     fill: rgba(70, 130, 180, 0.0);
     stroke: white;
     stroke-width: 2px;
     vector-effect: non-scaling-stroke;
 }
 
-.matrix-label {
+.minerva-root .matrix-label {
     font-size: 10px;
     color: white;
     fill : white;
 }
 
-.matrix-row-label {
+.minerva-root .matrix-row-label {
     font-size: 10px;
     color: white;
     fill : white;
 }
 
-.colorLegend{
+.minerva-root .colorLegend {
     font-size: 8px;
     color: white;
     fill : white;
 }
 
-.tooltip {
+.minerva-root .tooltip {
     position: absolute;
     margin-top: 3px;
     text-align: center;
@@ -2530,15 +2526,15 @@ polygon {
     pointer-events: none;
 }
 
-.bar {
+.minerva-root .bar {
     fill: steelblue;
 }
 
-.bar:hover {
+.minerva-root .bar:hover {
     fill: #a6cee3;
 }
 
-.axis--x path {
+.minerva-root .axis--x path {
     display: none;
 }
 

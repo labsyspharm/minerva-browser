@@ -6,6 +6,7 @@ var infovis = {};
 infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler){
 
     var ticks = 6;
+    var prefix = '#'+id+'-';
 
     //some additional checks and data wrangling to ensure this add-on is downward compatible
     if (visdata.colorTicks != null && visdata.colorTicks != undefined){
@@ -26,14 +27,14 @@ infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler)
         .then(function(data) {
 
             // SVG drawing area
-            if (d3.select("#matrix").empty() ) {
+            if (d3.select(prefix+"matrix").empty() ) {
 
                 //vis object
                 var vis = {};
 
                 //tooltip
                 var tooltip = d3.select("#"+id).append("div")
-                    .attr("id", "tooltip_matrix")
+                    .attr("id", id+"-tooltip_matrix")
                     .attr("class", "tooltip")
                     .style("opacity", 0);
 
@@ -85,7 +86,7 @@ infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler)
                 //the svg everything goes into
                 // d3.select("#"+id).style('position', 'relative');
                 vis.svg = d3.select("#"+id).append("svg")
-                    .attr('id', 'matrix')
+                    .attr('id', id+'-matrix')
                     .attr("width", vis.width + vis.margin.left + vis.margin.right)
                     .attr("height", vis.height + vis.margin.top + vis.margin.bottom)
                     .append("g")
@@ -100,7 +101,7 @@ infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler)
                     .append("g")
                     .attr("class", "matrix-row")
                     .attr('id', function(d,i){
-                        return 'matrixrow_' + i;
+                        return id+'-matrixrow_' + i;
                     })
                     .attr("transform", function (d, index) {
                         return "translate(0," + (
@@ -221,7 +222,7 @@ infovis.renderBarChart = function(wid_waypoint, id, visdata, events, eventHandle
     //tooltip
     vis.tooltip = d3.select("#"+id).append("div")
         .attr("class", "tooltip")
-        .attr("id", "tooltip_barChart")
+        .attr("id", id+"-tooltip_barChart")
         .style("opacity", 0);
 
     //create svg
@@ -518,7 +519,7 @@ infovis.renderScatterplot = function(wid_waypoint, id, visdata, events, eventHan
 
 infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, eventHandler){
 
-    if (d3.select("#axis-svg").empty() ) {
+    if (d3.select(prefix+"axis-svg").empty() ) {
         //eventhandler
         var eventHandler = eventHandler;
 
@@ -558,7 +559,7 @@ infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, ev
         // .style('background-color', 'black');
 
         div.append("svg")
-            .attr('id', 'axis-svg')
+            .attr('id', id+'-axis-svg')
             .attr('class', 'plot');
 
         var divLegend = d3.select("#" + id).append('div')
@@ -568,11 +569,11 @@ infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, ev
 
         divLegend
             .append("svg")
-            .attr('id', 'axis-svg-legend');
+            .attr('id', id+'-axis-svg-legend');
 
         //add canvas (for the actual plot)
         div.append('canvas')
-            .attr('id', 'plot-canvas')
+            .attr('id', id+'-plot-canvas')
             .attr('class', 'plot');
 
         //load data
@@ -616,20 +617,20 @@ infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, ev
 
             // the canvas is shifted by 1px to prevent any artefacts
             // when the svg axis and the canvas overlap
-            var canvas = d3.select("#plot-canvas")
+            var canvas = d3.select(prefix+"plot-canvas")
                 .attr("width", width - 1)
                 .attr("height", height - 1)
                 .style("transform", "translate(" + (margin.left + 1) +
                     "px" + "," + (margin.top + 1) + "px" + ")");
 
-            var svg = d3.select("#axis-svg")
+            var svg = d3.select(prefix+"axis-svg")
                 .attr("width", fullWidth)
                 .attr("height", fullHeight)
                 .append("g")
                 .attr("transform", "translate(" + margin.left + "," +
                     margin.top + ")");
 
-            var svgLegend = d3.select("#axis-svg-legend")
+            var svgLegend = d3.select(prefix+"axis-svg-legend")
                 .attr("width", fullWidth)
                 .attr("height", 100)
                 .append("g")

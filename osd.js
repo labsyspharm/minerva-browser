@@ -315,7 +315,7 @@ RenderOSD.prototype = {
 
     // Update the arrow overlays
     const THIS = this;
-    $.each($('.minerva-arrow-overlay'), function(id, el) {
+    $.each($(HS.el).find('.minerva-arrow-overlay'), function(id, el) {
       const current = THIS.viewer.getOverlayById(el.id);
       const xy = new OpenSeadragon.Point(-100, -100);
       if (current) {
@@ -390,7 +390,7 @@ RenderOSD.prototype = {
     }
     // Create new arrows
     else {
-      const proto_element = document.getElementsByClassName(arrow_class)[0];
+      const proto_element = HS.el.getElementsByClassName(arrow_class)[0];
       const element = proto_element.cloneNode(true);
       element.id = el;
       document.body.appendChild(element);
@@ -412,7 +412,7 @@ RenderOSD.prototype = {
     }
     // Create new arrow text
     else {
-      const proto_text_element = document.getElementsByClassName(text_class)[0];
+      const proto_text_element = HS.el.getElementsByClassName(text_class)[0];
       const text_element = proto_text_element.cloneNode(true);
       text_element.id = text_el;
       document.body.appendChild(text_element);
@@ -496,7 +496,7 @@ RenderOSD.prototype = {
       div = document.createElement("div"); 
       div.className = "minerva-white minerva-overlay";
       div.id = el;
-      document.getElementsByClassName('minerva-all-overlays')[0].appendChild(div); 
+      HS.el.getElementsByClassName('minerva-all-overlays')[0].appendChild(div); 
     }
 
     const xy = new OpenSeadragon.Point(overlay.x, overlay.y);

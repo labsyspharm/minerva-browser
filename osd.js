@@ -300,7 +300,7 @@ RenderOSD.prototype = {
     this.trackers.forEach(t => t.destroy());
     this.trackers = [];
 
-    this.addPolygon("selection", HS.state.p);
+    this.addPolygon(HS.id+"-selection", HS.state.p);
 
     // Update the box overlays
     HS.allOverlays.forEach(function(indices) {
@@ -309,7 +309,7 @@ RenderOSD.prototype = {
       if (prefix == 'waypoint-overlay') {
         overlay = HS.stories[s].Waypoints[w].Overlays[o];
       }
-      var el = 'minerva-' + indices.join('-');
+      var el = 'minerva-'+ HS.id + '-' + indices.join('-');
       this.addOverlay(overlay, el, s, w);
     }, this)
 
@@ -372,8 +372,8 @@ RenderOSD.prototype = {
     }
     const text_class = "minerva-arrow-text";
     const arrow_class = a.Arrowhead? "minerva-arrowhead-image" : "minerva-arrow-image";
-    const text_el = "minerva-arrow-text-" + indices.join('-');
-    const el = "minerva-arrow-image-" + indices.join('-');
+    const text_el = "minerva-arrow-text-" + HS.id + '-' + indices.join('-');
+    const el = "minerva-arrow-image-" + HS.id + '-' + indices.join('-');
 
     // Hide arrows not equal to current story and waypoint
     if (s_i != HS.s || w_i != HS.w) {

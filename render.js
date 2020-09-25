@@ -666,8 +666,7 @@ Render.prototype = {
       className: HS.m.includes(m) ? 'nav-link active' : 'nav-link',
       href: 'javascript:;',
       innerText: mask.Name,
-      title: mask.Path,
-      id: mask.Path,
+      title: mask.Path
     });
     var ariaSelected = HS.m.includes(m) ? true : false;
     aEl.setAttribute('aria-selected', ariaSelected);
@@ -1088,7 +1087,7 @@ Render.prototype = {
       const new_div = document.createElement('div');
       new_div.style.cssText = 'position:relative';
       new_div.className = visType + '-' + HS.s + '-' + HS.w;
-      new_div.id = visType + '-' + HS.s + '-' + HS.w;
+      new_div.id = visType + '-' + HS.id + '-' + HS.s + '-' + HS.w;
 
       const cache_divs = cache.getElementsByClassName(new_div.className);
       if (cache_divs[0] && el) {

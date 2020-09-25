@@ -34,7 +34,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
   const images = hashstate.images;
 
   // If only one image, set image name to the first image description
-  const imageName = document.getElementsByClassName('minerva-imageName')[0];
+  const imageName = hashstate.el.getElementsByClassName('minerva-imageName')[0];
   imageName.innerText = images.length == 1
     ? images[0].Description
     : exhibit.Name
@@ -3082,6 +3082,7 @@ export const build_page = function(options) {
   zoom_in_el.id = options.id + '-zoom-in';
 
   var exhibit = options.exhibit;
+  options.el = el;
 
   if (typeof exhibit === 'string' || exhibit instanceof String) {
     fetch(exhibit)
@@ -3099,6 +3100,6 @@ export const build_page = function(options) {
       $('#osd-side-nav').scrollTop(0);
   })
 
-  const duplicateViewButton = document.getElementsByClassName('minerva-duplicate-view')[0];
+  const duplicateViewButton = el.getElementsByClassName('minerva-duplicate-view')[0];
   duplicateViewButton.onclick = makeTwinViewer;
 }

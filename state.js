@@ -185,6 +185,8 @@ export const HashState = function(exhibit, options) {
   this.cell_type_links_map = options.cell_type_links_map;
   this.cell_type_alias_map = options.cell_type_alias_map;
   this.exhibit = exhibit;
+  this.el = options.el;
+  this.id = options.id;
 
   this.state = {
     buffer: {
@@ -203,7 +205,7 @@ export const HashState = function(exhibit, options) {
     p: [],
     name: '',
     description: '',
-    edit: false,
+  edit: false,
     drawing: 0
   };
 
@@ -318,13 +320,14 @@ HashState.prototype = {
 
   // Used only for optional OMERO support
   get omero_cookie() {
-    const username = 'jth30'
+    const HS = this;
+    const username = 'jth30';
     const pass = new Promise(function(resolve, reject) {
 
       const selector = '.minerva-password_modal';
-      $(selector).modal('show');
-      $(selector).find('form').submit(function(e){
-        $(selector).find('form').off();
+      $(HS.el).find(selector).modal('show');
+      $(HS.el).find(selector).find('form').submit(function(e){
+        $(HS.el).find(selector).find('form').off();
         $(this).closest('.modal').modal('hide');
         const formData = parseForm(e.target);
        
@@ -339,15 +342,16 @@ HashState.prototype = {
 
   // Used only for optional Cloud login support
   get token() {
+    const HS = this;
     const username = 'john_hoffer@hms.harvard.edu'
     const pass = new Promise(function(resolve, reject) {
       // Hard code password for public account
       resolve('MEETING@lsp2');
       /* 
       const selector = '.minerva-password_modal';
-      $(selector).modal('show');
-      $(selector).find('form').submit(function(e){
-        $(selector).find('form').off();
+      $(HS.el).find(selector).modal('show');
+      $(HS.el).find(selector).find('form').submit(function(e){
+        $(HS.el).find(selector).find('form').off();
         $(this).closest('.modal').modal('hide');
         const formData = parseForm(e.target);
        
@@ -913,7 +917,7 @@ HashState.prototype = {
     // Show welcome page if no hash present
     else if (this.isMissingHash) {
       this.s = 0; 
-      const welcome = $('.minerva-welcome_modal');
+      const welcome = $(this.el).find('.minerva-welcome_modal');
       const channel_count = welcome.find('.minerva-channel_count')[0];
       channel_count.innerText = this.channels.length;
       welcome.modal('show');
@@ -1008,7 +1012,7 @@ HashState.prototype = {
       this.pushState();
     }
     else {
-      $('.minerva-edit_description_modal').modal('show');
+      $(this.el).find('.minerva-edit_description_modal').modal('show');
     }
   },
 

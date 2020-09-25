@@ -67,11 +67,6 @@ const displayOrNot = function(selector, condition) {
   classOrNot(selector, !condition, 'd-none');
 };
 
-// Toggle 'active' class based on condition
-const activeOrNot = function(selector, condition) {
-  classOrNot(selector, condition, 'active');
-};
-
 // Set to green or white based on condition
 export const greenOrWhite = function(selector, condition) {
   classOrNot(selector, condition, 'minerva-green');
@@ -79,12 +74,12 @@ export const greenOrWhite = function(selector, condition) {
 };
 
 // Toggle cursor style based on condition
-const toggleCursor = function(cursor, condition) {
+const toggleCursor = function(selector, cursor, condition) {
   if (condition) {
-    $('.minerva-openseadragon *').css('cursor', cursor);
+    $(selector).css('cursor', cursor);
   }
   else {
-    $('.minerva-openseadragon *').css('cursor', 'default');
+    $(selector).css('cursor', 'default');
   }
 };
 
@@ -376,8 +371,8 @@ Render.prototype = {
     });
 
     // Handle Z-slider when in 3D mode
-    var z_legend = document.getElementsByClassName('minerva-depth-legend')[0];
-    var z_slider = document.getElementsByClassName('minerva-z-slider')[0];
+    var z_legend = HS.el.getElementsByClassName('minerva-depth-legend')[0];
+    var z_slider = HS.el.getElementsByClassName('minerva-z-slider')[0];
     z_slider.max = HS.cgs.length - 1;
     z_slider.value = HS.g;
     z_slider.min = 0;
@@ -415,7 +410,7 @@ Render.prototype = {
 
       const root = HS.location('host') + HS.location('pathname');
       const hash = HS.makeHash(['d', 'g', 'm', 'a', 'v', 'o', 'p']);
-      const link = document.getElementsByClassName('minerva-copy_link')[0];
+      const link = HS.el.getElementsByClassName('minerva-copy_link')[0];
       link.value = root + hash;
 
       return false;
@@ -486,7 +481,7 @@ Render.prototype = {
       const THIS = this;
 
       // Set all mask options
-      const mask_picker = document.getElementsByClassName('minerva-mask-picker')[0];
+      const mask_picker = HS.el.getElementsByClassName('minerva-mask-picker')[0];
       mask_picker.innerHTML = "";
       HS.masks.forEach(function(mask){
         const mask_option = document.createElement("option");
@@ -513,7 +508,7 @@ Render.prototype = {
       });
 
       // Set all group options
-      const group_picker = document.getElementsByClassName('minerva-group-picker')[0];
+      const group_picker = HS.el.getElementsByClassName('minerva-group-picker')[0];
       group_picker.innerHTML = "";
       HS.cgs.forEach(function(group){
         const group_option = document.createElement("option");
@@ -545,37 +540,40 @@ Render.prototype = {
     const edit = HS.edit;
     const drawing = HS.drawing;
     const drawType = HS.drawType;
+    const prefix = '#' + HS.id + ' ';
 
     // Enable home button if in outline mode, otherwise enable table of contents button
-    displayOrNot('.minerva-home-button', !edit && HS.waypoint.Mode == 'outline');
-    displayOrNot('.minerva-toc-button', !edit && HS.waypoint.Mode != 'outline');
+    displayOrNot(prefix+'.minerva-home-button', !edit && HS.waypoint.Mode == 'outline');
+    displayOrNot(prefix+'.minerva-toc-button', !edit && HS.waypoint.Mode != 'outline');
     // Enable 3D UI if in 3D mode
-    displayOrNot('.minerva-channel-groups-legend', !HS.design.is3d);
-    displayOrNot('.minerva-z-slider-legend', HS.design.is3d);
-    displayOrNot('.minerva-toggle-legend', !HS.design.is3d);
-    displayOrNot('.minerva-only-3d', HS.design.is3d);
+    displayOrNot(prefix+'.minerva-channel-groups-legend', !HS.design.is3d);
+    displayOrNot(prefix+'.minerva-z-slider-legend', HS.design.is3d);
+    displayOrNot(prefix+'.minerva-toggle-legend', !HS.design.is3d);
+    displayOrNot(prefix+'.minerva-only-3d', HS.design.is3d);
     // Enable edit UI if in edit mode
-    displayOrNot('.minerva-editControls', edit);
+    displayOrNot(prefix+'.minerva-editControls', edit);
     // Enable standard UI if not in edit mode
-    displayOrNot('.minerva-waypointControls', !edit);
-    displayOrNot('.minerva-waypointName', !edit);
+    displayOrNot(prefix+'.minerva-waypointControls', !edit);
+    displayOrNot(prefix+'.minerva-waypointName', !edit);
     
     // Show crosshair cursor if drawing
-    toggleCursor('crosshair', drawing);
+    toggleCursor(prefix+'.minerva-openseadragon *', 'crosshair', drawing);
     // Show correct switch state based on drawing mode
-    greenOrWhite('.minerva-draw-switch *', drawing && (drawType == "box"));
-    greenOrWhite('.minerva-lasso-switch *', drawing && (drawType == "lasso"));
-    greenOrWhite('.minerva-arrow-switch *', drawing && (drawType == "arrow"));
+    greenOrWhite(prefix+'.minerva-draw-switch *', drawing && (drawType == "box"));
+    greenOrWhite(prefix+'.minerva-lasso-switch *', drawing && (drawType == "lasso"));
+    greenOrWhite(prefix+'.minerva-arrow-switch *', drawing && (drawType == "arrow"));
   },
 
   // Load speech-synthesis from AWS Polly
   loadPolly: function(txt, speech_bucket) {
     const hash = sha1(txt);
-    displayOrNot('.minerva-audioControls', !!speech_bucket);
+    const HS = this.hashstate;
+    const prefix = '#' + HS.id + ' ';
+    displayOrNot(prefix+'.minerva-audioControls', !!speech_bucket);
     if (!!speech_bucket) {
       const polly_url = 'https://s3.amazonaws.com/'+ speech_bucket +'/speech/' + hash + '.mp3';
-      document.getElementsByClassName('minerva-audioSource')[0].src = polly_url;
-      document.getElementsByClassName('minerva-audioPlayback')[0].load();
+      HS.el.getElementsByClassName('minerva-audioSource')[0].src = polly_url;
+      HS.el.getElementsByClassName('minerva-audioPlayback')[0].load();
     }
   },
 
@@ -675,7 +673,7 @@ Render.prototype = {
     aEl.setAttribute('aria-selected', ariaSelected);
 
     // Append mask layer to mask layers
-    document.getElementsByClassName('minerva-mask-layers')[0].appendChild(aEl);
+    HS.el.getElementsByClassName('minerva-mask-layers')[0].appendChild(aEl);
     
     // Activate or deactivate Mask Layer
     $(aEl).click(this, function(e) {
@@ -714,7 +712,7 @@ Render.prototype = {
     else {
       $('.minerva-channel-label').hide()
     }
-    const cg_el = document.getElementsByClassName('minerva-channel-groups')[0];
+    const cg_el = HS.el.getElementsByClassName('minerva-channel-groups')[0];
 
     // Add filtered channel groups to waypoint
     cgs.forEach(function(group) {
@@ -728,7 +726,7 @@ Render.prototype = {
     const cgs_single = HS.cgs.filter(group => {
       return group.Channels.length == 1;
     });
-    const cg_legend = document.getElementsByClassName('minerva-channel-groups-legend')[0];
+    const cg_legend = HS.el.getElementsByClassName('minerva-channel-groups-legend')[0];
     if (cgs_multi.length > 0) {
       var h = document.createElement('h6');
       h.innerText = 'Channel Groups:'
@@ -820,6 +818,7 @@ Render.prototype = {
   // Add channel legend label
   addChannelLegend: function(channel, c) {
     const color = this.indexColor(c, '#FFF');
+    const HS = this.hashstate;
 
     var label = document.createElement('span');
     label.className = 'legend-label pl-3';
@@ -831,7 +830,7 @@ Render.prototype = {
     badge.innerText = '\u00a0';
 
     // Append channel legend to list
-    var ul = document.getElementsByClassName('minerva-channel-legend')[0];
+    var ul = HS.el.getElementsByClassName('minerva-channel-legend')[0];
     var li = document.createElement('li');
     li.appendChild(badge);
     li.appendChild(label);
@@ -860,7 +859,7 @@ Render.prototype = {
   newStories: function() {
 
     const HS = this.hashstate;
-    const items = document.getElementsByClassName('minerva-story-container')[0];
+    const items = HS.el.getElementsByClassName('minerva-story-container')[0];
     // Remove existing stories
     clearChildren(items);
 
@@ -927,9 +926,9 @@ Render.prototype = {
 
     const HS = this.hashstate;
     const waypoint = HS.waypoint;
-    const wid_waypoint = document.getElementsByClassName('minerva-viewer-waypoint')[0];
-    const waypointName = document.getElementsByClassName("minerva-waypointName")[0];
-    const waypointCount = document.getElementsByClassName("minerva-waypointCount")[0];
+    const wid_waypoint = HS.el.getElementsByClassName('minerva-viewer-waypoint')[0];
+    const waypointName = HS.el.getElementsByClassName("minerva-waypointName")[0];
+    const waypointCount = HS.el.getElementsByClassName("minerva-waypointCount")[0];
 
     waypointCount.innerText = HS.currentCount + '/' + HS.totalCount;
 
@@ -1137,9 +1136,9 @@ Render.prototype = {
   // Fill the waypoint if in editor mode
   fillWaypointEdit: function() {
     const HS = this.hashstate;
-    const wid_waypoint = document.getElementsByClassName('minerva-viewer-waypoint')[0];
+    const wid_waypoint = HS.el.getElementsByClassName('minerva-viewer-waypoint')[0];
     $(wid_waypoint).empty();
-    const form_proto = document.getElementsByClassName('minerva-save_edits_form')[0]
+    const form_proto = HS.el.getElementsByClassName('minerva-save_edits_form')[0]
     const form = form_proto.cloneNode(true);
     wid_waypoint.appendChild(form);
 

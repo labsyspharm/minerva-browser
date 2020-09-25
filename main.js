@@ -2185,6 +2185,14 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   background-color: black;
 }
 
+.minerva-root .minerva-toggle-sidebar {
+  color: #eee;
+}
+
+.minerva-root .minerva-toggle-sidebar:hover {
+  color: #eee;
+}
+
 .minerva-root {
   scrollbar-face-color: #646464;
   scrollbar-base-color: #646464;

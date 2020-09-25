@@ -3099,6 +3099,6 @@ export const build_page = function(options) {
       $('#osd-side-nav').scrollTop(0);
   })
 
-  const duplicateViewButton = document.querySelector('#minerva-duplicate-view');
+  const duplicateViewButton = document.getElementsByClassName('minerva-duplicate-view')[0];
   duplicateViewButton.onclick = makeTwinViewer;
 }

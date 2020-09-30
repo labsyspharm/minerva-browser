@@ -4,6 +4,7 @@ import { unpackGrid } from './render'
 import { remove_undefined } from './render'
 
 import LZString from "lz-string"
+const yaml = require('js-yaml');
 
 /*
  * Hard-coded authentication for optional OMERO connection
@@ -187,6 +188,11 @@ export const HashState = function(exhibit, options) {
   this.exhibit = exhibit;
   this.el = options.el;
   this.id = options.id;
+
+  this.customPopState = options.customPopState || false;
+  this.customPushState = options.customPushState || false;
+  this.customWelcome = options.customWelcome || "";
+  this.hideWelcome = options.hideWelcome || false;
 
   this.state = {
     buffer: {
@@ -867,20 +873,25 @@ HashState.prototype = {
   // Update the url with the hash state
   pushState: function() {
 
-    const url = this.makeUrl(this.hashKeys, this.searchKeys);
-
-    if (this.url == url && !this.changed) {
-      return;
-    }
-
-    if (this.embedded) {
-      history.replaceState(this.design, document.title, url);
+    if (typeof this.customPushState === "function" ) {
+      this.customPushState.call(this);
     }
     else {
-      history.pushState(this.design, document.title, url);
-    }
+      const url = this.makeUrl(this.hashKeys, this.searchKeys);
 
-    this.changed = false;
+      if (this.url == url && !this.changed) {
+        return;
+      }
+
+      if (this.embedded) {
+        history.replaceState(this.design, document.title, url);
+      }
+      else {
+        history.pushState(this.design, document.title, url);
+      }
+
+      this.changed = false;
+    }
   },
 
   // Update the hash state from the url
@@ -893,37 +904,48 @@ HashState.prototype = {
     const search = this.search;
     const searchKeys = this.searchKeys;
 
-    // Take search parameters
-    this.searchKeys.forEach(function(key) {
-      this[key] = search[key];
-    }, this);
-
-    // Accept valid hash
-    this.hashKeys.forEach(function(key) {
-      if (hash.hasOwnProperty(key)) {
-        this[key] = hash[key];
-      }
-    }, this);
-
-    // Handle user-defined shared links
-    if (this.isSharedLink) {
-      this.d = hash.d;
-      const tag_story = this.newTempStory('tag'); 
-      this.stories = this.stories.concat([tag_story]);
-      this.s = this.stories.length - 1;
-      this.pushState();
-      window.onpopstate();
+    if (typeof this.customPopState === "function" ) {
+      this.customPopState.call(this);
     }
-    // Show welcome page if no hash present
-    else if (this.isMissingHash) {
-      this.s = 0; 
-      const welcome = $(this.el).find('.minerva-welcome_modal');
-      const channel_count = welcome.find('.minerva-channel_count')[0];
-      channel_count.innerText = this.channels.length;
-      welcome.modal('show');
+    else {
+      // Take search parameters
+      this.searchKeys.forEach(function(key) {
+        this[key] = search[key];
+      }, this);
 
-      this.pushState();
-      window.onpopstate();
+      // Accept valid hash
+      this.hashKeys.forEach(function(key) {
+        if (hash.hasOwnProperty(key)) {
+          this[key] = hash[key];
+        }
+      }, this);
+
+      // Handle user-defined shared links
+      if (this.isSharedLink) {
+        this.d = hash.d;
+        const tag_story = this.newTempStory('tag'); 
+        this.stories = this.stories.concat([tag_story]);
+        this.s = this.stories.length - 1;
+        this.pushState();
+        window.onpopstate();
+      }
+      // Show welcome page if no hash present
+      else if (this.isMissingHash && !this.hideWelcome) {
+        this.s = 0; 
+        const welcome = $(this.el).find('.minerva-welcome_modal');
+        if (!this.customWelcome) {
+          const channel_count = welcome.find('.minerva-channel_count')[0];
+          channel_count.innerText = this.channels.length;
+        }
+        else {
+          const welcome_body = welcome.find('.modal-body')[0];
+          welcome_body.innerHTML = this.customWelcome;
+        }
+        welcome.modal('show');
+
+        this.pushState();
+        window.onpopstate();
+      }
     }
   },
 
@@ -1075,7 +1097,7 @@ HashState.prototype = {
     waypoint.Pan = [viewport.pan.x, viewport.pan.y];
     waypoint.Zoom = viewport.scale;
 
-    const wid_yaml = jsyaml.safeDump([[[waypoint]]], {
+    const wid_yaml = yaml.safeDump([[[waypoint]]], {
       lineWidth: 40,
       noCompatMode: true,
     });

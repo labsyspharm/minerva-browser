@@ -6,6 +6,7 @@
     "d3": "^5.15.0",
     "d3-svg-legend": "^2.25.6",
     "jquery": "3.5.1",
+    "js-yaml": "^3.14.0",
     "lz-string": "^1.4.4",
     "openseadragon": "^2.4.2",
     "popper.js": "1.16.0",

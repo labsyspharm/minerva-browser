@@ -577,17 +577,6 @@ HashState.prototype = {
     this.changed = true;
   },
 
-  // The individual channels
-  get chans() {
-    return this.design.chans || [];
-  },
-  set chans(_chans) {
-    var design = this.design;
-    design.chans = _chans;
-    this.design = design;
-    this.changed = true;
-  },
-
   // The stories (ie collections of waypoints)
   get stories() {
     return this.design.stories || [];
@@ -792,7 +781,6 @@ HashState.prototype = {
     }) 
 
     this.design = {
-      chans: exhibit.Channels || [],
       layout: exhibit.Layout || {},
       images: exhibit.Images || [],
       header: exhibit.Header || '',
@@ -1064,21 +1052,6 @@ HashState.prototype = {
     }, []);
   },
 
-  // map channel names to their rendering settings
-  channelSettings: function(channels) {
-    const chans = this.chans;
-    if (channels == undefined) {
-      return {}
-    }
-    return channels.reduce(function(map, c){
-      const i = index_name(chans, c);
-      if (i >= 0) {
-        map[c] = chans[i];
-      }
-      return map;
-    }, {});
-  },
-
   // Render current waypoint as configuration-style yaml
   get bufferYaml() {
     const viewport = this.viewport;
@@ -1135,10 +1108,9 @@ export const getAjaxHeaders = function(state, image){
 };
 
 // Return a function for Openseadragon's getTileUrl API
-export const getGetTileUrl = function(image, layer, channelSettings) {
+export const getGetTileUrl = function(image, layer) {
 
-  const colors = layer.Colors;
-  const channels = layer.Channels;
+  const renderList = layer.Render;
 
   // This default function simply requests for rendered jpegs
   const getJpegTile = function(level, x, y) {
@@ -1148,15 +1120,12 @@ export const getGetTileUrl = function(image, layer, channelSettings) {
 
   // Handle Optional AWS lambda functionality rendering images
   if (image.Provider == 'minerva' || image.Provider == 'minerva-public') {
-    const channelList = channels.reduce(function(list, c, i) {
-      const settings = channelSettings[c];
-      if (settings == undefined) {
-        return list;
-      }
+    const channelList = renderList.reduce(function(list, settings, i) {
+
       const allowed = settings.Images;
       if (allowed.indexOf(image.Name) >= 0) {
         const index = settings.Index;
-        const color = colors[i];
+        const color = settings.Color;
         const min = settings.Range[0];
         const max = settings.Range[1];
         const specs = [index, color, min, max];
@@ -1165,11 +1134,10 @@ export const getGetTileUrl = function(image, layer, channelSettings) {
       return list;
     }, []);
 
+    let api = image.Path;
     let channelPath = channelList.join('/');
-    let api = image.Path + '/render-tile/';
     if (image.Path.includes('/prerendered-tile/')) {
       channelPath = layer.Path;
-      api = image.Path;
     }
 
     const getMinervaTile = function(level, x, y) {
@@ -1183,15 +1151,12 @@ export const getGetTileUrl = function(image, layer, channelSettings) {
   }
   // Handle optional Omero functionality for rendering images
   else if (image.Provider == 'omero') {
-    const channelList = channels.reduce(function(list, c, i) {
-      const settings = channelSettings[c];
-      if (settings == undefined) {
-        return list;
-      }
+    const channelList = renderList.reduce(function(list, settings, i) {
+
       const allowed = settings.Images;
       if (allowed.indexOf(image.Name) >= 0) {
         const index = settings.Index;
-        const color = colors[i];
+        const color = settings.Color;
         const min = Math.round(settings.Range[0] * 65535);
         const max = Math.round(settings.Range[1] * 65535);
         list.push(index + '|' + min + ':' + max + '$' + color);

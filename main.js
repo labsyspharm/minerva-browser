@@ -69,7 +69,6 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
       // Iterate through the layers
       for (var j=0; j < layers.length; j++) {
         const layer = layers[j];
-        const channelSettings = hashstate.channelSettings(layer.Channels);
         getAjaxHeaders(hashstate, image).then(function(ajaxHeaders){
           const useAjax = (image.Provider == 'minerva' || image.Provider == 'minerva-public');
           // Add an openseadragon tiled image
@@ -83,7 +82,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
               maxLevel: image.MaxLevel,
               tileWidth: image.TileSize.slice(0,1).pop(),
               tileHeight: image.TileSize.slice(0,2).pop(),
-              getTileUrl: getGetTileUrl(image, layer, channelSettings)
+              getTileUrl: getGetTileUrl(image, layer)
             },
             x: x,
             y: y,

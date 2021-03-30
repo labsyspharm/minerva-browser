@@ -37,13 +37,21 @@ const changeSprings = function(viewer, seconds, stiffness) {
 const newMarkers = function(tileSources, group, active_masks) {
 
   const mask_paths = active_masks.map(m => m.Path);
-  
+
   Object.keys(tileSources)
     .forEach(el => {
-      el === group.Path || mask_paths.includes(el)
-        ? tileSources[el].forEach(t => t.setOpacity(1))
-        : tileSources[el].forEach(t => t.setOpacity(0));
-    })
+      const mask_path_index = mask_paths.indexOf(el);
+      const opacity = (el === group.Path || mask_path_index >=0) ? 1 : 0;
+      tileSources[el].forEach(tiledImage => {
+        tiledImage.setOpacity(opacity);
+        const {world} = tiledImage.viewer || {};
+        if (world && mask_path_index >= 0) {
+          // Reorder tiled images based on current active mask order
+          const itemIndex = world.getItemCount() - 1 - mask_path_index;
+          world.setItemIndex(tiledImage, Math.max(itemIndex, 0));
+        }
+      });
+    });
 };
 
 // Render openseadragon from given hash state

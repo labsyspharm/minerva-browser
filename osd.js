@@ -64,8 +64,6 @@ export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) 
   this.mouseEvent = {};
   this.trackers = [];
   this.eventHandler = eventHandler;
-
-  this.init();
 }
 
 RenderOSD.prototype = {

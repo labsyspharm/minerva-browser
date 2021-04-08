@@ -37,7 +37,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
   const imageName = hashstate.el.getElementsByClassName('minerva-imageName')[0];
   imageName.innerText = images.length == 1
     ? images[0].Description
-    : exhibit.Name
+    : hashstate.exhibit.Name
 
   // Read the grid arangement from the configuration file
   const numRows = grid.length;
@@ -3043,7 +3043,10 @@ const build_page_with_exhibit = function(exhibit, options) {
   const tileSources = {};
   const osd = new RenderOSD(hashstate, viewer, tileSources, eventHandler);
   const render = new Render(hashstate, osd, eventHandler);
-  const init = render.init.bind(render);
+  const init = () => {
+    osd.init.call(osd);
+    render.init.call(render);
+  }
 
   arrange_images(viewer, tileSources, hashstate, init);
 }
@@ -3073,6 +3076,7 @@ export const build_page = function(options) {
   // fill the main div with content
   const el = document.getElementById(options.id);
   el.innerHTML = exhibitHTML;
+  const home_el = el.getElementsByClassName('minerva-home-button')[0];
   const osd_el = el.getElementsByClassName('minerva-openseadragon')[0];
   const zoom_out_el = el.getElementsByClassName('minerva-zoom-out')[0];
   const zoom_in_el = el.getElementsByClassName('minerva-zoom-in')[0];

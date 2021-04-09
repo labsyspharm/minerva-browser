@@ -770,15 +770,19 @@ HashState.prototype = {
     const cgs = exhibit.Groups || [];
     const masks = exhibit.Masks || [];
     var stories = exhibit.Stories || [];
-    stories = stories.map(story => {
+    stories = stories.reduce((_stories, story) => {
       story.Waypoints = story.Waypoints.map(waypoint => {
         if (waypoint.Overlay != undefined) {
           waypoint.Overlays = [waypoint.Overlay];
         }
         return waypoint;
       })
-      return story;
-    }) 
+      // Require story to have Waypoints
+      if (story.Waypoints.length < 1) {
+        return _stories; 
+      }
+      return _stories.concat([story]);
+    }, [])
 
     this.design = {
       layout: exhibit.Layout || {},
@@ -788,6 +792,7 @@ HashState.prototype = {
       is3d: exhibit['3D'] || false,
       z_scale: exhibit['ZPerMicron'] || 0,
       default_group: exhibit.DefaultGroup || '',
+      first_group: exhibit.FirstGroup || '',
       stories: stories,
       masks: masks,
       cgs: cgs
@@ -795,14 +800,21 @@ HashState.prototype = {
 
     const outline_story = this.newTempStory('outline');
     this.stories = [outline_story].concat(this.stories);
-    const explore_story = this.newTempStory('explore');
-    this.stories = this.stories.concat([explore_story]);
+
+    if (this.stories.length > 1) {
+      const explore_story = this.newTempStory('explore');
+      this.stories = this.stories.concat([explore_story]);
+    }
   },
 
   // Create an empty story from current hash state
   newTempStory: function(mode) {
     const exhibit = this.exhibit;
-    const group = this.group;
+    let first_group = this.design.first_group;
+    if (index_name(this.cgs, first_group) == -1) {
+      first_group = this.group; 
+    }
+    const group = mode != 'tag' ? first_group : this.group;
     const a = this.a;
     const o = this.o;
     const p = this.p;

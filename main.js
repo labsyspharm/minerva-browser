@@ -56,6 +56,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
 
   const cellHeight = (1 + spacingFraction) / numRows - spacingFraction;
   const cellWidth = cellHeight * maxImageWidth / maxImageHeight;
+  const aspect_ratio = (cellWidth * numColumns) / (cellHeight * numRows);
 
   // Iterate through the rows
   for (var yi = 0; yi < numRows; yi++) {
@@ -113,7 +114,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
               // Initialize hash state
               nLoaded += 1;
               if (nLoaded == nTotal) {
-                init();
+                init(aspect_ratio);
               }
             }
           });
@@ -2237,6 +2238,11 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   left: 3px;
   top: 1rem;
 }
+
+.minerva-root .minerva-sidebar-menu.minimal {
+  margin-left: -314px;
+}
+
 .minerva-root .minerva-sidebar-menu.toggled {
   margin-left: -366px;
 }
@@ -3043,9 +3049,9 @@ const build_page_with_exhibit = function(exhibit, options) {
   const tileSources = {};
   const osd = new RenderOSD(hashstate, viewer, tileSources, eventHandler);
   const render = new Render(hashstate, osd, eventHandler);
-  const init = () => {
+  const init = (aspect_ratio) => {
     osd.init.call(osd);
-    render.init.call(render);
+    render.init.call(render, aspect_ratio);
   }
 
   arrange_images(viewer, tileSources, hashstate, init);
@@ -3080,6 +3086,9 @@ export const build_page = function(options) {
   const osd_el = el.getElementsByClassName('minerva-openseadragon')[0];
   const zoom_out_el = el.getElementsByClassName('minerva-zoom-out')[0];
   const zoom_in_el = el.getElementsByClassName('minerva-zoom-in')[0];
+  if (options.homeUrl != undefined) {
+    home_el.href = options.homeUrl; 
+  }
   osd_el.id = options.id + '-openseadragon';
   zoom_out_el.id = options.id + '-zoom-out';
   zoom_in_el.id = options.id + '-zoom-in';

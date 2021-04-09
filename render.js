@@ -218,9 +218,12 @@ export const Render = function(hashstate, osd, eventHandler) {
 
 Render.prototype = {
 
-  init: function() {
+  init: function(aspect_ratio) {
 
     const HS = this.hashstate;
+    // Go to true center
+    HS.v = [HS.v[0], 0.5 * aspect_ratio, 0.5];
+    HS.newExhibit();
 
     // Read hash
     window.onpopstate = (function(e) {
@@ -553,7 +556,8 @@ Render.prototype = {
     // Enable edit UI if in edit mode
     displayOrNot(prefix+'.minerva-editControls', edit);
     // Enable standard UI if not in edit mode
-    displayOrNot(prefix+'.minerva-waypointControls', !edit);
+    displayOrNot(prefix+'.minerva-waypointControls', !edit && HS.totalCount > 1);
+    displayOrNot(prefix+'.minerva-waypointCount', !edit && HS.totalCount > 1);
     displayOrNot(prefix+'.minerva-waypointName', !edit);
     
     // Show crosshair cursor if drawing
@@ -562,6 +566,10 @@ Render.prototype = {
     greenOrWhite(prefix+'.minerva-draw-switch *', drawing && (drawType == "box"));
     greenOrWhite(prefix+'.minerva-lasso-switch *', drawing && (drawType == "lasso"));
     greenOrWhite(prefix+'.minerva-arrow-switch *', drawing && (drawType == "arrow"));
+
+    // Special minmial nav if no text
+    const minimal_sidebar = !edit && HS.totalCount == 1 && !decode(HS.d);
+    classOrNot(prefix+'.minerva-sidebar-menu', minimal_sidebar, 'minimal');
   },
 
   // Load speech-synthesis from AWS Polly
@@ -862,7 +870,7 @@ Render.prototype = {
     // Remove existing stories
     clearChildren(items);
 
-    if (HS.waypoint.Mode == 'outline') {
+    if (HS.waypoint.Mode == 'outline' && HS.totalCount > 1) {
       var toc_label = document.createElement('p');
       toc_label.innerText = 'Table of Contents';
       items.appendChild(toc_label);
@@ -871,7 +879,7 @@ Render.prototype = {
       var sid_item = document.createElement('div');
       var sid_list = document.createElement('ol');
       HS.stories.forEach(function(story, sid) {
-        if (story.Mode == undefined || story.Mode == 'outline') {
+        if (story.Mode != 'explore') {
           this.addStory(story, sid, sid_list);
         }
       }, this);

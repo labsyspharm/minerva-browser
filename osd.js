@@ -538,7 +538,7 @@ RenderOSD.prototype = {
           $(div).css('cursor', 'pointer');
         },
         clickHandler: (function(event) {
-          const [s, w] = el.split('-').slice(2);
+          const [s, w] = el.split('-').slice(-3,-1);
           event.preventDefaultAction = false;
           HS.s = s;
           HS.w = w;

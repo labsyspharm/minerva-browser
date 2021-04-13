@@ -2559,7 +2559,7 @@ const exhibitHTML = `
                             </div>
                             <div class="col-8">
                               <div class="minerva-audioControls">
-                                <audio style="height: 25px; width:100% minerva-audioPlayback" controls>
+                                <audio style="height: 25px; width:100%" class="minerva-audioPlayback" controls>
                                   <source class="minerva-audioSource" type="audio/mp3" src="">
                                 </audio> 
                               </div>

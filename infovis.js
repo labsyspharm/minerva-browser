@@ -519,6 +519,7 @@ infovis.renderScatterplot = function(wid_waypoint, id, visdata, events, eventHan
 
 infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, eventHandler){
 
+    var prefix = '#'+id+'-';
     if (d3.select(prefix+"axis-svg").empty() ) {
         //eventhandler
         var eventHandler = eventHandler;

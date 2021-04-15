@@ -517,7 +517,19 @@ infovis.renderScatterplot = function(wid_waypoint, id, visdata, events, eventHan
     });
 };
 
-infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, eventHandler){
+infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, eventHandler) {
+
+    // Sample k elements from pool
+    const sampleSize = (pool, k) => {
+      const len = pool.length;
+      const count = Math.min(k, len);
+      if (count <= 0) {
+        return [];
+      } 
+      const selected = new Set();
+      while (selected.add(Math.random() * len | 0).size < count) {}
+      return [...selected].map(i => pool[i]);
+    }
 
     var prefix = '#'+id+'-';
     if (d3.select(prefix+"axis-svg").empty() ) {
@@ -557,16 +569,16 @@ infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, ev
         var div = d3.select("#" + id).append('div')
             .style('width', fullWidth + 'px')
             .style('height', fullHeight + 'px')
-        // .style('background-color', 'black');
 
         div.append("svg")
+            .style('z-index', '1')
+            .style('position', 'absolute')
             .attr('id', id+'-axis-svg')
             .attr('class', 'plot');
 
         var divLegend = d3.select("#" + id).append('div')
             .style('width', fullWidth + 'px')
             .style('height', 100 + 'px')
-        // .style('background-color', 'black');
 
         divLegend
             .append("svg")
@@ -574,6 +586,8 @@ infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, ev
 
         //add canvas (for the actual plot)
         div.append('canvas')
+            .style('z-index', '2')
+            .style('position', 'absolute')
             .attr('id', id+'-plot-canvas')
             .attr('class', 'plot');
 
@@ -596,7 +610,7 @@ infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, ev
 
             // selected sample random numbers -- this is the subset of points
             // drawn during 'zoom' events
-            var randomIndex = _.sampleSize(data, subsetSize);
+            var randomIndex = sampleSize(data, subsetSize);
 
             var pointRadius = 1.5, opacity = 0.5;
             if (data.length <= 100) {
@@ -844,7 +858,7 @@ infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, ev
                 .range(colors);
 
             // the legend shows the clusters in a different order, defined by the user
-            sortedColors = colors.slice().sort(function (a, b) {
+            var sortedColors = colors.slice().sort(function (a, b) {
                 return order.indexOf(labels[colors.indexOf(a)]) - order.indexOf(labels[colors.indexOf(b)]);
             });
             var sortedColor = d3.scaleOrdinal()

@@ -2501,6 +2501,22 @@ body .tooltip {
 .minerva-root .axis--x path {
     display: none;
 }
+
+.minerva-root .axis path,
+.minerva-root .axis line {
+  fill: none;
+  stroke: white;
+  shape-rendering: crispEdges;
+}
+
+.minerva-root .tick line {
+  opacity: 0.2;
+}
+
+.minerva-root .legend {
+  z-index: 3;
+  float:left;
+}
 `
 
 const exhibitHTML = `

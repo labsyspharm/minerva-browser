@@ -2883,27 +2883,35 @@ const exhibitHTML = `
                     </button>
                 </div>
                 <div class="modal-body">
-                    You're looking at an image layering
-                    <span class="minerva-channel_count"></span>
-                    CyCIF markers.
-                    Use the <i class="fas fa-arrow-left"></i>
-                    and <i class="fas fa-arrow-right"></i>
-                    arrows to move between highlighted image regions.
-                    Click <i class="fas fa-list-ul"></i>
-                    to return here to an overview of the full image.
-                    Use <i class="fas fa-search-minus"></i> to zoom out
-                    and <i class="fas fa-search-plus"></i> to zoom in.
-                    </br>
-                    </br>
-                    To share your own highlighted image regions,
-                    click <i class="fas fa-location-arrow"></i> to
-                    point an arrow at a small feature,
-                    click <i class="fas fa-bullseye"></i> to select
-                    a feature with a custom shape, and
-                    click <i class="fas fa-crosshairs"></i> to share a
-                    boundary around a rectangular region.
-                    Click <i class="fas fa-clone"></i> to open a
-                    new window with shared navigation.
+                    <div class="pb-2">
+                      <span class="minerva-welcome-markers">
+                        You're looking at an image layering
+                        <span class="minerva-channel_count"></span>
+                        CyCIF markers.
+                      </span>
+                      <span class="minerva-welcome-nav">
+                        Use the <i class="fas fa-arrow-left"></i>
+                        and <i class="fas fa-arrow-right"></i>
+                        arrows to move between highlighted image regions.
+                        Click <i class="fas fa-list-ul"></i>
+                        to return here to an overview of the full image.
+                        Use <i class="fas fa-search-minus"></i> to zoom out
+                        and <i class="fas fa-search-plus"></i> to zoom in.
+                      </span>
+                    </div>
+                    <div>
+                      <span class="minerva-welcome-tools">
+                        To share your own highlighted image regions,
+                        click <i class="fas fa-location-arrow"></i> to
+                        point an arrow at a small feature,
+                        click <i class="fas fa-bullseye"></i> to select
+                        a feature with a custom shape, and
+                        click <i class="fas fa-crosshairs"></i> to share a
+                        boundary around a rectangular region.
+                        Click <i class="fas fa-clone"></i> to open a
+                        new window with shared navigation.
+                      </span>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

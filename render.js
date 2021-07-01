@@ -570,6 +570,11 @@ Render.prototype = {
     // Special minmial nav if no text
     const minimal_sidebar = !edit && HS.totalCount == 1 && !decode(HS.d);
     classOrNot(prefix+'.minerva-sidebar-menu', minimal_sidebar, 'minimal');
+    displayOrNot(prefix+'.minerva-welcome-nav', !minimal_sidebar);
+
+    // H&E should not display number of cycif markers
+    const is_h_e = HS.group.Name == 'H&E';
+    displayOrNot(prefix+'.minerva-welcome-markers', !is_h_e);
   },
 
   // Load speech-synthesis from AWS Polly

@@ -4,30 +4,38 @@ import { legendColor } from 'd3-svg-legend'
 import colorbrewer from 'colorbrewer'
 var infovis = {};
 
-const renderVegaLite = function(wid_waypoint, id, visdata, events, eventHandler){
+const renderVegaLite = function(wid_waypoint, id, visdata, events){
   try {
-    embed(`#${id}`, visdata);
-    return Promise.resolve();
+    return embed(`#${id}`, visdata, {
+      tooltip: false,
+      actions: false,
+      theme: 'dark'
+    })
+    .then(result => {
+      result.view.addEventListener('click', function(event, item) {
+        events.clickHandler(item.datum)
+      });
+    }).catch(console.warn);
   }
    catch (error) {
     throw error;
   }
 }
 
-infovis.renderMatrix = function(wid_waypoint, id, visdata, events, eventHandler) {
-  return renderVegaLite(wid_waypoint, id, visdata, events, eventHandler);
+infovis.renderMatrix = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events);
 }
 
-infovis.renderBarChart = function(wid_waypoint, id, visdata, events, eventHandler) {
-  return renderVegaLite(wid_waypoint, id, visdata, events, eventHandler);
+infovis.renderBarChart = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events);
 }
 
-infovis.renderScatterplot = function(wid_waypoint, id, visdata, events, eventHandler) {
-  return renderVegaLite(wid_waypoint, id, visdata, events, eventHandler);
+infovis.renderScatterplot = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events);
 }
 
-infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events, eventHandler) {
-  return renderVegaLite(wid_waypoint, id, visdata, events, eventHandler);
+infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events);
 }
 
 export default infovis;

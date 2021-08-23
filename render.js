@@ -205,9 +205,8 @@ const newCopyButton = function() {
 };
 
 // Render the non-openseadragon UI
-export const Render = function(hashstate, osd, eventHandler) {
+export const Render = function(hashstate, osd) {
 
-  this.eventHandler = eventHandler;
   this.trackers = hashstate.trackers;
   this.pollycache = hashstate.pollycache;
   this.showdown = new showdown.Converter();
@@ -1003,7 +1002,8 @@ Render.prototype = {
     }
 
     // Handle click from plot that selects a mask
-    const maskHandler = function(name) {
+    const maskHandler = function(d) {
+      var name = d.type;
       var escaped_name = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = RegExp(escaped_name,'gi');
       const m = index_regex(HS.masks, re);
@@ -1014,7 +1014,9 @@ Render.prototype = {
     }
 
     // Handle click from plot that selects a mask and channel
-    const chanAndMaskHandler = function(mask, chan) {
+    const chanAndMaskHandler = function(d) {
+      var chan = d.channel
+      var mask = d.type
       var escaped_mask = mask.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re_mask = RegExp(escaped_mask,'gi');
       const m = index_regex(HS.masks, re_mask);
@@ -1038,7 +1040,8 @@ Render.prototype = {
     }
 
     // Handle click from plot that selects a cell position
-    const arrowHandler = function(cellPosition){
+    const arrowHandler = function(d){
+        var cellPosition = [parseInt(d['X_position']), parseInt(d['Y_position'])]
         var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
         //change hashstate vars
         HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
@@ -1068,7 +1071,7 @@ Render.prototype = {
       // Run infovis renderer
       const tmp = renderer(el, id, waypoint[visType], {
         'clickHandler': clickHandler
-      }, THIS.eventHandler);
+      });
       // Finish wayoint after renderer runs
       tmp.then(() => finish_waypoint(visType));
     }
@@ -1098,7 +1101,7 @@ Render.prototype = {
       const wid_code = Array.from(wid_waypoint.getElementsByTagName('code'));
       const el = wid_code.filter(code => code.innerText == visType)[0];
       const new_div = document.createElement('div');
-      new_div.style.cssText = 'position:relative';
+      new_div.style.cssText = 'width:100%';
       new_div.className = visType + '-' + HS.s + '-' + HS.w;
       new_div.id = visType + '-' + HS.id + '-' + HS.s + '-' + HS.w;
 

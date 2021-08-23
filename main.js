@@ -3056,7 +3056,7 @@ const build_page_with_exhibit = function(exhibit, options) {
   const hashstate = new HashState(exhibit, options);
   const tileSources = {};
   const osd = new RenderOSD(hashstate, viewer, tileSources, eventHandler);
-  const render = new Render(hashstate, osd, eventHandler);
+  const render = new Render(hashstate, osd);
   const init = (aspect_ratio) => {
     osd.init.call(osd);
     render.init.call(render, aspect_ratio);

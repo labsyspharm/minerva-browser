@@ -193,6 +193,7 @@ export const HashState = function(exhibit, options) {
   this.customPushState = options.customPushState || false;
   this.customWelcome = options.customWelcome || "";
   this.hideWelcome = options.hideWelcome || false;
+  this.noHome = options.noHome || false;
 
   this.state = {
     buffer: {
@@ -211,7 +212,7 @@ export const HashState = function(exhibit, options) {
     p: [],
     name: '',
     description: '',
-  edit: false,
+    edit: false,
     drawing: 0
   };
 

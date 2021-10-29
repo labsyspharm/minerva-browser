@@ -3104,9 +3104,7 @@ export const build_page = function(options) {
   if (options.homeUrl != undefined) {
     home_el.href = options.homeUrl; 
   }
-  else if (options.homeUrl === false){
-    home_el.className = 'd-none';
-  }
+  options.noHome = options.noHome || (options.homeUrl === false);
   osd_el.id = options.id + '-openseadragon';
   zoom_out_el.id = options.id + '-zoom-out';
   zoom_in_el.id = options.id + '-zoom-in';

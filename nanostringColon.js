@@ -1,4 +1,3 @@
-const slideColonicPatch = require('./slideColonicPatch.json');
 import { addMask, addEListener, buildCartoonImage, addHintText, addSlidePolygon} from './nanostringUtils';
 
 

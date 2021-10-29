@@ -3101,10 +3101,10 @@ export const build_page = function(options) {
   const osd_el = el.getElementsByClassName('minerva-openseadragon')[0];
   const zoom_out_el = el.getElementsByClassName('minerva-zoom-out')[0];
   const zoom_in_el = el.getElementsByClassName('minerva-zoom-in')[0];
-  if (options.homeUrl != undefined) {
+  options.noHome = !options.homeUrl;
+  if (!options.noHome) {
     home_el.href = options.homeUrl; 
   }
-  options.noHome = options.noHome || (options.homeUrl === false);
   osd_el.id = options.id + '-openseadragon';
   zoom_out_el.id = options.id + '-zoom-out';
   zoom_in_el.id = options.id + '-zoom-in';

@@ -22,14 +22,9 @@
     "@babel/core": "^7.14.6",
     "@babel/preset-env": "^7.14.7",
     "babel-loader": "^8.2.2",
-<<<<<<< HEAD
     "webpack": "^5.44.0",
     "webpack-cli": "^4.7.2",
     "webpack-dev-server": "^4.3.1"
-=======
-    "webpack": "^5.61.0",
-    "webpack-cli": "^4.9.1"
->>>>>>> fdd1f9c (improved hiding of home button)
   },
   "scripts": {
     "start:dev": "webpack serve --mode development",
@@ -37,15 +32,8 @@
     "build": "webpack --mode production"
   },
   "name": "minerva-browser",
-<<<<<<< HEAD
-<<<<<<< HEAD
+
   "version": "3.1.0",
-=======
-  "version": "3.2.1",
->>>>>>> 55ae79c (option to hide homeUrl)
-=======
-  "version": "3.2.2",
->>>>>>> fdd1f9c (improved hiding of home button)
   "description": "A storytelling interface atop openseadragon",
   "main": "index.js",
   "repository": {

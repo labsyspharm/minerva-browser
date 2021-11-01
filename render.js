@@ -571,6 +571,11 @@ Render.prototype = {
     const minimal_sidebar = !edit && HS.totalCount == 1 && !decode(HS.d);
     classOrNot(prefix+'.minerva-sidebar-menu', minimal_sidebar, 'minimal');
     displayOrNot(prefix+'.minerva-welcome-nav', !minimal_sidebar);
+    // Disable sidebar if no content
+    if (minimal_sidebar && noHome) {
+      classOrNot(prefix+'.minerva-sidebar-menu', true, 'toggled');
+      displayOrNot(prefix+'.minerva-toggle-sidebar', false);
+    }
 
     // H&E should not display number of cycif markers
     const is_h_e = HS.group.Name == 'H&E';

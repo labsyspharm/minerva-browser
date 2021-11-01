@@ -30,7 +30,7 @@
     "build": "webpack --mode production"
   },
   "name": "minerva-browser",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "description": "A storytelling interface atop openseadragon",
   "main": "index.js",
   "repository": {

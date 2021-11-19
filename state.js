@@ -929,19 +929,21 @@ HashState.prototype = {
         window.onpopstate();
       }
       // Show welcome page if no hash present
-      else if (this.isMissingHash && !this.hideWelcome) {
+      else if (this.isMissingHash) {
+        if (!this.hideWelcome) {
+          const welcome = $(this.el).find('.minerva-welcome_modal');
+          if (!this.customWelcome) {
+            const channel_count = welcome.find('.minerva-channel_count')[0];
+            channel_count.innerText = this.channels.length;
+          }
+          else {
+            const welcome_body = welcome.find('.modal-body')[0];
+            welcome_body.innerHTML = this.customWelcome;
+          }
+          welcome.modal('show');
+        }
+        // Set default story even if welcome hidden
         this.s = 0; 
-        const welcome = $(this.el).find('.minerva-welcome_modal');
-        if (!this.customWelcome) {
-          const channel_count = welcome.find('.minerva-channel_count')[0];
-          channel_count.innerText = this.channels.length;
-        }
-        else {
-          const welcome_body = welcome.find('.modal-body')[0];
-          welcome_body.innerHTML = this.customWelcome;
-        }
-        welcome.modal('show');
-
         this.pushState();
         window.onpopstate();
       }

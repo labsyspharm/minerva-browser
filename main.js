@@ -6,6 +6,7 @@ import { HashState } from "./state"
 import { Render } from './render'
 import { RenderOSD } from './osd'
 import * as d3 from "d3"
+import * as nanostringConfig from './nanostringStoryConfig';
 
 // Flatten an array of arrays
 const flatten = function(items) {

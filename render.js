@@ -438,6 +438,11 @@ Render.prototype = {
       }
       // Add segmentation mask menu
       this.addMasks();
+
+      // Add a footer, if applicable
+      if (HS.waypoint.Footer) {
+        this.addFooter();
+      };
       // Add stories navigation menu
       this.newStories();
 
@@ -708,6 +713,15 @@ Render.prototype = {
     });
   },
 
+  //Nanostring edit: Add footer from the exhibit.json file
+  addFooter: function() {
+    const HS = this.hashstate;
+    const footerP = document.createElement('p');
+    const footerText = HS.waypoint.Footer;
+    footerP.innerHTML = this.showdown.makeHtml(footerText);
+    HS.el.getElementsByClassName('minerva-mask-layers')[0].appendChild(footerP)
+  },
+
   // Add list of channel groups
   addGroups: function() {
     const HS = this.hashstate;
@@ -882,13 +896,17 @@ Render.prototype = {
 
       var sid_item = document.createElement('div');
       var sid_list = document.createElement('ol');
+      // NanoString Change - to allow for the Appendix to appear on the Table of Contents
       HS.stories.forEach(function(story, sid) {
-        if (story.Mode != 'explore') {
           this.addStory(story, sid, sid_list);
-        }
       }, this);
       sid_item.appendChild(sid_list);
       items.appendChild(sid_item);
+      //Nanostring change to allow exhibit.json to allow for text below the Table of Contents
+      const tocDescription = document.createElement('p');
+      const tocText = HS.stories[1]["Description"];
+      tocDescription.innerHTML = this.showdown.makeHtml(tocText);
+      items.appendChild(tocDescription);
     }
 
     const footer = document.createElement('p')
@@ -985,7 +1003,7 @@ Render.prototype = {
     });
 
     // All categories of possible visualization types
-    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot"];
+    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "Other", "MaskAndPan"];
     
     const waypointVis = new Set(allVis.filter(v => waypoint[v]));
     const renderedVis = new Set();
@@ -999,6 +1017,12 @@ Render.prototype = {
         $(wid_waypoint).css('height', '');
         THIS.colorMarkerText(wid_waypoint);
       }
+
+      // NanoString edit: change all url links to open in a new tab (had to filter our href=javascript;;)
+      const links = document.querySelectorAll('a[href*="http"]:not(a[href*="javascript"])');
+      links.forEach((link) => {
+          link.setAttribute('target', '_blank');
+      })  
     }
 
     // Handle click from plot that selects a mask
@@ -1024,17 +1048,13 @@ Render.prototype = {
         HS.m = [m];
       }
       
-      const c = index_name(HS.cgs, chan);
-      if (c >= 0) {
-        HS.g = c;
-      }
-      else {
-        var escaped_chan = chan.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const re_chan = RegExp(escaped_chan,'gi');
-        const r_c = index_regex(HS.cgs, re_chan);
-        if (r_c >= 0) {
-          HS.g = r_c;
-        }
+      const channelsList = HS.cgs[0].Channels
+      const channelIndex = channelsList.indexOf(chan)
+      // Nanostring change - shifts masks over 1 to account for All cells/structures mask
+      if (channelIndex >= 0) {
+        HS.g = channelIndex + 1;
+      } else {
+        HS.g = 0
       }
       THIS.newView(true);
     }
@@ -1042,6 +1062,9 @@ Render.prototype = {
     // Handle click from plot that selects a cell position
     const arrowHandler = function(d){
         var cellPosition = [parseInt(d['X_position']), parseInt(d['Y_position'])]
+        if (Number.isNaN(cellPosition[0])) {
+          return;
+        };
         var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
         //change hashstate vars
         HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
@@ -1049,6 +1072,27 @@ Render.prototype = {
         THIS.osd.newView(true);
         //delay visible arrow until animation end
         HS.a = [viewportCoordinates.x,viewportCoordinates.y];
+    }
+
+    const MaskAndPan = function(d){
+        // Pan and Zoom to coordinates from data file
+        var cellPosition = [parseInt(d['X_position']), parseInt(d['Y_position'])]
+        if (Number.isNaN(cellPosition[0])) {
+          return;
+        };
+        var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
+        //change hashstate vars
+        HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
+        // Add Mask specified in data file
+        var name = d.type;
+        var escaped_name = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = RegExp(escaped_name,'gi');
+        const m = index_regex(HS.masks, re);
+        if (m >= 0) {
+          HS.m = [m];
+        }
+        //render without menu redraw
+        THIS.osd.newView(true);
     }
 
 
@@ -1059,14 +1103,18 @@ Render.prototype = {
         'VisMatrix': infovis.renderMatrix,
         'VisBarChart': infovis.renderBarChart,
         'VisScatterplot': infovis.renderScatterplot,
-        'VisCanvasScatterplot': infovis.renderCanvasScatterplot
+        'VisCanvasScatterplot': infovis.renderCanvasScatterplot,
+        'Other': infovis.renderOther,
+        "MaskAndPan": infovis.renderMaskAndPan 
       }[visType]
       // Select click handler based on renderer given in markdown
       const clickHandler = {
         'VisMatrix': chanAndMaskHandler,
-        'VisBarChart': maskHandler,
+        'VisBarChart': chanAndMaskHandler,
         'VisScatterplot': arrowHandler,
-        'VisCanvasScatterplot': arrowHandler
+        'VisCanvasScatterplot': arrowHandler,
+        'Other': arrowHandler,
+        'MaskAndPan': MaskAndPan
       }[visType]
       // Run infovis renderer
       const tmp = renderer(el, id, waypoint[visType], {
@@ -1119,6 +1167,12 @@ Render.prototype = {
         renderVis(visType, wid_waypoint, new_div.id);
       }
     })
+
+    // Nanostring-specific event - for adding content to a specific waypoint
+    const currentWaypointInfo = {waypointNum: HS.w, storyNum: HS.s, domElement: wid_waypoint, osd: this.osd, finish_waypoint}
+    const waypointBuildEvent = new CustomEvent('waypointBuildEvent', {
+      detail: currentWaypointInfo});
+    document.dispatchEvent(waypointBuildEvent);
 
     finish_waypoint('');
 

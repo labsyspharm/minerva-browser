@@ -3083,7 +3083,9 @@ const build_page_with_exhibit = function(exhibit, options) {
   }
 
   arrange_images(viewer, tileSources, hashstate, init);
-}
+
+  return viewer;
+};
 
 export const build_page = function(options) {
 
@@ -3128,25 +3130,25 @@ export const build_page = function(options) {
   zoom_out_el.id = options.id + '-zoom-out';
   zoom_in_el.id = options.id + '-zoom-in';
 
-  var exhibit = options.exhibit;
-  options.el = el;
+  $('.js-toggle-osd-side-nav').click(function() {
+    $('#osd-side-nav').position().top == 0
+      ? $('#osd-side-nav').css('top', '75vh')
+      : $('#osd-side-nav').css('top', 0);
+    $('#osd-side-nav').scrollTop(0);
+  });
 
+  options.el = el;
+  const duplicateViewButton = el.getElementsByClassName('minerva-duplicate-view')[0];
+  duplicateViewButton.onclick = makeTwinViewer;
+
+  var exhibit = options.exhibit;
   if (typeof exhibit === 'string' || exhibit instanceof String) {
-    fetch(exhibit)
+    return fetch(exhibit)
       .then(response => response.json())
       .then(data => build_page_with_exhibit(data, options));
   }
   else {
-    build_page_with_exhibit(exhibit, options);
+    return Promise.resolve(build_page_with_exhibit(exhibit, options));
   }
 
-  $('.js-toggle-osd-side-nav').click(function() {
-      $('#osd-side-nav').position().top == 0 
-          ? $('#osd-side-nav').css('top', '75vh')
-          : $('#osd-side-nav').css('top', 0);
-      $('#osd-side-nav').scrollTop(0);
-  })
-
-  const duplicateViewButton = el.getElementsByClassName('minerva-duplicate-view')[0];
-  duplicateViewButton.onclick = makeTwinViewer;
-}
+};

@@ -222,6 +222,15 @@ export const HashState = function(exhibit, options) {
 
 HashState.prototype = {
 
+  init: function(aspect_ratio) {
+    const portion = 0.5
+    const limitedHeight = portion * window.innerHeight;
+    const limitedWidth = limitedHeight * aspect_ratio;
+    const idealWidth = limitedWidth / window.innerWidth;
+    const zoom = Math.min(portion, idealWidth);
+    this.v = [zoom, this.v[1], this.v[2]];
+  },
+
   /*
    * Editor buffers
    */ 

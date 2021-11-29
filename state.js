@@ -207,7 +207,7 @@ export const HashState = function(exhibit, options) {
     g: 0,
     s: 0,
     a: [-100, -100],
-    v: [0.5, 0.5, 0.5],
+    v: [1e-100, 0.5, 0.5],
     o: [-100, -100, 1, 1],
     p: [],
     name: '',

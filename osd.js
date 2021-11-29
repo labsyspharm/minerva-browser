@@ -63,6 +63,7 @@ export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) 
   this.viewer = viewer;
   this.mouseEvent = {};
   this.trackers = [];
+  this.aspect_ratio = 1;
   this.eventHandler = eventHandler;
 }
 
@@ -79,8 +80,9 @@ RenderOSD.prototype = {
   },
 
   // Initialize connection to openseadragon
-  init: function () {
+  init: function (aspect_ratio) {
   
+    this.aspect_ratio = aspect_ratio;
     const viewer = this.viewer;
     const HS = this.hashstate;
     const THIS = this;
@@ -553,8 +555,12 @@ RenderOSD.prototype = {
   // Pan to viewport given by hash state
   activateViewport: function() {
     const HS = this.hashstate;
+    const ar = this.aspect_ratio;
     const viewport = this.viewer.viewport;
+    const scale = HS.viewport.scale;
     viewport.panTo(HS.viewport.pan);
-    viewport.zoomTo(HS.viewport.scale);
+    viewport.zoomTo(
+      ar < 1 ? scale * ar : scale
+    );
   }
 }

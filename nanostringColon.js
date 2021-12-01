@@ -101,12 +101,7 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
     const svgNS = 'http://www.w3.org/2000/svg';
     const showdown_text = new showdown.Converter({tables: true});
 
-    if (waypointNum === 0 && storyNum === 0){
-        // remove the home button
-        document.querySelector('.minerva-home-button').style.display = 'none';
-    }
-
-    else if (waypointNum === 0 && storyNum === 1) {
+    if (waypointNum === 0 && storyNum === 1) {
         const svgContainer = document.createElement('object');
         svgContainer.data = 'svgs/colonGross.svg'
         svgContainer.type = 'image/svg+xml'

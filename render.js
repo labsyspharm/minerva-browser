@@ -801,26 +801,6 @@ Render.prototype = {
         }
       }
     }
-    
-    var moreEl = document.createElement('a');
-    if (selected && show_more && s_w) {
-      const opacity = 'opacity: ' +  + ';';
-      moreEl = Object.assign(moreEl, {
-        className : 'text-white',
-        style: 'position: absolute; right: 5px;',
-        href: 'javascript:;',
-        innerText: 'MORE',
-      });
-      aEl.appendChild(moreEl);
-
-      // Update Waypoint
-      $(moreEl).click(this, function(e) {
-        HS.s = s_w[0];
-        HS.w = s_w[1];
-        HS.pushState();
-        window.onpopstate();
-      });
-    }
 
     // Append channel group to element
     el.appendChild(aEl);
@@ -1004,7 +984,7 @@ Render.prototype = {
     });
 
     // All categories of possible visualization types
-    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "Other", "MaskAndPan"];
+    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "Other", "MaskAndPan", "chanAndMaskandPan"];
     
     const waypointVis = new Set(allVis.filter(v => waypoint[v]));
     const renderedVis = new Set();
@@ -1034,6 +1014,37 @@ Render.prototype = {
       const m = index_regex(HS.masks, re);
       if (m >= 0) {
         HS.m = [m];
+      }
+      THIS.newView(true);
+    }
+
+    // Handle click from plot that selects a mask and channel
+    const chanAndMaskandPanHandler = function(d) {
+      // Pan and Zoom to coordinates from data file
+      var cellPosition = [parseInt(d['X_position']), parseInt(d['Y_position'])]
+      if (Number.isNaN(cellPosition[0])) {
+        return;
+      };
+      var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
+      //change hashstate vars
+      HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
+      //Change channels and masks based on data file
+      var chan = d.channel
+      var mask = d.type
+      var escaped_mask = mask.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re_mask = RegExp(escaped_mask,'gi');
+      const m = index_regex(HS.masks, re_mask);
+      if (m >= 0) {
+        HS.m = [m];
+      }
+      
+      const channelsList = HS.cgs[0].Channels
+      const channelIndex = channelsList.indexOf(chan)
+      // Nanostring change - shifts masks over 1 to account for All cells/structures mask
+      if (channelIndex >= 0) {
+        HS.g = channelIndex + 1;
+      } else {
+        HS.g = 0
       }
       THIS.newView(true);
     }
@@ -1106,7 +1117,8 @@ Render.prototype = {
         'VisScatterplot': infovis.renderScatterplot,
         'VisCanvasScatterplot': infovis.renderCanvasScatterplot,
         'Other': infovis.renderOther,
-        "MaskAndPan": infovis.renderMaskAndPan 
+        "MaskAndPan": infovis.renderMaskAndPan,
+        "chanAndMaskandPan": infovis.renderChanAndMaskandPanHandler
       }[visType]
       // Select click handler based on renderer given in markdown
       const clickHandler = {
@@ -1115,7 +1127,8 @@ Render.prototype = {
         'VisScatterplot': arrowHandler,
         'VisCanvasScatterplot': arrowHandler,
         'Other': arrowHandler,
-        'MaskAndPan': MaskAndPan
+        'MaskAndPan': MaskAndPan,
+        'chanAndMaskandPan': chanAndMaskandPanHandler
       }[visType]
       // Run infovis renderer
       const tmp = renderer(el, id, waypoint[visType], {

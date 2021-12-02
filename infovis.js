@@ -44,4 +44,8 @@ infovis.renderOther = function(wid_waypoint, id, visdata, events) {
 infovis.renderMaskAndPan = function(wid_waypoint, id, visdata, events) {
   return renderVegaLite(wid_waypoint, id, visdata, events)
 }
+
+infovis.renderChanAndMaskandPanHandler = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events)
+}
 export default infovis;

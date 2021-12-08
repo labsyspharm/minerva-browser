@@ -243,7 +243,7 @@ a > .minerva-root code { color: inherit; }
 .minerva-root kbd kbd { padding: 0; font-size: 100%; font-weight: 700; }
 .minerva-root pre { display: block; font-size: 87.5%; color: #212529; }
 .minerva-root pre code { font-size: inherit; color: inherit; word-break: normal; }
-.minerva-root .pre-scrollable { max-height: 500px; overflow-y: scroll; }
+.minerva-root .pre-scrollable { max-height: 340px; overflow-y: scroll; }
 .minerva-root .container { width: 100%; padding-right: 15px; padding-left: 15px; margin-right: auto; margin-left: auto; }
 @media (min-width: 576px) { .minerva-root .container { max-width: 540px; } }
 @media (min-width: 768px) { .minerva-root .container { max-width: 720px; } }

@@ -824,7 +824,7 @@ HashState.prototype = {
 
     // Three types of empty story
     const name = {
-      'explore': 'Free Explore',
+      'explore': 'Appendix',
       'tag': 'Shared Link',
       'outline': 'Introduction'
     }[mode];

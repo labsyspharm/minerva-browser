@@ -956,33 +956,6 @@ Render.prototype = {
     // Waypoint description markdown
     var md = waypoint.Description;
 
-    // Create links for cell types
-    HS.cell_type_links_map.forEach(function(link, type){
-      var escaped_type = type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      var re = RegExp(escaped_type+'s?', 'gi');
-      md = md.replace(re, function(m) {
-        return '['+m+']('+link+')';
-      });
-    });
-
-    // Create code blocks for protein markers
-    HS.marker_links_map.forEach(function(link, marker){
-      var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      var re = RegExp('(^|[^0-9A-Za-z`])\('+escaped_marker+'\)([^0-9A-Za-z`]|$)', 'gi');
-      md = md.replace(re, function(m, pre, m1, post) {
-        return m.replace(m1, '`'+m1+'`', 'gi');
-      });
-    });
-
-    // Create links for protein markers
-    HS.marker_links_map.forEach(function(link, marker){
-      var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      var re = RegExp('`'+escaped_marker+'`', 'gi');
-      md = md.replace(re, function(m) {
-        return '['+m+']('+link+')';
-      });
-    });
-
     // All categories of possible visualization types
     const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "Other", "MaskAndPan", "chanAndMaskandPan"];
     
@@ -1104,7 +1077,7 @@ Render.prototype = {
           HS.m = [m];
         }
         //render without menu redraw
-        THIS.osd.newView(true);
+        THIS.newView(true);
     }
 
 

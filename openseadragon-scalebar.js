@@ -330,7 +330,8 @@ export const OpenSeadragonScalebar = function($) {
                         y = Math.min(y, pixel.y - barHeight);
                     }
                 }
-                return new $.Point(x - this.xOffset, y - this.yOffset);
+                // NanoString Change: Subtracted 33 so that the scalebar is visible on the iPad
+                return new $.Point(x - this.xOffset, (y - this.yOffset - 33));
             }
             if (this.location === $.ScalebarLocation.BOTTOM_LEFT) {
                 var barHeight = this.divElt.offsetHeight;

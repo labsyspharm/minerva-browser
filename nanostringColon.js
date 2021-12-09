@@ -71,7 +71,7 @@ const allROIs = {
         maskNum: [2],
         channel: [0]
     },
-    // best-in-class lamina proprioa
+    // best-in-class lamina propria
     r005LamProp: {
         panCoord: {x: 0.5496, y: 0.6362},
         zoomRatio: 3.4445,
@@ -402,7 +402,7 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
             const vessels = doc.querySelector('#vessels');
             addEListener(osd, allROIs.r033, vessels, ['addMask', 'panZoom'], storyNum, waypointNum);
             const lamProp = doc.querySelector('#laminaPropria');
-            addEListener(osd, allROIs.r005, lamProp, ['addMask', 'panZoom'], storyNum, waypointNum);
+            addEListener(osd, allROIs.r005LamProp, lamProp, ['addMask', 'panZoom'], storyNum, waypointNum);
             finish_waypoint('')
         }
         domElement.appendChild(svgContainer);
@@ -432,7 +432,7 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
         const tableDiv = document.createElement('div');
         tableDiv.id = 'pathwayTable'
         const table_showdown = new showdown.Converter({tables: true});
-        const pathways = "| Abbr. | Full Gene Set Name |\n|-----|---------|\n| CMC | Caridac muscle contraction |\n| TM | Tropomyosin |\n| VSM | Vascular smooth muscle contraction |\n| LTM | Leukocyte transendothelial migration |\n| PI | Primary immunodeficiency |\n| INI | Intestinal immune network for IgA production |\n| EEC | Exosomal proteins of epithelial cells |\n| ESC | Epithelial sodium channel (SCNN)";
+        const pathways = "| Abbr. | Full Gene Set Name |\n|-----|---------|\n| CMC | Caridac muscle contraction |\n| TMS | Tropomyosin |\n| VSM | Vascular smooth muscle contraction |\n| LTM | Leukocyte transendothelial migration |\n| PID | Primary immunodeficiency |\n| INI | Intestinal immune network for IgA production |\n| EEC | Exosomal proteins of epithelial cells |\n| ESC | Epithelial sodium channel (SCNN)";
         const table_html = table_showdown.makeHtml(pathways)
         tableDiv.innerHTML = table_html
         domElement.appendChild(tableDiv)
@@ -468,13 +468,6 @@ document.addEventListener('waypointBuildEvent', function(e) {
         osd: osd,
         width: width
     }
-    // Remove polygons and overlays when the waypoint is changed
-    const overlayIds = ['#slideMedulla', '#slideCortex']
-    for (let id of overlayIds) {
-        if (document.querySelector(id)) {
-            document.querySelector(id).remove();
-        }
-    }
     if (document.querySelector('[id^=ROIBox]')){
         const ROIBoxes = document.querySelectorAll('[id^=ROIBox]')
         for (let box of ROIBoxes){
@@ -485,30 +478,6 @@ document.addEventListener('waypointBuildEvent', function(e) {
     buildWaypointCartoon(waypointNum, storyNum, width, domElement, osd, finish_waypoint)
     }
 );
-
-
-// window.addEventListener('resize', function (e){
-//     const currW = e.target.window.innerWidth
-//     const oldW = e.target.window.waypointAttr.width
-//     if ((currW < scrnWBps[1] && oldW >= scrnWBps[1]) || (currW < scrnWBps[2] && oldW >= scrnWBps[2]) || (currW >= scrnWBps[2] && oldW < scrnWBps[2]) || (currW >= scrnWBps[1] && oldW < scrnWBps[1])) {
-//         const {waypointNum, storyNum, domElement, osd} = e.target.window.waypointAttr;
-//         const svgCont = ['#largeSvgContainer', '#mediumSvgContainer', '#smallSvgContainer']
-//     svgCont.forEach((id) => {
-//         if (document.querySelector(id)) {
-//             document.querySelector(id).remove();
-//         }
-//     });
-//         // The waypoints that have images that need resizing via buildWaypointCartoon
-//         const waypointsToRebuild = []
-//         // For this story, all storyNums, except the Table of Contents page, which doesn't need rebuilding, are 1
-//         waypointsToRebuild.forEach((waypoint) => {
-//             if (waypointNum === waypoint && storyNum === 1) {
-//                 buildWaypointCartoon(waypointNum, storyNum, currW, domElement, osd);
-//             }
-//         });
-//     } 
-//     e.target.window.waypointAttr.width = currW
-// });
 
 const css = `
 #logoDiv {
@@ -538,7 +507,7 @@ const css = `
     .minerva-root .openseadragon-canvas {
         left: 100px !important;
     }
-
+}
 
 
 @media (max-width: 1099px) {

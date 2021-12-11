@@ -432,7 +432,7 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
         const tableDiv = document.createElement('div');
         tableDiv.id = 'pathwayTable'
         const table_showdown = new showdown.Converter({tables: true});
-        const pathways = "| Abbr. | Full Gene Set Name |\n|-----|---------|\n| CMC | Caridac muscle contraction |\n| TMS | Tropomyosin |\n| VSM | Vascular smooth muscle contraction |\n| LTM | Leukocyte transendothelial migration |\n| PID | Primary immunodeficiency |\n| INI | Intestinal immune network for IgA production |\n| EEC | Exosomal proteins of epithelial cells |\n| ESC | Epithelial sodium channel (SCNN)";
+        const pathways = "| Abbr. | Full Gene Set Name |\n|-----|---------|\n| CMC | Caridac muscle contraction |\n| TMS | Tropomyosin |\n| VSM | Vascular smooth muscle contraction |\n| LTM | Leukocyte transendothelial migration |\n| PID | Primary immunodeficiency |\n| INI | Intestinal immune network for IgA production |\n| EPE | Exosomal proteins of epithelial cells |\n| ESC | Epithelial sodium channel (SCNN)";
         const table_html = table_showdown.makeHtml(pathways)
         tableDiv.innerHTML = table_html
         domElement.appendChild(tableDiv)
@@ -499,7 +499,7 @@ const css = `
 
 @media (min-width: 1100px) {
     .minerva-root .minerva-sidebar-menu {
-        width: 450px !important;
+        width: 455px !important;
     }
     .minerva-root .minerva-sidebar-menu.toggled {
         margin-left: -420px !important;

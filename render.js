@@ -1008,7 +1008,7 @@ Render.prototype = {
       const re_mask = RegExp(escaped_mask,'gi');
       const m = index_regex(HS.masks, re_mask);
       if (m >= 0) {
-        HS.m = [m];
+        HS.m = [-1, m];
       }
       
       const channelsList = HS.cgs[0].Channels
@@ -1019,7 +1019,9 @@ Render.prototype = {
       } else {
         HS.g = 0
       }
-      THIS.newView(true);
+
+      HS.pushState();
+      window.onpopstate();
     }
 
     // Handle click from plot that selects a mask and channel
@@ -1030,7 +1032,7 @@ Render.prototype = {
       const re_mask = RegExp(escaped_mask,'gi');
       const m = index_regex(HS.masks, re_mask);
       if (m >= 0) {
-        HS.m = [m];
+        HS.m = [-1, m];
       }
       
       const channelsList = HS.cgs[0].Channels
@@ -1041,7 +1043,8 @@ Render.prototype = {
       } else {
         HS.g = 0
       }
-      THIS.newView(true);
+      HS.pushState();
+      window.onpopstate();
     }
 
     // Handle click from plot that selects a cell position
@@ -1074,10 +1077,11 @@ Render.prototype = {
         const re = RegExp(escaped_name,'gi');
         const m = index_regex(HS.masks, re);
         if (m >= 0) {
-          HS.m = [m];
+          HS.m = [-1, m];
         }
         //render without menu redraw
-        THIS.newView(true);
+        HS.pushState();
+        window.onpopstate();
     }
 
 

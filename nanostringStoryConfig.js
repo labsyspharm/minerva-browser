@@ -4,13 +4,15 @@ export function getConfig() {
     return config;
 }
 
-const SUPPORTED_STORY_TYPES = ['colon'];
+const SUPPORTED_STORY_TYPES = ['colon', 'lymph node'];
 
 function loadNanostringStory(storyType) {
     const storyFile = (() => {
       switch (storyType) {
         case 'colon':
           return require('./nanostringColon');
+        case 'lymph node':
+          return require('/nanostringLymphNode')
         default:
           throw new Error('unsupported story type');
       }

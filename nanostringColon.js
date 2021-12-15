@@ -1,4 +1,4 @@
-import { addEListener, addHintText } from './nanostringUtils';
+import { addEListener } from './nanostringUtils';
 
 const allROIs = {
     r001Epi: {
@@ -349,8 +349,7 @@ const grossDetailColonicPatch = {
 }
 
 
-function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElement, osd, finish_waypoint) {
-    const svgNS = 'http://www.w3.org/2000/svg';
+function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) {
     const showdown_text = new showdown.Converter({tables: true});
 
     if (waypointNum === 0 && storyNum === 1) {
@@ -358,6 +357,7 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
         svgContainer.data = 'svgs/colonGross.svg'
         svgContainer.type = 'image/svg+xml'
         svgContainer.id = 'grossImage'
+        // Add interactivity to the clickable regions in the cartoon image SVG
         svgContainer.onload = function (){
             const doc = this.getSVGDocument();
             const colonicPatch = doc.querySelector('#colonicPatch');
@@ -366,10 +366,6 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
             addEListener(osd, grossDetailMuscleLayers, muscleLayers, ['panZoom'], storyNum, waypointNum);
             finish_waypoint('')
         }
-        domElement.appendChild(svgContainer);
-        const hintText = ""
-        const hintId = 'hintText';
-        addHintText(hintText, hintId, showdown_text);
     }
 
     else if (waypointNum === 1 && storyNum === 1) {
@@ -377,6 +373,7 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
         svgContainer.data = 'svgs/colonDetail.svg'
         svgContainer.type = 'image/svg+xml'
         svgContainer.id = 'detailImage'
+        // Add interactivity to the clickable regions in the cartoon image SVG
         svgContainer.onload = function (){
             const doc = this.getSVGDocument();
             const cirMus = doc.querySelector('#circularMuscle');
@@ -400,9 +397,6 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
             finish_waypoint('')
         }
         domElement.appendChild(svgContainer);
-        const hintText = ""
-        const hintId = 'hintText';
-        addHintText(hintText, hintId, showdown_text);
     }
 
     else if (waypointNum === 4 && storyNum === 1){
@@ -410,6 +404,7 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
         svgContainer.data = 'svgs/Wpt6-Heatmap.svg';
         svgContainer.type = 'image/svg+xml';
         svgContainer.id = 'heatmap';
+        // Add interactivity to each column in the heatmap SVG file. Columns have ids that exactly match the object keys
         svgContainer.onload = function (){
             const doc = this.getSVGDocument();
             Object.entries(allROIs).forEach(([key, val]) => {
@@ -449,7 +444,7 @@ function buildWaypointCartoon(waypointNum, storyNum, windowInnerWidth, domElemen
     }
     }
 
-// Add cartoon image to a specific waypoint
+// Add cartoon image or text to a specific waypoint
 // Change the number that HS.w is equal to based on which waypoint the image needs to appear on.
 // If the waypoint is the first one after the Table of Contents HS.s must also be set, otherwise, it appears in the TOC too
 document.addEventListener('waypointBuildEvent', function(e) {
@@ -469,7 +464,7 @@ document.addEventListener('waypointBuildEvent', function(e) {
             document.querySelector(`#${box.id}`).remove()
         }
     }
-    buildWaypointCartoon(waypointNum, storyNum, width, domElement, osd, finish_waypoint)
+    buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint)
     }
 );
 

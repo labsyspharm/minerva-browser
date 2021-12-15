@@ -366,6 +366,7 @@ function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) 
             addEListener(osd, grossDetailMuscleLayers, muscleLayers, ['panZoom'], storyNum, waypointNum);
             finish_waypoint('')
         }
+        domElement.appendChild(svgContainer);
     }
 
     else if (waypointNum === 1 && storyNum === 1) {

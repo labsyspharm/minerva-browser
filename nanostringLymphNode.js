@@ -3,57 +3,98 @@ import { addMask, addEListener, buildCartoonImage, addHintText, addSlidePolygon}
 const allROIs = {
     // best-in-class full ROI of Germinal center
     r004: {
-        panCoord: {x: 0.775, y: 0.374},
-        zoomRatio: 3.8488,
-        ROIBox: [{overlay: {x: 0.762, y: 0.371, width: 0.026, height: 0.017}}],
+        panCoord: {x: 0.5227, y: 0.3764},
+        zoomRatio: 5.6315,
+        ROIBox: [{overlay: {x: 0.5046, y: 0.3617, width: 0.024, height: 0.025}}],
         maskNum: [1],
         channel: [0]
     },
-    // best-in-class full ROI of B cell zone
+    // best-in-class full ROI of B cell zone/Mantle zone
     r005: {
-        panCoord: {x: 0.783, y: 0.368},
-        zoomRatio: 3.8488,
-        ROIBox: [{overlay: {x: 0.764, y: 0.359, width: 0.037, height: 0.018}}],
+        panCoord: {x: 0.5227, y: 0.3764},
+        zoomRatio: 5.6315,
+        ROIBox: [{overlay: {x: 0.5087, y: 0.3585, width: 0.027, height: 0.0198}}],
         maskNum: [5],
         channel: [0]
     },
     // best-in-class full ROI of T cell zone
     r006: {
-        panCoord: {x: 0.766, y: 0.382},
-        zoomRatio: 3.8488,
-        ROIBox: [{overlay: {x: 0.749, y: 0.371, width: 0.034, height: 0.023}}],
+        panCoord: {x: 0.5227, y: 0.3764},
+        zoomRatio: 5.6315,
+        ROIBox: [{overlay: {x: 0.4982, y: 0.3704, width: 0.026, height: 0.0244}}],
         maskNum: [6],
         channel: [0]
     },
     // best-in-class Germinal center - CD11c
-    r028: {
-        panCoord: {x: 0.117, y: 0.508},
-        zoomRatio: 3.8488,
-        ROIBox: [{overlay: {x: 0.101, y: 0.508, width: 0.032, height: 0.030}}],
+    r028cd11c: {
+        panCoord: {x: 0.1039, y: 0.51},
+        zoomRatio: 5.6315,
+        ROIBox: [{overlay: {x: 0.0635, y: 0.5049, width: 0.03, height: 0.0345}}],
         maskNum: [2],
         channel: [0]
     },
     // best-in-class Germinal center - CD20
-    r028: {
-        panCoord: {x: 0.117, y: 0.508},
-        zoomRatio: 3.8488,
-        ROIBox: [{overlay: {x: 0.101, y: 0.508, width: 0.032, height: 0.030}}],
+    r028cd20: {
+        panCoord: {x: 0.1039, y: 0.51},
+        zoomRatio: 5.6315,
+        ROIBox: [{overlay: {x: 0.0635, y: 0.5049, width: 0.03, height: 0.0345}}],
         maskNum: [3],
         channel: [0]
     },
     // best-in-class Germinal center - CD3
-    r028: {
-        panCoord: {x: 0.117, y: 0.508},
-        zoomRatio: 3.8488,
-        ROIBox: [{overlay: {x: 0.101, y: 0.508, width: 0.032, height: 0.030}}],
+    r028cd3: {
+        panCoord: {x: 0.1039, y: 0.51},
+        zoomRatio: 5.6315,
+        ROIBox: [{overlay: {x: 0.0635, y: 0.5049, width: 0.03, height: 0.0345}}],
         maskNum: [4],
         channel: [0]
     },
 }
 
-function buildWaypoint(waypointNum, storyNum, domElement) {
+const slideImageRect = {
+    name: 'slideImage',
+    panCoord: {x: 0.3333, y: 0.4861},
+    zoomRatio: 0.7298,
+    ROIBox: [{overlay: {x: 0.0421, y: 0.0838, width: 0.57, height: 0.7946}}]
+}
+
+function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) {
     const showdown_text = new showdown.Converter({tables: true});
-    if (waypointNum === 0 && storyNum === 2) {
+
+    if (waypointNum === 0 && storyNum === 1) {
+        const svgContainer = document.createElement('object');
+        svgContainer.data = 'img/LymphNode_gross_white.svg'
+        svgContainer.type = 'image/svg+xml'
+        svgContainer.id = 'grossImage'
+        // Add interactivity to the clickable regions in the cartoon image SVG
+        svgContainer.onload = function (){
+            const doc = this.getSVGDocument();
+            const slideImage = doc.querySelector('#slideImage');
+            addEListener(osd, slideImageRect, slideImage, ['panZoom'], storyNum, waypointNum)
+            finish_waypoint('')
+        }
+        domElement.appendChild(svgContainer);
+    }
+
+    else if (waypointNum === 1 && storyNum === 1) {
+        const svgContainer = document.createElement('object');
+        svgContainer.data = 'img/LymphNode_Detail.svg'
+        svgContainer.type = 'image/svg+xml'
+        svgContainer.id = 'detailImage'
+        // Add interactivity to the clickable regions in the cartoon image SVG
+        svgContainer.onload = function (){
+            const doc = this.getSVGDocument();
+            Object.entries(allROIs).forEach(([key, val]) => {
+                const el = doc.querySelector(`#${key}`);
+                if (el) {
+                    addEListener(osd, val, el, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum)
+                }
+            });
+            finish_waypoint('')
+        }
+        domElement.appendChild(svgContainer);
+    }
+    else if (waypointNum === 0 && storyNum === 2) {
         const lastpageTextDiv = document.createElement('div');
         lastpageTextDiv.id = 'lastPageText'
         const lastPageText = `For more information on NanoString GeoMx technology visit [**our website**](https://www.nanostring.com/products/geomx-digital-spatial-profiler/geomx-dsp-overview/).   
@@ -89,7 +130,7 @@ document.addEventListener('waypointBuildEvent', function(e) {
             document.querySelector(`#${box.id}`).remove()
         }
     }
-    buildWaypoint(waypointNum, storyNum, domElement)
+    buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint)
     }
 );
 

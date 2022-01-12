@@ -2535,7 +2535,7 @@ const exhibitHTML = `
             </div>
             <div class="minerva-sidebar-menu container position-absolute">
                 <div class="row">
-                    <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll">
+                    <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 90vh; overflow-y: scroll">
                         <div class="row">
                             <div class="col-10">
                                 <h3 class="minerva-imageName m-0"></h3>

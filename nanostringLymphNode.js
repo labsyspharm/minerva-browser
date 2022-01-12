@@ -1,4 +1,4 @@
-import { addMask, addEListener, buildCartoonImage, addHintText, addSlidePolygon} from './nanostringUtils';
+import { addEListener } from './nanostringUtils';
 
 const allROIs = {
     // best-in-class full ROI of Germinal center
@@ -87,7 +87,7 @@ function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) 
             Object.entries(allROIs).forEach(([key, val]) => {
                 const el = doc.querySelector(`#${key}`);
                 if (el) {
-                    addEListener(osd, val, el, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum)
+                    addEListener(osd, val, el, ['addMask', 'panZoom'], storyNum, waypointNum)
                 }
             });
             finish_waypoint('')

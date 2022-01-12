@@ -83,7 +83,6 @@ export function addMask(osd, maskNums) {
     // Add the mask to all the ROIs of the same structure
     // onpopstate seems to need a list longer than 1 so -1 is added
     osd.hashstate.m = [-1, ...maskNums]
-    osd.hashstate.g = [0]
     osd.hashstate.pushState();
     window.onpopstate();
 }

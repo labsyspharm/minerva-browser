@@ -986,9 +986,11 @@ Render.prototype = {
       const re = RegExp(escaped_name,'gi');
       const m = index_regex(HS.masks, re);
       if (m >= 0) {
-        HS.m = [m];
+        HS.m = [-1, m];
       }
-      THIS.newView(true);
+      //render without menu redraw
+      HS.pushState();
+      window.onpopstate();
     }
 
     // Handle click from plot that selects a mask and channel
@@ -1100,7 +1102,7 @@ Render.prototype = {
       // Select click handler based on renderer given in markdown
       const clickHandler = {
         'VisMatrix': chanAndMaskHandler,
-        'VisBarChart': chanAndMaskHandler,
+        'VisBarChart': maskHandler,
         'VisScatterplot': arrowHandler,
         'VisCanvasScatterplot': arrowHandler,
         'Other': arrowHandler,

@@ -378,23 +378,23 @@ function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) 
         svgContainer.onload = function (){
             const doc = this.getSVGDocument();
             const cirMus = doc.querySelector('#circularMuscle');
-            addEListener(osd, allROIs.r013, cirMus, ['addMask', 'panZoom'], storyNum, waypointNum);
+            addEListener(osd, allROIs.r013, cirMus, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum);
             const longMus = doc.querySelector('#longitudinalMuscle');
-            addEListener(osd, allROIs.r017, longMus, ['addMask', 'panZoom'], storyNum, waypointNum);
+            addEListener(osd, allROIs.r017, longMus, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum);
             const connTiss = doc.querySelector('#connectiveTissue');
-            addEListener(osd, allROIs.r037, connTiss, ['addMask', 'panZoom'], storyNum, waypointNum);
+            addEListener(osd, allROIs.r037, connTiss, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum);
             const epithelium = doc.querySelector('#epithelium');
-            addEListener(osd, allROIs.r005Epi, epithelium, ['addMask', 'panZoom'], storyNum, waypointNum);
+            addEListener(osd, allROIs.r005Epi, epithelium, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum);
             const musMuc = doc.querySelector('#muscularisMucosae');
-            addEListener(osd, allROIs.r024, musMuc, ['addMask', 'panZoom'], storyNum, waypointNum);
+            addEListener(osd, allROIs.r024, musMuc, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum);
             const enteroCells = doc.querySelector('#enteroCells');
             addEListener(osd, allROIs.r032, enteroCells, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum);
             const colPatch = doc.querySelector('#colonicPatch');
-            addEListener(osd, allROIs.r007, colPatch, ['addMask', 'panZoom'], storyNum, waypointNum);
+            addEListener(osd, allROIs.r007, colPatch, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum);
             const vessels = doc.querySelector('#vessels');
-            addEListener(osd, allROIs.r033, vessels, ['addMask', 'panZoom'], storyNum, waypointNum);
+            addEListener(osd, allROIs.r033, vessels, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum);
             const lamProp = doc.querySelector('#laminaPropria');
-            addEListener(osd, allROIs.r005LamProp, lamProp, ['addMask', 'panZoom'], storyNum, waypointNum);
+            addEListener(osd, allROIs.r005LamProp, lamProp, ['addMaskAndChannel', 'panZoom'], storyNum, waypointNum);
             finish_waypoint('')
         }
         domElement.appendChild(svgContainer);

@@ -900,9 +900,12 @@ a > .minerva-root code { color: inherit; }
 .minerva-root .custom-control-label::before, .minerva-root .custom-file-label, .minerva-root .custom-select { transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
 @media (prefers-reduced-motion: reduce) { .minerva-root .custom-control-label::before, .minerva-root .custom-file-label, .minerva-root .custom-select { transition: none; } }
 .minerva-root .nav { display: flex; flex-wrap: wrap; padding-left: 0; margin-bottom: 0; list-style: none; }
-.minerva-root .nav-link { display: block; padding: 0.5rem 1rem; }
-.minerva-root .nav-link:hover, .minerva-root .nav-link:focus { text-decoration: none; }
-.minerva-root .nav-link.disabled { color: #6c757d; pointer-events: none; cursor: default; }
+.minerva-root .all-layers { background-color: transparent; color: #007bff; text-align: left; border: none; }
+.minerva-root .all-layers:hover { color: #0056b3; border: none; }
+.minerva-root .all-layers:focus-visible, .minerva-root .all-layers:focus { outline: none; }
+.minerva-root .nav-link, .minerva-root .all-layers { display: block; padding: 0.5rem 1rem; }
+.minerva-root .nav-link:hover, .minerva-root .nav-link:focus, .minerva-root .all-layers:hover, .minerva-root .all-layers:focus  { text-decoration: none; }
+.minerva-root .nav-link.disabled, .minerva-root .all-layers.disabled { color: #6c757d; pointer-events: none; cursor: default; }
 .minerva-root .nav-tabs { border-bottom: 1px solid #dee2e6; }
 .minerva-root .nav-tabs .nav-item { margin-bottom: -1px; }
 .minerva-root .nav-tabs .nav-link { border: 1px solid transparent; border-top-left-radius: 0.25rem; border-top-right-radius: 0.25rem; }
@@ -910,8 +913,8 @@ a > .minerva-root code { color: inherit; }
 .minerva-root .nav-tabs .nav-link.disabled { color: #6c757d; background-color: transparent; border-color: transparent; }
 .minerva-root .nav-tabs .nav-link.active, .minerva-root .nav-tabs .nav-item.show .nav-link { color: #495057; background-color: #fff; border-color: #dee2e6 #dee2e6 #fff; }
 .minerva-root .nav-tabs .dropdown-menu { margin-top: -1px; border-top-left-radius: 0; border-top-right-radius: 0; }
-.minerva-root .nav-pills .nav-link { border-radius: 0.25rem; }
-.minerva-root .nav-pills .nav-link.active, .minerva-root .nav-pills .show > .nav-link { color: #fff; background-color: #007bff; }
+.minerva-root .nav-pills .nav-link, .minerva-root .all-layers { border-radius: 0.25rem; }
+.minerva-root .nav-pills .nav-link.active, .minerva-root .nav-pills .show > .nav-link, .minerva-root .all-layers.active  { color: #fff; background-color: #007bff; }
 .minerva-root .nav-fill .nav-item { flex: 1 1 auto; text-align: center; }
 .minerva-root .nav-justified .nav-item { flex-basis: 0; flex-grow: 1; text-align: center; }
 .minerva-root .tab-content > .tab-pane { display: none; }
@@ -921,7 +924,7 @@ a > .minerva-root code { color: inherit; }
 .minerva-root .navbar-brand { display: inline-block; padding-top: 0.3125rem; padding-bottom: 0.3125rem; margin-right: 1rem; font-size: 1.25rem; line-height: inherit; white-space: nowrap; }
 .minerva-root .navbar-brand:hover, .minerva-root .navbar-brand:focus { text-decoration: none; }
 .minerva-root .navbar-nav { display: flex; flex-direction: column; padding-left: 0; margin-bottom: 0; list-style: none; }
-.minerva-root .navbar-nav .nav-link { padding-right: 0; padding-left: 0; }
+.minerva-root .navbar-nav .nav-link, .minvera-root .all-layers { padding-right: 0; padding-left: 0; }
 .minerva-root .navbar-nav .dropdown-menu { position: static; float: none; }
 .minerva-root .navbar-text { display: inline-block; padding-top: 0.5rem; padding-bottom: 0.5rem; }
 .minerva-root .navbar-collapse { flex-basis: 100%; flex-grow: 1; align-items: center; }

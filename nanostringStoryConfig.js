@@ -4,7 +4,7 @@ export function getConfig() {
     return config;
 }
 
-const SUPPORTED_STORY_TYPES = ['colon', 'lymph node'];
+const SUPPORTED_STORY_TYPES = ['colon', 'lymph node', 'mouse brain', 'human brain'];
 
 function loadNanostringStory(storyType) {
     const storyFile = (() => {
@@ -12,7 +12,11 @@ function loadNanostringStory(storyType) {
         case 'colon':
           return require('./nanostringColon');
         case 'lymph node':
-          return require('/nanostringLymphNode')
+          return require('/nanostringLymphNode');
+        case 'mouse brain':
+          return require('./nanostringMouseBrain');
+        case 'human brain':
+          return require('./nanostringHumanBrain');
         default:
           throw new Error('unsupported story type');
       }

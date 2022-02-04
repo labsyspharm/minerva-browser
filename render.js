@@ -668,6 +668,30 @@ Render.prototype = {
     else {
       $('.minerva-mask-label').hide()
     }
+
+    // Add button to turn on and off all data layers if there are masks specified in the story for that waypoint
+    if (HS.waypoint.Masks) {
+      let allMasksButton = document.createElement('button');
+      allMasksButton.innerText = 'All Data Layers';
+      allMasksButton = Object.assign(allMasksButton, {
+        className: HS.active_masks.length === HS.waypoint.Masks.length ? 'all-layers active' : 'all-layers'
+      })
+      HS.el.getElementsByClassName('minerva-mask-layers')[0].appendChild(allMasksButton);
+      $(allMasksButton).click(this, () => {
+        if (HS.active_masks.length !== HS.waypoint.Masks.length) {
+          HS.waypoint.Masks.forEach((el, _i) => {
+            const dataLayerIndex = HS.masks.findIndex(dl => dl.Name === el);
+            if (!HS.m.includes(dataLayerIndex)) {
+              HS.m.push(dataLayerIndex)
+            }
+          })
+        } else {
+          HS.m = [-1]
+        }
+        HS.pushState();
+        window.onpopstate();
+      })
+  } 
     // Add masks with indices
     masks.forEach(function(mask) {
       const m = index_name(HS.masks, mask.Name);
@@ -954,10 +978,16 @@ Render.prototype = {
     $(wid_waypoint).css('height', $(wid_waypoint).height());
 
     // Waypoint description markdown
-    var md = waypoint.Description;
+    let md = (() => {
+      if (waypoint.Mode === 'explore' && HS.exhibit.Appendix) {
+        return HS.exhibit.Appendix
+      } else {
+        return waypoint.Description
+      }
+    })();
 
     // All categories of possible visualization types
-    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "Other", "MaskAndPan", "chanAndMaskandPan"];
+    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "Other", "MaskAndPan", "chanAndMaskandPan", "multipleMasksHandler"];
     
     const waypointVis = new Set(allVis.filter(v => waypoint[v]));
     const renderedVis = new Set();
@@ -989,6 +1019,24 @@ Render.prototype = {
         HS.m = [-1, m];
       }
       //render without menu redraw
+      HS.pushState();
+      window.onpopstate();
+    }
+
+    // Handle click from plot that adds multiple masks
+    const multipleMasksHandler = function(d) {
+      // type must be an array of mask names
+      const names = d.type;
+      HS.m = [-1]
+      names.forEach((name) => {
+        var escaped_name = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = RegExp(escaped_name,'gi');
+        const mask = index_regex(HS.masks, re);
+        if (mask >= 0) {
+          HS.m.push(mask);
+        }
+      })
+      // render without menu redraw
       HS.pushState();
       window.onpopstate();
     }
@@ -1067,12 +1115,11 @@ Render.prototype = {
     const MaskAndPan = function(d){
         // Pan and Zoom to coordinates from data file
         var cellPosition = [parseInt(d['X_position']), parseInt(d['Y_position'])]
-        if (Number.isNaN(cellPosition[0])) {
-          return;
+        if (!Number.isNaN(cellPosition[0])) {
+            var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
+            //change hashstate vars
+            HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
         };
-        var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
-        //change hashstate vars
-        HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
         // Add Mask specified in data file
         var name = d.type;
         var escaped_name = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1097,7 +1144,8 @@ Render.prototype = {
         'VisCanvasScatterplot': infovis.renderCanvasScatterplot,
         'Other': infovis.renderOther,
         "MaskAndPan": infovis.renderMaskAndPan,
-        "chanAndMaskandPan": infovis.renderChanAndMaskandPanHandler
+        "chanAndMaskandPan": infovis.renderChanAndMaskandPanHandler,
+        'multipleMasksHandler': infovis.renderMultipleMasksHandler
       }[visType]
       // Select click handler based on renderer given in markdown
       const clickHandler = {
@@ -1107,7 +1155,8 @@ Render.prototype = {
         'VisCanvasScatterplot': arrowHandler,
         'Other': arrowHandler,
         'MaskAndPan': MaskAndPan,
-        'chanAndMaskandPan': chanAndMaskandPanHandler
+        'chanAndMaskandPan': chanAndMaskandPanHandler,
+        'multipleMasksHandler': multipleMasksHandler
       }[visType]
       // Run infovis renderer
       const tmp = renderer(el, id, waypoint[visType], {

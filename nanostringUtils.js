@@ -65,7 +65,7 @@ export function panZoom(osd, svgObj, storyNum, waypointNum) {
 }
 
 // Event listener for the SVGs - circles (or removes the ciricle of) the corresponding part on the slide when clicked.
-export function addSlidePolygon(polygonID, fileName, osd){
+function addSlidePolygon(polygonID, fileName, osd){
     if (!document.querySelector(`#${polygonID}`)) {
         osd.addPolygon(polygonID, fileName);
     } else {

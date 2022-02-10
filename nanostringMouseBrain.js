@@ -1,3 +1,22 @@
+const slideCortex = require('./mouseBrainObjects/cortex.json');
+const slideCaudoputamen = require('./mouseBrainObjects/caudoputamen.json');
+const slideAmygdala = require('./mouseBrainObjects/amygdala.json');
+const slideInternalCapsule = require('./mouseBrainObjects/internalCapsule.json');
+const slideCa1 = require('./mouseBrainObjects/ca1.json');
+const slideHippocampus = require('./mouseBrainObjects/hippocampus.json');
+const slideHypothalamus = require('./mouseBrainObjects/hypothalamus.json');
+const slideLateralHabenula = require('./mouseBrainObjects/lateralHabenula.json');
+const slideMedialHabenula = require('./mouseBrainObjects/medialHabenula.json');
+const slideMN = require('./mouseBrainObjects/mediodorsalNucleus.json');
+const slideTPVN = require('./mouseBrainObjects/thalamicParaventricularNucleus.json');
+const slideThalamus = require('./mouseBrainObjects/thalamus.json');
+const slideVPN = require('./mouseBrainObjects/ventralPosteromedialNucleus.json');
+const slideVMHN = require('./mouseBrainObjects/ventromedialHypothalamicNucleus.json');
+const slideCA2 = require('./mouseBrainObjects/ca2.json');
+const slideCA3 = require('./mouseBrainObjects/ca3.json');
+const dentateGyrus = require('./mouseBrainObjects/DentateGyrus.json');
+const choroidPlexus = require('./mouseBrainObjects/choroidPlexus.json');
+
 import { addEListener } from './nanostringUtils';
 
 const allROIs = {
@@ -185,10 +204,107 @@ const allROIs = {
     // }
 }
 
+// Polygon objects for adding drawings over slide image
+const allSlidePolygons = {
+    cortex: {
+        polygonID: 'slideCortex',
+        file: slideCortex
+    },
+    caudoputamen: {
+        polygonID: 'slideCaudoputamen',
+        file: slideCaudoputamen
+    },
+    amygdala: {
+        polygonID: 'slideAmygdala',
+        file: slideAmygdala
+    },
+    internalCapsule: {
+        polygonID: 'slideInternalCapsule',
+        file: slideInternalCapsule
+    },
+    Hippocampus_CA1: {
+        polygonID: 'CA1',
+        file: slideCa1
+    },
+    Hippocampus_CA2: {
+        polygonID: 'CA2',
+        file: slideCA2
+    },
+    Hippocampus_CA3: {
+        polygonID: 'CA3',
+        file: slideCA3
+    },
+    hippocampus: {
+        polygonID: 'slideHippocampus',
+        file: slideHippocampus
+    },
+    HypothalamusBackground: {
+        polygonID: 'slideHypothalamus',
+        file: slideHypothalamus
+    },
+    lateralHabenula: {
+        polygonID: 'slideLateralHabenula',
+        file: slideLateralHabenula
+    },
+    medialHabenula: {
+        polygonID: 'slideMedialHabenula',
+        file: slideMedialHabenula
+    },
+    MediodorsalNucleus: {
+        polygonID: 'slideMT',
+        file: slideMN
+    },
+    paraventricularNucleus: {
+        polygonID: 'slideTPVN',
+        file: slideTPVN
+    },
+    thalamusBackground: {
+        polygonID: 'slideThalamus',
+        file: slideThalamus
+    },
+    VentralPosteromedialNucleus: {
+        polygonID: 'slideVPN',
+        file: slideVPN
+    },
+    VentromedialHypothalamicNucleus: {
+        polygonID: 'slideVMHN',
+        file: slideVMHN
+    },
+    DentateGyrus: {
+        polygonID: 'DentateGyrus',
+        file: dentateGyrus
+    },
+    choroidPlexus: {
+        polygonID: 'choroidPlexus',
+        file: choroidPlexus
+    }
+}
+
+
+
 function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) {
     const showdown_text = new showdown.Converter({tables: true});
 
-    if (waypointNum === 1 && storyNum === 1) {
+    if (waypointNum === 0 && storyNum === 1) {
+        const svgContainer = document.createElement('object');
+        svgContainer.data = 'svg/MouseBrain_gross.svg'
+        svgContainer.type = 'image/svg+xml'
+        svgContainer.id = 'detailImage'
+        // Add interactivity to the clickable regions in the cartoon image SVG
+        svgContainer.onload = function (){
+            const doc = this.getSVGDocument();
+            Object.entries(allSlidePolygons).forEach(([key, val]) => {
+                const el = doc.querySelector(`#${key}`);
+                if (el) {
+                    addEListener(osd, val, el, ['addPolygon'], storyNum, waypointNum);
+                }
+            });
+            finish_waypoint('')
+        }
+        domElement.appendChild(svgContainer);
+    }
+
+    else if (waypointNum === 1 && storyNum === 1) {
         const svgContainer = document.createElement('object');
         svgContainer.data = 'svg/muBrainDetail.svg'
         svgContainer.type = 'image/svg+xml'
@@ -221,6 +337,15 @@ document.addEventListener('waypointBuildEvent', function(e) {
         osd: osd,
         width: width
     }
+
+    // Remove polygons and overlays when the waypoint is changed
+    const overlayIds = ['#slideCortex', '#slideCaudoputamen', '#slideAmygdala', ]
+    for (let id of overlayIds) {
+        if (document.querySelector(id)) {
+            document.querySelector(id).remove();
+        }
+    }
+
     if (document.querySelector('[id^=ROIBox]')){
         const ROIBoxes = document.querySelectorAll('[id^=ROIBox]')
         for (let box of ROIBoxes){

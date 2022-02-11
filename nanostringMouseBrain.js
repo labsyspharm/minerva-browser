@@ -339,7 +339,7 @@ document.addEventListener('waypointBuildEvent', function(e) {
     }
 
     // Remove polygons and overlays when the waypoint is changed
-    const overlayIds = ['#slideCortex', '#slideCaudoputamen', '#slideAmygdala', ]
+    const overlayIds = ['#slideCortex', '#slideCaudoputamen', '#slideAmygdala', '#slideInternalCapsule', '#CA1', '#CA2', '#CA3', '#slideHippocampus', "#slideHypothalamus", "#slideLateralHabenula", "#slideMedialHabenula", "#slideMT", "#slideTPVN", "#slideThalamus", "#slideVPN", "#slideVMHN", "#DentateGyrus", "#choroidPlexus"]
     for (let id of overlayIds) {
         if (document.querySelector(id)) {
             document.querySelector(id).remove();

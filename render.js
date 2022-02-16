@@ -672,7 +672,7 @@ Render.prototype = {
     // Add button to turn on and off all data layers if there are masks specified in the story for that waypoint
     if (HS.waypoint.Masks) {
       let allMasksButton = document.createElement('button');
-      allMasksButton.innerText = 'All Data Layers';
+      allMasksButton.innerText = 'All data layers';
       allMasksButton = Object.assign(allMasksButton, {
         className: HS.active_masks.length === HS.waypoint.Masks.length ? 'all-layers active' : 'all-layers'
       })

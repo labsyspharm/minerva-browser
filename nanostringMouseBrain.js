@@ -1,7 +1,7 @@
 const slideCortex = require('./mouseBrainObjects/cortex.json');
 const slideCaudoputamen = require('./mouseBrainObjects/caudoputamen.json');
 const slideAmygdala = require('./mouseBrainObjects/amygdala.json');
-const slideInternalCapsule = require('./mouseBrainObjects/internalCapsule.json');
+const slideCorticospinalTract = require('./mouseBrainObjects/corticospinalTract.json');
 const slideCa1 = require('./mouseBrainObjects/ca1.json');
 const slideHippocampus = require('./mouseBrainObjects/hippocampus.json');
 const slideHypothalamus = require('./mouseBrainObjects/hypothalamus.json');
@@ -20,69 +20,6 @@ const choroidPlexus = require('./mouseBrainObjects/choroidPlexus.json');
 import { addEListener } from './nanostringUtils';
 
 const allROIs = {
-    // // best-in-class Ependymal cells
-    // r019: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [20]
-    // },
-    // // best-in-class Thalamus (Full ROI)
-    // r023: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [32]
-    // },
-    // // best-in-class Thalamic paraventricular nucleus/PVT (Full ROI)
-    // r025: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [33]
-    // },
-    // // best-in-class Mediodorsal thalamus/Thalamus (Full ROI)
-    // r027: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [30]
-    // },
-    // // best-in-class Hippocampus dentate gyrus/Hippocampus (NeuN+) 
-    // r030: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [24]
-    // },
-    // // best-in-class Hippocampus CA1 (Full ROI)
-    // r033: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [21]
-    // },
-    // // best-in-class Hippocamus CA3 (Full ROI)
-    // r038: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [23]
-    // },
-    // // best-in-class Hippocampus CA2 (Full ROI)
-    // r039: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [22]
-    // },
-    // // best-in-class Amygdala (Full ROI)
-    // r040: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [1]
-    // },
     // best-in-class Cortical layer I (Full ROI)
     r043: {
         panCoord: {x: 0.1800, y: 0.6544},
@@ -118,34 +55,6 @@ const allROIs = {
         ROIBox: [{overlay: {x: 0.2053, y: 0.5841, width: 0.0443, height: 0.0387}}],
         maskNum: [14]
     },
-    // // best-in-class Cortical layer II/III (NeuN+)
-    // r049: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [9]
-    // },
-    // // best-in-class Cortical layer II/III (DNA)
-    // r049: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [10]
-    // },
-    // best-in-class Cortical layer IV (NeuN+)
-    // r050: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [12]
-    // },
-    // // best-in-class Cortical layer IV (DNA)
-    // r050: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [13]
-    // },
     // best-in-class Cortical layer V (NeuN+)
     r051NeuN: {
         panCoord: {x: 0.1830, y: 0.5872},
@@ -159,49 +68,7 @@ const allROIs = {
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1621, y: 0.5646, width: 0.0418, height: 0.0452}}],
         maskNum: [13]
-    },
-    // // best-in-class Cortical layer VI (NeuN+)
-    // r052: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [18]
-    // },
-    // // best-in-class Cortical layer VI (DNA)
-    // r052: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [19]
-    // },
-    // best-in-class Amygdala (NeuN+)
-    // r068: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [2]
-    // },
-    // // best-in-class Amygdala (DNA)
-    // r068: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [3]
-    // },
-    // // best-in-class Caudoputamen (NeuN+)
-    // r075: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [5]
-    // },
-    // // best-in-class Caudoputamen (DNA)
-    // r075: {
-    //     panCoord: {x: , y: },
-    //     zoomRatio: ,
-    //     ROIBox: [{overlay: {x: , y: , width: , height: }}],
-    //     maskNum: [6]
-    // }
+    }
 }
 
 // Polygon objects for adding drawings over slide image
@@ -220,7 +87,7 @@ const allSlidePolygons = {
     },
     internalCapsule: {
         polygonID: 'slideInternalCapsule',
-        file: slideInternalCapsule
+        file: slideCorticospinalTract
     },
     Hippocampus_CA1: {
         polygonID: 'CA1',
@@ -304,7 +171,7 @@ function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) 
         domElement.appendChild(svgContainer);
     }
 
-    else if (waypointNum === 1 && storyNum === 1) {
+    else if (waypointNum === 4 && storyNum === 1) {
         const svgContainer = document.createElement('object');
         svgContainer.data = 'svg/muBrainDetail.svg'
         svgContainer.type = 'image/svg+xml'

@@ -2271,8 +2271,12 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   width: 200px;
 }
 
-.minerva-root .minerva-legend.toggled {
-  margin-right: -200px;
+.minerva-root .minerva-legend.toggled .btn-group-vertical {
+  display: none !important;
+}
+
+.minerva-root .minerva-legend.toggled .minerva-channel-groups-legend {
+  display: none !important;
 }
 
 .minerva-root .minerva-sidebar-menu .minerva-open-sidebar {
@@ -2512,12 +2516,12 @@ const exhibitHTML = `
             <div class="minerva-legend position-absolute"
                  style="pointer-events: none; top: 1rem; right: 8px">
                 <div>
+                  <a class="minerva-toggle-legend p-1" href="javascript;;">
+                    <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
+                    <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
+                  </a>
                     <div class="btn-group-vertical bg-trans p-2"
                          style="display:inline-block; vertical-align:top;">
-                        <a class="minerva-toggle-legend p-1" href="javascript;;">
-                            <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
-                            <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
-                        </a>
                         <ul class="minerva-channel-legend list-unstyled m-0"></ul>
                         <div class="p-1 minerva-only-3d">
                           Depth:

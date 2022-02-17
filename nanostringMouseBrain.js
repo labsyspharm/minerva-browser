@@ -25,49 +25,49 @@ const allROIs = {
         panCoord: {x: 0.1800, y: 0.6544},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1554, y: 0.6333, width: 0.0492, height: 0.0421}}],
-        maskNum: [4]
+        maskNum: [3]
     },
     // best-in-class Cortical layer II/III (Full ROI)
     r044: {
         panCoord: {x: 0.1857, y: 0.6425},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1609, y: 0.6202, width: 0.0496, height: 0.0447}}],
-        maskNum: [5]
+        maskNum: [4]
     },
     // best-in-class Cortical layer IV (Full ROI)
     r045: {
         panCoord: {x: 0.1991, y: 0.6291},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1816, y: 0.6139, width: 0.0351, height: 0.0305}}],
-        maskNum: [8]
+        maskNum: [7]
     },
     // best-in-class Cortical layer V (Full ROI)
     r046: {
         panCoord: {x: 0.2108, y: 0.6177},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1894, y: 0.5997, width: 0.0428, height: 0.0361}}],
-        maskNum: [11]
+        maskNum: [10]
     },
     // best-in-class Cortical layer VI (Full ROI)
     r047: {
         panCoord: {x: 0.2274, y: 0.6035},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.2053, y: 0.5841, width: 0.0443, height: 0.0387}}],
-        maskNum: [14]
+        maskNum: [13]
     },
     // best-in-class Cortical layer V (NeuN+)
     r051NeuN: {
         panCoord: {x: 0.1830, y: 0.5872},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1621, y: 0.5646, width: 0.0418, height: 0.0452}}],
-        maskNum: [12]
+        maskNum: [11]
     },
     // best-in-class Cortical layer V (DNA)
     r051Neuropil: {
         panCoord: {x: 0.1830, y: 0.5872},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1621, y: 0.5646, width: 0.0418, height: 0.0452}}],
-        maskNum: [13]
+        maskNum: [12]
     }
 }
 

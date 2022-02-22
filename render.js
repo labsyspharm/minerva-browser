@@ -987,7 +987,7 @@ Render.prototype = {
     })();
 
     // All categories of possible visualization types
-    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "Other", "MaskAndPan", "chanAndMaskandPan", "multipleMasksHandler"];
+    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "Other", "MaskAndPan", "chanAndMaskandPan", "multipleMasksHandler", "multipleMasksAndPan", "multipleMasksPanChannel"];
     
     const waypointVis = new Set(allVis.filter(v => waypoint[v]));
     const renderedVis = new Set();
@@ -1025,8 +1025,8 @@ Render.prototype = {
 
     // Handle click from plot that adds multiple masks
     const multipleMasksHandler = function(d) {
-      // type must be an array of mask names
-      const names = d.type;
+      // type must be a string of mask names separated by a comma and no spaces between the comma and names
+      const names = d.type.split(',');
       HS.m = [-1]
       names.forEach((name) => {
         var escaped_name = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1036,6 +1036,40 @@ Render.prototype = {
           HS.m.push(mask);
         }
       })
+      // render without menu redraw
+      HS.pushState();
+      window.onpopstate();
+    }
+
+    const multipleMasksPanChannel = function(d){
+      // Pan and Zoom to coordinates from data file
+      var cellPosition = [parseInt(d['X_position']), parseInt(d['Y_position'])]
+      if (!Number.isNaN(cellPosition[0])) {
+        var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
+        //change hashstate vars
+        HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
+      };
+      //Change channels and masks based on data file
+      var chan = d.channel
+      // type must be a string of mask names separated by a comma and no spaces between the comma and names
+      const names = d.type.split(',');
+      HS.m = [-1]
+      names.forEach((name) => {
+        var escaped_name = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = RegExp('^'+escaped_name+'$','gi');
+        const mask = index_regex(HS.masks, re);
+        if (mask >= 0) {
+          HS.m.push(mask);
+        }
+      })
+      const channelsList = HS.cgs[0].Channels
+      const channelIndex = channelsList.indexOf(chan)
+      // Nanostring change - shifts masks over 1 to account for All cells/structures mask
+      if (channelIndex >= 0) {
+        HS.g = channelIndex + 1;
+      } else {
+        HS.g = 0
+      }
       // render without menu redraw
       HS.pushState();
       window.onpopstate();
@@ -1133,6 +1167,30 @@ Render.prototype = {
         window.onpopstate();
     }
 
+    const multipleMasksAndPan = function(d){
+      // Pan and Zoom to coordinates from data file
+      var cellPosition = [parseInt(d['X_position']), parseInt(d['Y_position'])]
+      if (!Number.isNaN(cellPosition[0])) {
+          var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
+          //change hashstate vars
+          HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
+      };
+      // type must be a string of mask names separated by a comma and no spaces between the comma and names
+      const names = d.type.split(',');
+      HS.m = [-1]
+      names.forEach((name) => {
+        var escaped_name = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = RegExp('^'+escaped_name+'$','gi');
+        const mask = index_regex(HS.masks, re);
+        if (mask >= 0) {
+          HS.m.push(mask);
+        }
+      })
+      //render without menu redraw
+      HS.pushState();
+      window.onpopstate();
+  }
+
 
     // Visualization code
     const renderVis = function(visType, el, id) {
@@ -1145,7 +1203,9 @@ Render.prototype = {
         'Other': infovis.renderOther,
         "MaskAndPan": infovis.renderMaskAndPan,
         "chanAndMaskandPan": infovis.renderChanAndMaskandPanHandler,
-        'multipleMasksHandler': infovis.renderMultipleMasksHandler
+        'multipleMasksHandler': infovis.renderMultipleMasksHandler,
+        'multipleMasksAndPan': infovis.renderMultipleMasksAndPan,
+        'multipleMasksPanChannel': infovis.renderMultipleMasksPanChannel
       }[visType]
       // Select click handler based on renderer given in markdown
       const clickHandler = {
@@ -1156,7 +1216,9 @@ Render.prototype = {
         'Other': arrowHandler,
         'MaskAndPan': MaskAndPan,
         'chanAndMaskandPan': chanAndMaskandPanHandler,
-        'multipleMasksHandler': multipleMasksHandler
+        'multipleMasksHandler': multipleMasksHandler,
+        'multipleMasksAndPan': multipleMasksAndPan,
+        'multipleMasksPanChannel': multipleMasksPanChannel
       }[visType]
       // Run infovis renderer
       const tmp = renderer(el, id, waypoint[visType], {

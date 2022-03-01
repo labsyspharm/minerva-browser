@@ -17,7 +17,7 @@ const slideCA3 = require('./mouseBrainObjects/ca3.json');
 const dentateGyrus = require('./mouseBrainObjects/DentateGyrus.json');
 const choroidPlexus = require('./mouseBrainObjects/choroidPlexus.json');
 
-import { addEListener } from './nanostringUtils';
+import { addEListener, addMask } from './nanostringUtils';
 
 const allROIs = {
     // best-in-class Cortical layer I (Full ROI)
@@ -185,6 +185,23 @@ function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) 
                     addEListener(osd, val, el, ['addMask', 'panZoom'], storyNum, waypointNum);
                 }
             });
+            finish_waypoint('')
+        }
+        domElement.appendChild(svgContainer);
+    }
+
+    else if (waypointNum === 9 && storyNum === 1) {
+        const svgContainer = document.createElement('object');
+        svgContainer.data = 'svg/volcano_plot.svg'
+        svgContainer.type = 'image/svg+xml'
+        svgContainer.id = 'volcano_plot'
+        // Add interactivity to the clickable regions in the cartoon image SVG
+        svgContainer.onload = function (){
+            const doc = this.getSVGDocument();
+            const caudoputamen = doc.querySelector('#caudoputamen');
+            caudoputamen.addEventListener('click', () => addMask(osd, [17]));
+            const amygdala= doc.querySelector('#amygdala');
+            amygdala.addEventListener('click', () => addMask(osd, [1]));
             finish_waypoint('')
         }
         domElement.appendChild(svgContainer);

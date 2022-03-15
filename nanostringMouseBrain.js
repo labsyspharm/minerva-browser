@@ -60,14 +60,14 @@ const allROIs = {
         panCoord: {x: 0.1830, y: 0.5872},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1621, y: 0.5646, width: 0.0418, height: 0.0452}}],
-        maskName: ["Cortical layer VI - NeuN+"]
+        maskName: ["Cortical layer V - NeuN+"]
     },
     // best-in-class Cortical layer V (DNA)
     r051Neuropil: {
         panCoord: {x: 0.1830, y: 0.5872},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1621, y: 0.5646, width: 0.0418, height: 0.0452}}],
-        maskName: ["Cortical layer VI - Neuropil"]
+        maskName: ["Cortical layer V - Neuropil"]
     }
 }
 

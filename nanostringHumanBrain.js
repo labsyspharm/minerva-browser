@@ -9,56 +9,56 @@ const allROIs = {
         panCoord: {x: 0.2893, y: 0.6163},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.2731, y: 0.5968, width: 0.0324, height: 0.0392}}],
-        maskNum: [0]
+        maskName: ["Cortical layer I"]
     },
     // best-in-class Cortical Layer II/III
     r003: {
         panCoord: {x: 0.3148, y: 0.6090},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.283, y: 0.5894, width: 0.0473, height: 0.044}}],
-        maskNum: [1]
+        maskName: ["Cortical layer II/III"]
     },
     // best-in-class Cortical Layer IV
     r029: {
         panCoord: {x: 0.4158, y: 0.6929},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.3995, y: 0.6769, width: 0.0326, height: 0.0320}}],
-        maskNum: [6]
+        maskName: ["Cortical layer IV"]
     },
     // best-in-class Cortical Layer V
     r025: {
         panCoord: {x: 0.3396, y: 0.5500},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.3238, y: 0.5346, width: 0.0317, height: 0.0308}}],
-        maskNum: [7]
+        maskName: ["Cortical layer V"]
     },
     // best-in-class Cortical Layer V (GFAP)
     r033GFAP: {
         panCoord: {x: 0.2903, y: 0.4578},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.2742, y: 0.4392, width: 0.0321, height: 0.0371}}],
-        maskNum: [10]
+        maskName: ["Cortical layer V - GFAP+"]
     },
     // best-in-class Cortical Layer V (Iba1)
     r033Iba1: {
         panCoord: {x: 0.2903, y: 0.4578},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.2742, y: 0.4392, width: 0.0321, height: 0.0371}}],
-        maskNum: [9]
+        maskName: ["Cortical layer V - Iba1+"]
     },
     // best-in-class Cortical Layer V (Neuropil)
     r033Neuropil: {
         panCoord: {x: 0.2903, y: 0.4578},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.2742, y: 0.4392, width: 0.0321, height: 0.0371}}],
-        maskNum: [11]
+        maskName: ["Cortical layer V - Neuropil"]
     },
     // best-in-class Cortical Layer V (NeuN+)
     r033NeuN: {
         panCoord: {x: 0.2903, y: 0.4578},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.2742, y: 0.4392, width: 0.0321, height: 0.0371}}],
-        maskNum: [8]
+        maskName: ["Cortical layer V - NeuN+"]
     },
 }
 

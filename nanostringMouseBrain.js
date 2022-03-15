@@ -25,49 +25,49 @@ const allROIs = {
         panCoord: {x: 0.1800, y: 0.6544},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1554, y: 0.6333, width: 0.0492, height: 0.0421}}],
-        maskNum: [3]
+        maskNum: ["Cortical layer I"]
     },
     // best-in-class Cortical layer II/III (Full ROI)
     r044: {
         panCoord: {x: 0.1857, y: 0.6425},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1609, y: 0.6202, width: 0.0496, height: 0.0447}}],
-        maskNum: [4]
+        maskNum: ["Cortical layer II/III"]
     },
     // best-in-class Cortical layer IV (Full ROI)
     r045: {
         panCoord: {x: 0.1991, y: 0.6291},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1816, y: 0.6139, width: 0.0351, height: 0.0305}}],
-        maskNum: [7]
+        maskNum: ["Cortical layer IV"]
     },
     // best-in-class Cortical layer V (Full ROI)
     r046: {
         panCoord: {x: 0.2108, y: 0.6177},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1894, y: 0.5997, width: 0.0428, height: 0.0361}}],
-        maskNum: [10]
+        maskNum: ["Cortical layer V"]
     },
     // best-in-class Cortical layer VI (Full ROI)
     r047: {
         panCoord: {x: 0.2274, y: 0.6035},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.2053, y: 0.5841, width: 0.0443, height: 0.0387}}],
-        maskNum: [13]
+        maskNum: ["Cortical layer VI"]
     },
     // best-in-class Cortical layer V (NeuN+)
     r051NeuN: {
         panCoord: {x: 0.1830, y: 0.5872},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1621, y: 0.5646, width: 0.0418, height: 0.0452}}],
-        maskNum: [11]
+        maskNum: ["Cortical layer VI - NeuN+"]
     },
     // best-in-class Cortical layer V (DNA)
     r051Neuropil: {
         panCoord: {x: 0.1830, y: 0.5872},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1621, y: 0.5646, width: 0.0418, height: 0.0452}}],
-        maskNum: [12]
+        maskNum: ["Cortical layer VI - Neuropil"]
     }
 }
 
@@ -199,9 +199,9 @@ function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) 
         svgContainer.onload = function (){
             const doc = this.getSVGDocument();
             const caudoputamen = doc.querySelector('#caudoputamen');
-            caudoputamen.addEventListener('click', () => addMask(osd, [17]));
+            caudoputamen.addEventListener('click', () => addMask(osd, ["Caudoputamen - NeuN+"]));
             const amygdala= doc.querySelector('#amygdala');
-            amygdala.addEventListener('click', () => addMask(osd, [1]));
+            amygdala.addEventListener('click', () => addMask(osd, ["Amygdala - NeuN+"]));
             finish_waypoint('')
         }
         domElement.appendChild(svgContainer);
@@ -224,18 +224,18 @@ document.addEventListener('waypointBuildEvent', function(e) {
 
     // Remove polygons and overlays when the waypoint is changed
     const overlayIds = ['#slideCortex', '#slideCaudoputamen', '#slideAmygdala', '#slideInternalCapsule', '#CA1', '#CA2', '#CA3', '#slideHippocampus', "#slideHypothalamus", "#slideLateralHabenula", "#slideMedialHabenula", "#slideMT", "#slideTPVN", "#slideThalamus", "#slideVPN", "#slideVMHN", "#DentateGyrus", "#choroidPlexus"]
-    for (let id of overlayIds) {
+    overlayIds.forEach((id) => {
         if (document.querySelector(id)) {
             document.querySelector(id).remove();
         }
-    }
+    });
 
     if (document.querySelector('[id^=ROIBox]')){
         const ROIBoxes = document.querySelectorAll('[id^=ROIBox]')
-        for (let box of ROIBoxes){
+        ROIBoxes.forEach((box) => {
             osd.viewer.removeOverlay(box.id)  
             document.querySelector(`#${box.id}`).remove()
-        }
+        });
     }
     buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint)
     }

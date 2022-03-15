@@ -6,48 +6,42 @@ const allROIs = {
         panCoord: {x: 0.5227, y: 0.3764},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.5046, y: 0.3617, width: 0.024, height: 0.025}}],
-        maskNum: [1],
-        channel: [0]
+        maskName: ["Germinal center"]
     },
     // best-in-class full ROI of B cell zone/Mantle zone
     r005: {
         panCoord: {x: 0.5227, y: 0.3764},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.5087, y: 0.3585, width: 0.027, height: 0.0198}}],
-        maskNum: [5],
-        channel: [0]
+        maskName: ["Mantle zone"]
     },
     // best-in-class full ROI of T cell zone
     r006: {
         panCoord: {x: 0.5227, y: 0.3764},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.4982, y: 0.3704, width: 0.026, height: 0.0244}}],
-        maskNum: [6],
-        channel: [0]
+        maskName: ["Paracortex zone"]
     },
     // best-in-class Germinal center - CD11c
     r028cd11c: {
         panCoord: {x: 0.1039, y: 0.51},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.0635, y: 0.5049, width: 0.03, height: 0.0345}}],
-        maskNum: [2],
-        channel: [0]
+        maskName: ["Germinal center - CD11c+"]
     },
     // best-in-class Germinal center - CD20
     r028cd20: {
         panCoord: {x: 0.1039, y: 0.51},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.0635, y: 0.5049, width: 0.03, height: 0.0345}}],
-        maskNum: [3],
-        channel: [0]
+        maskName: ["Germinal center - CD20+"]
     },
     // best-in-class Germinal center - CD3
     r028cd3: {
         panCoord: {x: 0.1039, y: 0.51},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.0635, y: 0.5049, width: 0.03, height: 0.0345}}],
-        maskNum: [4],
-        channel: [0]
+        maskName: ["Germinal center - CD3+"]
     },
 }
 
@@ -59,8 +53,6 @@ const slideImageRect = {
 }
 
 function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) {
-    const showdown_text = new showdown.Converter({tables: true});
-
     if (waypointNum === 0 && storyNum === 1) {
         const svgContainer = document.createElement('object');
         svgContainer.data = 'img/LymphNode_gross_white.svg'
@@ -93,20 +85,6 @@ function buildWaypoint(waypointNum, storyNum, domElement, osd, finish_waypoint) 
             finish_waypoint('')
         }
         domElement.appendChild(svgContainer);
-    }
-    else if (waypointNum === 0 && storyNum === 2) {
-        const lastpageTextDiv = document.createElement('div');
-        lastpageTextDiv.id = 'lastPageText'
-        const lastPageText = `For more information on NanoString GeoMx technology visit [**our website**](https://www.nanostring.com/products/geomx-digital-spatial-profiler/geomx-dsp-overview/).   
-        \nDetails of the performance of WTA have been [**published**](https://doi.org/10.1101/2021.09.29.462442).   
-        \nMinerva is an open-source software package that was developed by Laboratory of Systems Pharmacology at Harvard University and is available [**here**](https://github.com/labsyspharm/minerva-story/wiki).   
-        We would like to thank Jeremy Muhlich and John Thomas Hoffer for assistance in enabling Minerva features to support the Spatial Organ Atlas.  
-        \nSources:   
-        Rashid R, Chen YA, Hoffer J, Muhlich JL, Lin JR, Krueger R, Pfister H, Mitchell R, Santagata S, and Sorger PK. Interpretative guides for interacting with tissue atlas and digital pathology data using the Minerva browser. BioRxiv. (2020) [https://doi.org/10.1101/2020.03.27.001834](https://doi.org/10.1101/2020.03.27.001834)
-        \nHoffer J, Rashid R, Muhlich JL, Chen, YA, Russell D, Ruokonen J, Krueger R, Pfister H, Santagata S, Sorger PK. (2020). Minerva: a light-weight, narrative image browser for multiplexed tissue images. Journal of Open Source Software, 5(54), 2579, [https://doi.org/10.21105/joss.02579](https://doi.org/10.21105/joss.02579)
-        \n\nFOR RESEARCH USE ONLY. Not for use in diagnostic procedures.`
-        lastpageTextDiv.innerHTML = showdown_text.makeHtml(lastPageText);
-        domElement.appendChild(lastpageTextDiv);
     }
 }
 
@@ -165,8 +143,7 @@ const css = `
 `;
 
 export const story = {
-    'css': css,
-    // other story config
+    'css': css
 };
 
 const styleElement = document.createElement('style');

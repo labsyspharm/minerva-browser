@@ -1063,8 +1063,7 @@ Render.prototype = {
         }
       })
       const channelsList = HS.cgs[0].Channels
-      const channelIndex = channelsList.indexOf(chan)
-      // Nanostring change - shifts masks over 1 to account for All cells/structures mask
+      const channelIndex = channelsList.indexOf(chan);
       if (channelIndex >= 0) {
         HS.g = channelIndex + 1;
       } else {
@@ -1079,12 +1078,12 @@ Render.prototype = {
     const chanAndMaskandPanHandler = function(d) {
       // Pan and Zoom to coordinates from data file
       var cellPosition = [parseInt(d['X_position']), parseInt(d['Y_position'])]
-      if (Number.isNaN(cellPosition[0])) {
-        return;
-      };
-      var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
-      //change hashstate vars
-      HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y]
+      if (!Number.isNaN(cellPosition[0])) {
+        var viewportCoordinates = THIS.osd.viewer.viewport.imageToViewportCoordinates(cellPosition[0], cellPosition[1]);
+        //change hashstate vars
+        HS.v = [ 10, viewportCoordinates.x, viewportCoordinates.y];
+      }
+      
       //Change channels and masks based on data file
       var chan = d.channel
       var mask = d.type
@@ -1097,7 +1096,6 @@ Render.prototype = {
       
       const channelsList = HS.cgs[0].Channels
       const channelIndex = channelsList.indexOf(chan)
-      // Nanostring change - shifts masks over 1 to account for All cells/structures mask
       if (channelIndex >= 0) {
         HS.g = channelIndex + 1;
       } else {
@@ -1121,7 +1119,6 @@ Render.prototype = {
       
       const channelsList = HS.cgs[0].Channels
       const channelIndex = channelsList.indexOf(chan)
-      // Nanostring change - shifts masks over 1 to account for All cells/structures mask
       if (channelIndex >= 0) {
         HS.g = channelIndex + 1;
       } else {

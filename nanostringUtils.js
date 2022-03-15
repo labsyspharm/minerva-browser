@@ -37,14 +37,6 @@ function addROIBox(osd, ROIBox, id, storyNum, waypointNum){
     osd.addOverlay(overlay, id, storyNum, waypointNum)
 }
 
-// export function addMaskOld(osd, maskNums) {
-//     // Add the mask to all the ROIs of the same structure
-//     // onpopstate seems to need a list longer than 1 so -1 is added
-//     osd.hashstate.m = [-1, ...maskNums]
-//     osd.hashstate.pushState();
-//     window.onpopstate();
-// }
-
 export function addMask(osd, maskNames) {
     osd.hashstate.m = [-1];
     maskNames.forEach((el) => {

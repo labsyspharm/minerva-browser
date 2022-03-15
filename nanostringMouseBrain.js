@@ -25,49 +25,49 @@ const allROIs = {
         panCoord: {x: 0.1800, y: 0.6544},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1554, y: 0.6333, width: 0.0492, height: 0.0421}}],
-        maskNum: ["Cortical layer I"]
+        maskName: ["Cortical layer I"]
     },
     // best-in-class Cortical layer II/III (Full ROI)
     r044: {
         panCoord: {x: 0.1857, y: 0.6425},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1609, y: 0.6202, width: 0.0496, height: 0.0447}}],
-        maskNum: ["Cortical layer II/III"]
+        maskName: ["Cortical layer II/III"]
     },
     // best-in-class Cortical layer IV (Full ROI)
     r045: {
         panCoord: {x: 0.1991, y: 0.6291},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1816, y: 0.6139, width: 0.0351, height: 0.0305}}],
-        maskNum: ["Cortical layer IV"]
+        maskName: ["Cortical layer IV"]
     },
     // best-in-class Cortical layer V (Full ROI)
     r046: {
         panCoord: {x: 0.2108, y: 0.6177},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1894, y: 0.5997, width: 0.0428, height: 0.0361}}],
-        maskNum: ["Cortical layer V"]
+        maskName: ["Cortical layer V"]
     },
     // best-in-class Cortical layer VI (Full ROI)
     r047: {
         panCoord: {x: 0.2274, y: 0.6035},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.2053, y: 0.5841, width: 0.0443, height: 0.0387}}],
-        maskNum: ["Cortical layer VI"]
+        maskName: ["Cortical layer VI"]
     },
     // best-in-class Cortical layer V (NeuN+)
     r051NeuN: {
         panCoord: {x: 0.1830, y: 0.5872},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1621, y: 0.5646, width: 0.0418, height: 0.0452}}],
-        maskNum: ["Cortical layer VI - NeuN+"]
+        maskName: ["Cortical layer VI - NeuN+"]
     },
     // best-in-class Cortical layer V (DNA)
     r051Neuropil: {
         panCoord: {x: 0.1830, y: 0.5872},
         zoomRatio: 5.6315,
         ROIBox: [{overlay: {x: 0.1621, y: 0.5646, width: 0.0418, height: 0.0452}}],
-        maskNum: ["Cortical layer VI - Neuropil"]
+        maskName: ["Cortical layer VI - Neuropil"]
     }
 }
 

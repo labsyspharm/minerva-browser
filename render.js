@@ -551,8 +551,7 @@ Render.prototype = {
     const prefix = '#' + HS.id + ' ';
 
     // Enable home button if in outline mode, otherwise enable table of contents button
-    displayOrNot(prefix+'.minerva-home-button', !noHome && !edit && HS.waypoint.Mode == 'outline');
-    displayOrNot(prefix+'.minerva-toc-button', !edit && HS.waypoint.Mode != 'outline');
+    displayOrNot(prefix+'.minerva-toc-button', !edit);
     // Enable 3D UI if in 3D mode
     displayOrNot(prefix+'.minerva-channel-groups-legend', !HS.design.is3d);
     displayOrNot(prefix+'.minerva-z-slider-legend', HS.design.is3d);

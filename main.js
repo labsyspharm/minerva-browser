@@ -86,6 +86,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
               tileHeight: image.TileSize.slice(0,2).pop(),
               getTileUrl: getGetTileUrl(image, layer)
             },
+            degrees: image.Rotation || 0,
             x: x,
             y: y,
             opacity: 0,

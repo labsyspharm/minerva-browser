@@ -691,8 +691,16 @@ Render.prototype = {
         window.onpopstate();
       })
   } 
+  // Only puts unique mask names in the list of data layers
+  // Source: https://melvingeorge.me/blog/remove-duplicate-elements-from-array-of-objects-javascript
+  const uniqueMasks = new Set();
+  const filteredMasks = masks.filter((el) => {
+    const isDuplicate = uniqueMasks.has(el.Name);
+    uniqueMasks.add(el.Name);
+    return !isDuplicate;
+  });
     // Add masks with indices
-    masks.forEach(function(mask) {
+    filteredMasks.forEach(function(mask) {
       const m = index_name(HS.masks, mask.Name);
       this.addMask(mask, m);
     }, this);

@@ -994,7 +994,7 @@ Render.prototype = {
     })();
 
     // All categories of possible visualization types
-    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "Other", "MaskAndPan", "chanAndMaskandPan", "multipleMasksHandler", "multipleMasksAndPan", "multipleMasksPanChannel"];
+    const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "MaskAndPan", "chanAndMaskandPan", "multipleMasksHandler", "multipleMasksAndPan", "multipleMasksPanChannel"];
     
     const waypointVis = new Set(allVis.filter(v => waypoint[v]));
     const renderedVis = new Set();
@@ -1204,7 +1204,6 @@ Render.prototype = {
         'VisBarChart': infovis.renderBarChart,
         'VisScatterplot': infovis.renderScatterplot,
         'VisCanvasScatterplot': infovis.renderCanvasScatterplot,
-        'Other': infovis.renderOther,
         "MaskAndPan": infovis.renderMaskAndPan,
         "chanAndMaskandPan": infovis.renderChanAndMaskandPanHandler,
         'multipleMasksHandler': infovis.renderMultipleMasksHandler,
@@ -1217,7 +1216,6 @@ Render.prototype = {
         'VisBarChart': maskHandler,
         'VisScatterplot': arrowHandler,
         'VisCanvasScatterplot': arrowHandler,
-        'Other': arrowHandler,
         'MaskAndPan': MaskAndPan,
         'chanAndMaskandPan': chanAndMaskandPanHandler,
         'multipleMasksHandler': multipleMasksHandler,

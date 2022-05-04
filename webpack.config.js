@@ -2,7 +2,6 @@ const webpack = require('webpack')
 const path = require('path')
 
 IndexLoader = {
-  devtool: "inline-source-map",
   entry: './index.js',
   output: {
     filename: 'bundle.js',
@@ -15,12 +14,7 @@ IndexLoader = {
       Buffer: ['buffer', 'Buffer'],
       process: 'process/browser'
     })
-  ],
-  devServer: {
-    static: { directory: path.join(__dirname, 'build') },
-    // compress: false,
-    // port: 8080,
-  },
+  ]
 }
 
-module.exports = IndexLoader;
+module.exports = [IndexLoader];

@@ -347,8 +347,6 @@ RenderOSD.prototype = {
   addPolygon: function(id, polygon) {
     var svg_overlay = this.svg_overlay;
 
-    // for story building purposes - uncomment below to capture the Polygon object
-    // console.log(polygon);
     d3.select('#' + id).remove();
     var selPoly = svg_overlay.selectAll(id).data([polygon]);
     selPoly.enter().append("polygon")
@@ -481,7 +479,7 @@ RenderOSD.prototype = {
     const current = this.viewer.getOverlayById(el);
     const HS = this.hashstate;
 
-    const not_outline = (HS.waypoint.Mode != '');
+    const not_outline = (HS.waypoint.Mode != 'outline');
     const not_current = (HS.s != s || HS.w != w);
 
     // Hide if not part of the outline and not current story/waypoint
@@ -558,5 +556,6 @@ RenderOSD.prototype = {
     const viewport = this.viewer.viewport;
     viewport.panTo(HS.viewport.pan);
     viewport.zoomTo(HS.viewport.scale);
+    viewport.applyConstraints(true);
   }
 }

@@ -440,6 +440,8 @@ Render.prototype = {
       this.addMasks();
 
       // Add a footer, if applicable
+      // Specify for the text for the footer in the exhibit.json file
+      // goes under the data layer buttons
       if (HS.waypoint.Footer) {
         this.addFooter();
       };
@@ -551,7 +553,8 @@ Render.prototype = {
     const prefix = '#' + HS.id + ' ';
 
     // Enable home button if in outline mode, otherwise enable table of contents button
-    displayOrNot(prefix+'.minerva-toc-button', !edit);
+    displayOrNot(prefix+'.minerva-home-button', !noHome && !edit && HS.waypoint.Mode == 'outline');
+    displayOrNot(prefix+'.minerva-toc-button', !edit && HS.waypoint.Mode != 'outline');
     // Enable 3D UI if in 3D mode
     displayOrNot(prefix+'.minerva-channel-groups-legend', !HS.design.is3d);
     displayOrNot(prefix+'.minerva-z-slider-legend', HS.design.is3d);
@@ -575,6 +578,11 @@ Render.prototype = {
     const minimal_sidebar = !edit && HS.totalCount == 1 && !decode(HS.d);
     classOrNot(prefix+'.minerva-sidebar-menu', minimal_sidebar, 'minimal');
     displayOrNot(prefix+'.minerva-welcome-nav', !minimal_sidebar);
+    // Disable sidebar if no content
+    if (minimal_sidebar && noHome) {
+      classOrNot(prefix+'.minerva-sidebar-menu', true, 'toggled');
+      displayOrNot(prefix+'.minerva-toggle-sidebar', false);
+    }
 
     // H&E should not display number of cycif markers
     const is_h_e = HS.group.Name == 'H&E';
@@ -1273,12 +1281,6 @@ Render.prototype = {
         renderVis(visType, wid_waypoint, new_div.id);
       }
     })
-
-    // Nanostring-specific event - for adding content to a specific waypoint
-    const currentWaypointInfo = {waypointNum: HS.w, storyNum: HS.s, domElement: wid_waypoint, osd: this.osd, finish_waypoint}
-    const waypointBuildEvent = new CustomEvent('waypointBuildEvent', {
-      detail: currentWaypointInfo});
-    document.dispatchEvent(waypointBuildEvent);
 
     finish_waypoint('');
 

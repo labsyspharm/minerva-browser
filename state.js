@@ -824,7 +824,7 @@ HashState.prototype = {
 
     // Three types of empty story
     const name = {
-      'explore': 'Appendix',
+      'explore': 'Free Explore',
       'tag': 'Shared Link',
       'outline': 'Introduction'
     }[mode];
@@ -840,6 +840,7 @@ HashState.prototype = {
       'tag': this.active_masks.filter(mask => mask.Name).map(mask => mask.Name),
     }[mode];
 
+    // Add text to the Free Explore page by adding the key "Appendix" with a string value to exhibit.json
     const waypoint_text = (() => {
       if (mode === 'explore') {
         return this.exhibit.Appendix
@@ -937,19 +938,21 @@ HashState.prototype = {
         window.onpopstate();
       }
       // Show welcome page if no hash present
-      else if (this.isMissingHash && !this.hideWelcome) {
+      else if (this.isMissingHash) {
+        if (!this.hideWelcome) {
+          const welcome = $(this.el).find('.minerva-welcome_modal');
+          if (!this.customWelcome) {
+            const channel_count = welcome.find('.minerva-channel_count')[0];
+            channel_count.innerText = this.channels.length;
+          }
+          else {
+            const welcome_body = welcome.find('.modal-body')[0];
+            welcome_body.innerHTML = this.customWelcome;
+          }
+          welcome.modal('show');
+        }
+        // Set default story even if welcome hidden
         this.s = 0; 
-        const welcome = $(this.el).find('.minerva-welcome_modal');
-        if (!this.customWelcome) {
-          const channel_count = welcome.find('.minerva-channel_count')[0];
-          channel_count.innerText = this.channels.length;
-        }
-        else {
-          const welcome_body = welcome.find('.modal-body')[0];
-          welcome_body.innerHTML = this.customWelcome;
-        }
-        welcome.modal('show');
-
         this.pushState();
         window.onpopstate();
       }

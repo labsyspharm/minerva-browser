@@ -6,7 +6,6 @@ import { HashState } from "./state"
 import { Render } from './render'
 import { RenderOSD } from './osd'
 import * as d3 from "d3"
-import * as nanostringConfig from './nanostringStoryConfig';
 
 // Flatten an array of arrays
 const flatten = function(items) {
@@ -143,6 +142,10 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
     }
   }
 };
+
+let marker_data = [{"﻿String":"ARL13B","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=ARL13B&keywords=ARL13B"},{"﻿String":"ASMA","Alias":"A-SMA, a-SMA, alpha-SMA, α-SMA","Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=ACTA2&keywords=alpha,smooth,muscle,actin"},{"﻿String":"BANF1","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=BANF1&keywords=BANF1"},{"﻿String":"CD11B","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=ITGAM&keywords=CD11B"},{"﻿String":"CD14","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD14&keywords=CD14"},{"﻿String":"CD163","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD163&keywords=CD163"},{"﻿String":"CD19","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD19&keywords=CD19"},{"﻿String":"CD20","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=MS4A1&keywords=CD20"},{"﻿String":"CD21","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CR2&keywords=CD21"},{"﻿String":"CD3D","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD3D&keywords=CD3D"},{"﻿String":"CD4","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD4&keywords=CD4"},{"﻿String":"CD45","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=PTPRC&keywords=CD45"},{"﻿String":"CD45RB","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=PTPRC&keywords=CD45RB"},{"﻿String":"CD68","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD68&keywords=CD68"},{"﻿String":"CD8A","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD8A&keywords=CD8A"},{"﻿String":"FOXP3","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=FOXP3&keywords=FOXP3"},{"﻿String":"GFAP","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=GFAP&keywords=GFAP"},{"﻿String":"GTUBULIN","Alias":"gamma-tubulin","Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=TUBG1&keywords=gamma,tubulin"},{"﻿String":"IBA1","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=AIF1&keywords=IBA1"},{"﻿String":"KERATIN","Alias":"pan-cytokeratin, pan-keratin","Link":"https://www.genecards.org/Search/Keyword?queryString=KERATIN"},{"﻿String":"KI67","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=MKI67&keywords=KI67"},{"﻿String":"LAG3","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=LAG3&keywords=LAG3"},{"﻿String":"LAMINAC","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=LMNA&keywords=LAMIN,AC"},{"﻿String":"LAMINB","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=LMNB1&keywords=LAMINB"},{"﻿String":"PD-1","Alias":"PD1","Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=PDCD1&keywords=PD-1"},{"﻿String":"PD-L1","Alias":"PDL1","Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD274&keywords=PD-L1"},{"﻿String":"CD19","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD19&keywords=CD19"},{"﻿String":"CD14","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD14&keywords=CD11c"},{"﻿String":"CD56","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=NCAM1&keywords=CD56"},{"﻿String":"CD34","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD34&keywords=CD34"},{"﻿String":"CD44","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD44&keywords=CD34"},{"﻿String":"CD14","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD14&keywords=CD14"},{"﻿String":"CD33","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD33&keywords=CD33"},{"﻿String":"CD41","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=ITGA2B&keywords=CD41"},{"﻿String":"CD61","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=ITGB3&keywords=CD61"},{"﻿String":"CD62","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=SELP&keywords=CD62"},{"﻿String":"CD146","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=MCAM&keywords=CD146"},{"﻿String":"CD1d","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD1D&keywords=CD1d"},{"﻿String":"CD2","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD2&keywords=CD2"},{"﻿String":"CD5","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD5&keywords=cd5"},{"﻿String":"CD7","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD7&keywords=CD7"},{"﻿String":"CD9","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD9&keywords=CD9"},{"﻿String":"CD10","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=MME&keywords=CD10"},{"﻿String":"CD11A","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=ITGAL&keywords=CD11A"},{"﻿String":"CD70","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD70&keywords=CD70"},{"﻿String":"CD74","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=CD74&keywords=CD74"},{"﻿String":"CD103","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=ITGAE&keywords=CD103"},{"﻿String":"CD133","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=PROM1&keywords=CD133"},{"﻿String":"CD168","Alias":null,"Link":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=HMMR&keywords=CD168"}];
+let cell_type_data = [{"﻿String":"Natural Killer Cells","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/c%C3%A9lulas/natural-killer-cells"},{"﻿String":"B Cells","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/cells/b-cells"},{"﻿String":"Basophil","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/c%C3%A9lulas/basophils"},{"﻿String":"Helper T cell","Alias":"CD4+ T Cell","Link":"https://www.immunology.org/public-information/bitesized-immunology/células/cd4-t-cells"},{"﻿String":"Cytotoxic T Cell","Alias":"CD8+ T Cell","Link":"https://www.immunology.org/public-information/bitesized-immunology/c%C3%A9lulas/cd8-t-cells"},{"﻿String":"Dendritic Cell","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/cells/dendritic-cells"},{"﻿String":"Eosinophils","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/c%C3%A9lulas/eosinophils"},{"﻿String":"Macrophage","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/c%C3%A9lulas/macrophages"},{"﻿String":"Mast Cell","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/c%C3%A9lulas/mast-cells"},{"﻿String":"Neutrophil","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/cells/neutrophils"},{"﻿String":"Regulatory T Cell","Alias":"Treg","Link":"https://www.immunology.org/public-information/bitesized-immunology/células/regulatory-t-cells-tregs"},{"﻿String":"T follicular helper cell","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/cells/t-follicular-helper-cells"},{"﻿String":"bone marrow","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/%C3%B3rganos-y-tejidos/bone-marrow"},{"﻿String":"lymph node","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/organs-and-tissues/lymph-node"},{"﻿String":"complement system","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/sistemas-y-procesos/complement-system"},{"﻿String":"phagocytosis","Alias":null,"Link":"https://www.immunology.org/public-information/bitesized-immunology/systems-and-processes/phagocytosis"}];
+
 
 const exhibitCSS = `
 @import url("https://fonts.googleapis.com/css?family=Hind+Vadodara:500|Overpass:200,800");
@@ -2183,8 +2186,18 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 @media (max-width: 575.98px) { .minerva-root .display-4 { font-size: 2rem; margin-top: 1rem; } }
 .minerva-root .select2-results ul { color: black; }
 
+.minerva-root {
+  display: grid; 
+  grid-template-columns: 1fr; 
+  grid-template-rows: 1fr; 
+  grid-column-gap: 0px;
+  grid-row-gap: 0px; 
+  height: 100%;
+  width: 100%;
+}
+
 .minerva-root > div {
-  background-color: black;
+  grid-area: 1 / 1 / 2 / 2;
 }
 
 .minerva-root .minerva-toggle-sidebar {
@@ -2312,7 +2325,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   left: 0;
   bottom: 0; */
   width: 100%;
-  height: 100vh;
+  height: 100%;
   pointer-events: fill;
   /* border: 1px solid #444; */
 }
@@ -2481,6 +2494,14 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     fill : white;
 }
 
+body {
+  margin: 0;
+  height: 100vh;
+  background-color: black;
+  /* mobile viewport bug fix */
+  height: -webkit-fill-available;
+}
+
 body .tooltip {
     position: absolute;
     margin-top: 3px;
@@ -2511,36 +2532,36 @@ body .tooltip {
 
 const exhibitHTML = `
 <div class="minerva-root">
-    <div class="position-fixed w-100" style="top: 0;left: 0;">
-        <div>
-            <div class="minerva-openseadragon"></div>
-            <div class="minerva-legend position-absolute"
-                 style="pointer-events: none; top: 1rem; right: 8px">
-                <div>
-                  <a class="minerva-toggle-legend p-1" href="javascript;;">
-                    <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
-                    <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
-                  </a>
-                    <div class="btn-group-vertical bg-trans p-2"
-                         style="display:inline-block; vertical-align:top;">
-                        <ul class="minerva-channel-legend list-unstyled m-0"></ul>
-                        <div class="p-1 minerva-only-3d">
-                          Depth:
-                        </div>
-                        <div style="text-align: right;">
-                          <span class="minerva-depth-legend"> </span>
-                        </div>
-                    </div> 
-                    <div class="minerva-channel-groups-legend nav flex-column nav-pills p-2 bg-trans"
-                         style="display:inline-block; vertical-align:top;
-                         pointer-events: all; overflow-y: scroll; max-height: 80vh;">
-                    </div>
-                    <div class="minerva-z-slider-legend bg-trans"
-                         style="pointer-events: all; display:inline-block; vertical-align:top;">
-                        <input class="minerva-z-slider" type="range"/>
-                    </div>
+    <div>
+      <div class="minerva-openseadragon"></div>
+    </div>
+    <div>
+        <div class="minerva-legend position-absolute" style="pointer-events: none; top: 1rem; right: 8px">
+            <div>
+              
+                <a class="minerva-toggle-legend p-1" href="javascript;;">
+                  <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
+                  <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
+                </a>
+                <div class="btn-group-vertical bg-trans p-2" style="display:inline-block; vertical-align:top;">
+                <ul class="minerva-channel-legend list-unstyled m-0"></ul>
+                <div class="p-1 minerva-only-3d">
+                  Depth:
+                </div>
+                <div style="text-align: right;">
+                  <span class="minerva-depth-legend"> </span>
+                </div>
+              </div> 
+              <div class="minerva-channel-groups-legend nav flex-column nav-pills p-2 bg-trans"
+                    style="display:inline-block; vertical-align:top;
+                    pointer-events: all; overflow-y: scroll; max-height: 80vh;">
+              </div>
+              <div class="minerva-z-slider-legend bg-trans"
+                    style="pointer-events: all; display:inline-block; vertical-align:top;">
+                  <input class="minerva-z-slider" type="range"/>
                 </div>
             </div>
+        </div>
             <div class="minerva-sidebar-menu container position-absolute">
                 <div class="row">
                     <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 90vh; overflow-y: scroll">
@@ -2635,168 +2656,169 @@ const exhibitHTML = `
         </div>
     </div>
 
-    <div class="d-none">
-        <div class="minerva-arrow-overlay">
-          <div class="minerva-arrowhead-image">
-            <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <div>
+      <div class="d-none">
+          <div class="minerva-arrow-overlay">
+            <div class="minerva-arrowhead-image">
+              <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="48"
-   height="51.69223"
-   viewBox="0 0 12.711991 13.676902"
-   version="1.1"
-   id="svg8"
-   inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="arrowhead.svg">
-  <defs
-     id="defs2" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="2.8"
-     inkscape:cx="215.21359"
-     inkscape:cy="30.005484"
-     inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
-     showgrid="false"
-     inkscape:window-width="1440"
-     inkscape:window-height="855"
-     inkscape:window-x="366"
-     inkscape:window-y="127"
-     inkscape:window-maximized="0"
-     units="px"
-     fit-margin-top="0"
-     fit-margin-left="0"
-     fit-margin-right="0"
-     fit-margin-bottom="0">
-    <inkscape:grid
-       type="xygrid"
-       id="grid93"
-       originx="-80.574495"
-       originy="-156.63291" />
-    <inkscape:grid
-       type="xygrid"
-       id="grid3784"
-       originx="-80.574495"
-       originy="-156.63291" />
-  </sodipodi:namedview>
-  <metadata
-     id="metadata5">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-80.487169,-126.68424)">
-    <path
-       style="fill:#000000;stroke:#ffffff;stroke-width:0.65998453;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 90.862994,132.64086 1.759972,-5.27987 -11.439757,6.15985 11.439757,6.15987 -1.759972,-5.27988 c -0.185517,-0.55655 -0.185517,-1.20342 0,-1.75997 z"
-       id="path91"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="scccss" />
-  </g>
-</svg>
+    <svg
+      xmlns:dc="http://purl.org/dc/elements/1.1/"
+      xmlns:cc="http://creativecommons.org/ns#"
+      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+      xmlns:svg="http://www.w3.org/2000/svg"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+      xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+      width="48"
+      height="51.69223"
+      viewBox="0 0 12.711991 13.676902"
+      version="1.1"
+      id="svg8"
+      inkscape:version="0.92.2 5c3e80d, 2017-08-06"
+      sodipodi:docname="arrowhead.svg">
+      <defs
+        id="defs2" />
+      <sodipodi:namedview
+        id="base"
+        pagecolor="#ffffff"
+        bordercolor="#666666"
+        borderopacity="1.0"
+        inkscape:pageopacity="0.0"
+        inkscape:pageshadow="2"
+        inkscape:zoom="2.8"
+        inkscape:cx="215.21359"
+        inkscape:cy="30.005484"
+        inkscape:document-units="mm"
+        inkscape:current-layer="layer1"
+        showgrid="false"
+        inkscape:window-width="1440"
+        inkscape:window-height="855"
+        inkscape:window-x="366"
+        inkscape:window-y="127"
+        inkscape:window-maximized="0"
+        units="px"
+        fit-margin-top="0"
+        fit-margin-left="0"
+        fit-margin-right="0"
+        fit-margin-bottom="0">
+        <inkscape:grid
+          type="xygrid"
+          id="grid93"
+          originx="-80.574495"
+          originy="-156.63291" />
+        <inkscape:grid
+          type="xygrid"
+          id="grid3784"
+          originx="-80.574495"
+          originy="-156.63291" />
+      </sodipodi:namedview>
+      <metadata
+        id="metadata5">
+        <rdf:RDF>
+          <cc:Work
+            rdf:about="">
+            <dc:format>image/svg+xml</dc:format>
+            <dc:type
+              rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+            <dc:title></dc:title>
+          </cc:Work>
+        </rdf:RDF>
+      </metadata>
+      <g
+          inkscape:label="Layer 1"
+          inkscape:groupmode="layer"
+          id="layer1"
+          transform="translate(-80.487169,-126.68424)">
+        <path
+            style="fill:#000000;stroke:#ffffff;stroke-width:0.65998453;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+            d="m 90.862994,132.64086 1.759972,-5.27987 -11.439757,6.15985 11.439757,6.15987 -1.759972,-5.27988 c -0.185517,-0.55655 -0.185517,-1.20342 0,-1.75997 z"
+            id="path91"
+            inkscape:connector-curvature="0"
+            sodipodi:nodetypes="scccss" />
+      </g>
+    </svg>
 
-          </div>
-          <div class="minerva-arrow-image">
-            <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+              </div>
+              <div class="minerva-arrow-image">
+                <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="122.79958"
-   height="51.401581"
-   viewBox="0 0 32.521399 13.600001"
-   version="1.1"
-   id="svg8"
-   inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="arrow.svg">
-  <defs
-     id="defs2" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="3.959798"
-     inkscape:cx="154.51108"
-     inkscape:cy="29.572515"
-     inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
-     showgrid="false"
-     inkscape:window-width="1440"
-     inkscape:window-height="855"
-     inkscape:window-x="0"
-     inkscape:window-y="1"
-     inkscape:window-maximized="1"
-     units="px"
-     fit-margin-top="0"
-     fit-margin-left="0"
-     fit-margin-right="0"
-     fit-margin-bottom="0">
-    <inkscape:grid
-       type="xygrid"
-       id="grid93"
-       originx="-80.574492"
-       originy="-156.63309" />
-    <inkscape:grid
-       type="xygrid"
-       id="grid3784"
-       originx="-80.574492"
-       originy="-156.63309" />
-  </sodipodi:namedview>
-  <metadata
-     id="metadata5">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-80.487168,-126.76104)">
-    <path
-       style="fill:#000000;stroke:#ffffff;stroke-width:0.6562736;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 90.804653,132.6843 1.750076,-5.25019 -11.375434,6.12522 11.375434,6.12523 -1.750076,-5.25019 h 21.875777 v -1.75007 z"
-       id="path91"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="cccccccc" />
-  </g>
-</svg>
+    <svg
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        xmlns:cc="http://creativecommons.org/ns#"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:svg="http://www.w3.org/2000/svg"
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+        xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+        width="122.79958"
+        height="51.401581"
+        viewBox="0 0 32.521399 13.600001"
+        version="1.1"
+        id="svg8"
+        inkscape:version="0.92.2 5c3e80d, 2017-08-06"
+        sodipodi:docname="arrow.svg">
+      <defs
+          id="defs2" />
+      <sodipodi:namedview
+          id="base"
+          pagecolor="#ffffff"
+          bordercolor="#666666"
+          borderopacity="1.0"
+          inkscape:pageopacity="0.0"
+          inkscape:pageshadow="2"
+          inkscape:zoom="3.959798"
+          inkscape:cx="154.51108"
+          inkscape:cy="29.572515"
+          inkscape:document-units="mm"
+          inkscape:current-layer="layer1"
+          showgrid="false"
+          inkscape:window-width="1440"
+          inkscape:window-height="855"
+          inkscape:window-x="0"
+          inkscape:window-y="1"
+          inkscape:window-maximized="1"
+          units="px"
+          fit-margin-top="0"
+          fit-margin-left="0"
+          fit-margin-right="0"
+          fit-margin-bottom="0">
+        <inkscape:grid
+            type="xygrid"
+            id="grid93"
+            originx="-80.574492"
+            originy="-156.63309" />
+        <inkscape:grid
+          type="xygrid"
+          id="grid3784"
+          originx="-80.574492"
+          originy="-156.63309" />
+      </sodipodi:namedview>
+      <metadata
+        id="metadata5">
+        <rdf:RDF>
+          <cc:Work
+            rdf:about="">
+            <dc:format>image/svg+xml</dc:format>
+            <dc:type
+              rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+            <dc:title></dc:title>
+          </cc:Work>
+        </rdf:RDF>
+      </metadata>
+      <g
+        inkscape:label="Layer 1"
+        inkscape:groupmode="layer"
+        id="layer1"
+        transform="translate(-80.487168,-126.76104)">
+        <path
+          style="fill:#000000;stroke:#ffffff;stroke-width:0.6562736;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+          d="m 90.804653,132.6843 1.750076,-5.25019 -11.375434,6.12522 11.375434,6.12523 -1.750076,-5.25019 h 21.875777 v -1.75007 z"
+          id="path91"
+          inkscape:connector-curvature="0"
+          sodipodi:nodetypes="cccccccc" />
+      </g>
+    </svg>
 
           </div>
           <div class="minerva-arrow-text">
@@ -3069,9 +3091,25 @@ const build_page_with_exhibit = function(exhibit, options) {
   }
 
   arrange_images(viewer, tileSources, hashstate, init);
+
+  return viewer;
 }
 
 export const build_page = function(options) {
+
+  if (Array.isArray(options.markerData)) {
+    marker_data = options.markerData;
+  }
+  if (Array.isArray(options.cellTypeData)) {
+    cell_type_data = options.cellTypeData;
+  }
+  // define the marker and cell type links table
+  const marker_maps = get_links_alias(marker_data);
+  options.marker_links_map = marker_maps[0];
+  options.marker_alias_map = marker_maps[1];
+  const cell_type_maps = get_links_alias(cell_type_data);
+  options.cell_type_links_map = cell_type_maps[0];
+  options.cell_type_alias_map = cell_type_maps[1];
 
   // add CSS to the document
   var linkElement1 = document.createElement('link');
@@ -3100,25 +3138,24 @@ export const build_page = function(options) {
   zoom_out_el.id = options.id + '-zoom-out';
   zoom_in_el.id = options.id + '-zoom-in';
 
-  var exhibit = options.exhibit;
-  options.el = el;
+  $('.js-toggle-osd-side-nav').click(function() {
+    $('#osd-side-nav').position().top == 0 
+        ? $('#osd-side-nav').css('top', '75vh')
+        : $('#osd-side-nav').css('top', 0);
+    $('#osd-side-nav').scrollTop(0);
+  })
 
+  options.el = el;
+  const duplicateViewButton = el.getElementsByClassName('minerva-duplicate-view')[0];
+  duplicateViewButton.onclick = makeTwinViewer;
+
+  var exhibit = options.exhibit;
   if (typeof exhibit === 'string' || exhibit instanceof String) {
-    fetch(exhibit)
+    return fetch(exhibit)
       .then(response => response.json())
       .then(data => build_page_with_exhibit(data, options));
   }
   else {
-    build_page_with_exhibit(exhibit, options);
+    return Promise.resolve(build_page_with_exhibit(exhibit, options));
   }
-
-  $('.js-toggle-osd-side-nav').click(function() {
-      $('#osd-side-nav').position().top == 0 
-          ? $('#osd-side-nav').css('top', '75vh')
-          : $('#osd-side-nav').css('top', 0);
-      $('#osd-side-nav').scrollTop(0);
-  })
-
-  const duplicateViewButton = el.getElementsByClassName('minerva-duplicate-view')[0];
-  duplicateViewButton.onclick = makeTwinViewer;
 }

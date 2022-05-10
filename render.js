@@ -579,6 +579,7 @@ Render.prototype = {
     classOrNot(prefix+'.minerva-sidebar-menu', minimal_sidebar, 'minimal');
     displayOrNot(prefix+'.minerva-welcome-nav', !minimal_sidebar);
     // Disable sidebar if no content
+    // ??? Not with 'no nav when on waypoint...' change
     if (minimal_sidebar && noHome) {
       classOrNot(prefix+'.minerva-sidebar-menu', true, 'toggled');
       displayOrNot(prefix+'.minerva-toggle-sidebar', false);

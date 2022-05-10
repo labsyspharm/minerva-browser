@@ -811,6 +811,7 @@ HashState.prototype = {
   // Create an empty story from current hash state
   newTempStory: function(mode) {
     const exhibit = this.exhibit;
+    // ??? Not consistent with 'no nav when one waypoint...' commit
     const first_g = index_name(this.cgs, this.design.first_group);
     const first_group = (first_g != -1) ? this.cgs[first_g] : this.group;
     const group = mode != 'tag' ? first_group : this.group;

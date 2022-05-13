@@ -2185,18 +2185,8 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 @media (max-width: 575.98px) { .minerva-root .display-4 { font-size: 2rem; margin-top: 1rem; } }
 .minerva-root .select2-results ul { color: black; }
 
-.minerva-root {
-  display: grid; 
-  grid-template-columns: 1fr; 
-  grid-template-rows: 1fr; 
-  grid-column-gap: 0px;
-  grid-row-gap: 0px; 
-  height: 100%;
-  width: 100%;
-}
-
 .minerva-root > div {
-  grid-area: 1 / 1 / 2 / 2;
+  background-color: black;
 }
 
 .minerva-root .minerva-toggle-sidebar {
@@ -2324,7 +2314,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   left: 0;
   bottom: 0; */
   width: 100%;
-  height: 100%;
+  height: 100vh;
   pointer-events: fill;
   /* border: 1px solid #444; */
 }
@@ -2491,14 +2481,6 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     font-size: 8px;
     color: white;
     fill : white;
-}
-
-body {
-  margin: 0;
-  height: 100vh;
-  background-color: black;
-  /* mobile viewport bug fix */
-  height: -webkit-fill-available;
 }
 
 body .tooltip {

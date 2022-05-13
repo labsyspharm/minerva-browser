@@ -7,6 +7,7 @@ var infovis = {};
 const renderVegaLite = function(wid_waypoint, id, visdata, events){
   try {
     return embed(`#${id}`, visdata, {
+      tooltip: false,
       actions: false,
       theme: 'dark'
     })

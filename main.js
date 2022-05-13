@@ -2185,8 +2185,18 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 @media (max-width: 575.98px) { .minerva-root .display-4 { font-size: 2rem; margin-top: 1rem; } }
 .minerva-root .select2-results ul { color: black; }
 
+.minerva-root {
+  display: grid; 
+  grid-template-columns: 1fr; 
+  grid-template-rows: 1fr; 
+  grid-column-gap: 0px;
+  grid-row-gap: 0px; 
+  height: 100%;
+  width: 100%;
+}
+
 .minerva-root > div {
-  background-color: black;
+  grid-area: 1 / 1 / 2 / 2;
 }
 
 .minerva-root .minerva-toggle-sidebar {
@@ -2314,7 +2324,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   left: 0;
   bottom: 0; */
   width: 100%;
-  height: 100vh;
+  height: 100%;
   pointer-events: fill;
   /* border: 1px solid #444; */
 }
@@ -2483,6 +2493,14 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     fill : white;
 }
 
+body {
+  margin: 0;
+  height: 100vh;
+  background-color: black;
+  /* mobile viewport bug fix */
+  height: -webkit-fill-available;
+}
+
 body .tooltip {
     position: absolute;
     margin-top: 3px;
@@ -2636,11 +2654,13 @@ const exhibitHTML = `
             </div>
         </div>
     </div>
+
     <div>
         <div class="d-none">
             <div class="minerva-arrow-overlay">
               <div class="minerva-arrowhead-image">
                 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
     <svg
        xmlns:dc="http://purl.org/dc/elements/1.1/"
        xmlns:cc="http://creativecommons.org/ns#"
@@ -2717,9 +2737,11 @@ const exhibitHTML = `
            sodipodi:nodetypes="scccss" />
       </g>
     </svg>
+
               </div>
               <div class="minerva-arrow-image">
                 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
     <svg
        xmlns:dc="http://purl.org/dc/elements/1.1/"
        xmlns:cc="http://creativecommons.org/ns#"
@@ -2796,12 +2818,14 @@ const exhibitHTML = `
            sodipodi:nodetypes="cccccccc" />
       </g>
     </svg>
+
               </div>
               <div class="minerva-arrow-text">
                 <div class="minerva-arrow-label p-3 bg-trans" style="max-width: 200px;">
                 </div>
               </div>
             </div>
+
             <form class="form minerva-save_edits_form">
                 <div class="input-group">
                     <div style="width: 100%; margin-bottom: 5px">
@@ -2830,6 +2854,8 @@ const exhibitHTML = `
                 </div>
             </form>
         </div>
+
+
         <div class="minerva-password_modal modal fade" role="dialog">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
@@ -2837,6 +2863,7 @@ const exhibitHTML = `
                         <h2 class="modal-title">Minerva Password</h2>
                     </div>
                     <div class="modal-body">
+
                         <form class="form">
                             <div class="form-group">
                                 <input type=password class="form-control" name="p">
@@ -2845,8 +2872,10 @@ const exhibitHTML = `
                         </form>
                     </div>
                 </div>
+              </div>
             </div>
-        </div>
+
+
         <div class="minerva-edit_description_modal modal fade" role="dialog">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content text-dark">
@@ -2857,6 +2886,7 @@ const exhibitHTML = `
                         </button>
                     </div>
                     <div class="modal-body">
+
                         <form class="form">
                             <div class="form-group text-bold">
                                 <label> Enter a description for the selected region. </label>
@@ -2869,6 +2899,7 @@ const exhibitHTML = `
                 </div>
             </div>
         </div>
+
         <div class="minerva-welcome_modal modal fade" role="dialog">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content text-dark">
@@ -3060,7 +3091,7 @@ const build_page_with_exhibit = function(exhibit, options) {
   arrange_images(viewer, tileSources, hashstate, init);
 
   return viewer;
-}
+};
 
 export const build_page = function(options) {
 

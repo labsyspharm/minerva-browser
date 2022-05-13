@@ -579,7 +579,6 @@ Render.prototype = {
     classOrNot(prefix+'.minerva-sidebar-menu', minimal_sidebar, 'minimal');
     displayOrNot(prefix+'.minerva-welcome-nav', !minimal_sidebar);
     // Disable sidebar if no content
-    // ??? Not with 'no nav when on waypoint...' change
     if (minimal_sidebar && noHome) {
       classOrNot(prefix+'.minerva-sidebar-menu', true, 'toggled');
       displayOrNot(prefix+'.minerva-toggle-sidebar', false);
@@ -842,6 +841,26 @@ Render.prototype = {
       }
     }
 
+    var moreEl = document.createElement('a');
+    if (selected && show_more && s_w) {
+      const opacity = 'opacity: ' +  + ';';
+      moreEl = Object.assign(moreEl, {
+        className : 'text-white',
+        style: 'position: absolute; right: 5px;',
+        href: 'javascript:;',
+        innerText: 'MORE',
+      });
+      aEl.appendChild(moreEl);
+
+      // Update Waypoint
+      $(moreEl).click(this, function(e) {
+        HS.s = s_w[0];
+        HS.w = s_w[1];
+        HS.pushState();
+        window.onpopstate();
+      });
+    }
+
     // Append channel group to element
     el.appendChild(aEl);
     
@@ -1002,6 +1021,34 @@ Render.prototype = {
       }
     })();
 
+    // Create links for cell types
+    HS.cell_type_links_map.forEach(function(link, type){
+      var escaped_type = type.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var re = RegExp(escaped_type+'s?', 'gi');
+      md = md.replace(re, function(m) {
+        return '['+m+']('+link+')';
+      });
+    });
+
+    // Create code blocks for protein markers
+    HS.marker_links_map.forEach(function(link, marker){
+      var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var re = RegExp('(^|[^0-9A-Za-z`])\('+escaped_marker+'\)([^0-9A-Za-z`]|$)', 'gi');
+      md = md.replace(re, function(m, pre, m1, post) {
+        return m.replace(m1, '`'+m1+'`', 'gi');
+      });
+    });
+
+    // Create links for protein markers
+    HS.marker_links_map.forEach(function(link, marker){
+      var escaped_marker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var re = RegExp('`'+escaped_marker+'`', 'gi');
+      md = md.replace(re, function(m) {
+        return '['+m+']('+link+')';
+      });
+    });
+
+
     // All categories of possible visualization types
     const allVis = ['VisMatrix', 'VisBarChart', 'VisScatterplot', "VisCanvasScatterplot", "MaskAndPan", "chanAndMaskandPan", "multipleMasksHandler", "multipleMasksAndPan", "multipleMasksPanChannel"];
     
@@ -1078,12 +1125,18 @@ Render.prototype = {
           HS.m.push(mask);
         }
       })
-      const channelsList = HS.cgs[0].Channels
-      const channelIndex = channelsList.indexOf(chan);
-      if (channelIndex >= 0) {
-        HS.g = channelIndex + 1;
-      } else {
-        HS.g = 0
+
+      const c = index_name(HS.cgs, chan);
+      if (c >= 0) {
+        HS.g = c;
+      }
+      else {
+        var escaped_chan = chan.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re_chan = RegExp(escaped_chan,'gi');
+        const r_c = index_regex(HS.cgs, re_chan);
+        if (r_c >= 0) {
+          HS.g = r_c;
+        }
       }
       // render without menu redraw
       HS.pushState();
@@ -1110,12 +1163,17 @@ Render.prototype = {
         HS.m = [-1, m];
       }
       
-      const channelsList = HS.cgs[0].Channels
-      const channelIndex = channelsList.indexOf(chan)
-      if (channelIndex >= 0) {
-        HS.g = channelIndex + 1;
-      } else {
-        HS.g = 0
+      const c = index_name(HS.cgs, chan);
+      if (c >= 0) {
+        HS.g = c;
+      }
+      else {
+        var escaped_chan = chan.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re_chan = RegExp(escaped_chan,'gi');
+        const r_c = index_regex(HS.cgs, re_chan);
+        if (r_c >= 0) {
+          HS.g = r_c;
+        }
       }
 
       HS.pushState();
@@ -1133,13 +1191,19 @@ Render.prototype = {
         HS.m = [-1, m];
       }
       
-      const channelsList = HS.cgs[0].Channels
-      const channelIndex = channelsList.indexOf(chan)
-      if (channelIndex >= 0) {
-        HS.g = channelIndex + 1;
-      } else {
-        HS.g = 0
+      const c = index_name(HS.cgs, chan);
+      if (c >= 0) {
+        HS.g = c;
       }
+      else {
+        var escaped_chan = chan.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re_chan = RegExp(escaped_chan,'gi');
+        const r_c = index_regex(HS.cgs, re_chan);
+        if (r_c >= 0) {
+          HS.g = r_c;
+        }
+      }
+
       HS.pushState();
       window.onpopstate();
     }

@@ -207,7 +207,7 @@ export const HashState = function(exhibit, options) {
     g: 0,
     s: 0,
     a: [-100, -100],
-    v: [0.5, 0.5, 0.5],
+    v: [1e-100, 0.5, 0.5],
     o: [-100, -100, 1, 1],
     p: [],
     name: '',
@@ -811,7 +811,6 @@ HashState.prototype = {
   // Create an empty story from current hash state
   newTempStory: function(mode) {
     const exhibit = this.exhibit;
-    // ??? Not consistent with 'no nav when one waypoint...' commit
     const first_g = index_name(this.cgs, this.design.first_group);
     const first_group = (first_g != -1) ? this.cgs[first_g] : this.group;
     const group = mode != 'tag' ? first_group : this.group;

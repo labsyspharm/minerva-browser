@@ -2460,7 +2460,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     border-right-width: 1px;
 }
 
-.minerva-root polygon {
+.minerva-root .openseadragon-canvas polygon {
     fill: rgba(70, 130, 180, 0.0);
     stroke: white;
     stroke-width: 2px;

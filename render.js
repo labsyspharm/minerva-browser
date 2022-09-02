@@ -893,7 +893,9 @@ Render.prototype = {
           this.addStory(story, sid, sid_list);
         }
       }, this);
+      const logo_svg = this.getLogoImage();
       sid_item.appendChild(sid_list);
+      sid_item.appendChild(logo_svg);
       items.appendChild(sid_item);
     }
 
@@ -901,6 +903,22 @@ Render.prototype = {
     const md = HS.design.footer;
     footer.innerHTML = this.showdown.makeHtml(md);
     items.appendChild(footer);
+  },
+
+  // Generate svg logo element
+  getLogoImage: function() {
+		const parser = new DOMParser();
+		const styleStr = '<style type="text/css"> .st0{fill:#FFFFFF;} .st1{fill:#00A5DF;} .st2{fill:#963CBD;} .st3{fill:#004EA8;} .st4{fill:#93C90F;} .st5{fill:#007749;} .st6{fill:#D00070;} .st7{fill:#890C58;} .st8{fill:#FF6720;} .st9{fill:#00778B;} .st10{fill:#AB2328;}</style>';
+    const wordStr = '<g><polygon class="st0" points="178.39,125.26 197.56,27.3 228.84,98.11 261.23,27.3 278.46,125.26 264.36,125.26 255.57,70.26  228.6,129.44 202.4,70.2 192.61,125.26 "/><rect x="293.46" y="34.15" class="st0" width="13.75" height="91.11"/><polygon class="st0" points="327.1,125.26 327.1,27.95 388.31,96.67 388.31,34.15 402.06,34.15 402.06,130.8 340.85,62.24  340.85,125.26 "/><polygon class="st0" points="476.7,47.07 434.41,47.07 434.41,71.91 465.87,71.91 465.87,84.84 434.41,84.84 434.41,112.33  476.7,112.33 476.7,125.26 420.66,125.26 420.66,34.15 476.7,34.15 "/><path class="st0" d="M534.69,86.43l28.2,38.83h-16.82l-26.02-37.29h-12.55v37.29h-13.75V34.15h26.18c12.04,0,20.73,2.26,26.08,6.79 c5.9,5.03,8.85,11.68,8.85,19.94c0,6.45-1.85,12-5.55,16.64C545.63,82.16,540.75,85.13,534.69,86.43 M507.51,75.99h14.44 c13.02,0,19.53-4.98,19.53-14.93c0-9.32-6.33-13.98-19-13.98h-14.97V75.99z"/><polygon class="st0" points="574.71,34.15 599.9,97.29 625.45,34.15 640.5,34.15 599.61,132.1 559.66,34.15 "/><path class="st0" d="M687.86,103.13h-39l-10.15,22.13H623.9l45.08-96.83l43.49,96.83h-15.05L687.86,103.13z M682.26,90.21 l-13.51-30.98l-14.16,30.98H682.26z"/></g>';
+    const iconStr = '<g><polygon class="st1" points="84.9,125.15 74.67,101.74 61.02,109.33 54.73,141.49 66.91,150.34 71.24,125.99 84.9,156.83 98.55,125.99 102.88,150.34 115.07,141.49 108.77,109.33 95.12,101.74 "/><polygon class="st1" points="98.18,94.75 105.77,94 103.52,82.52 "/><polygon class="st1" points="64.02,94 71.62,94.75 66.27,82.52 "/><polygon class="st2" points="161.32,101.3 136.22,78.79 160.71,82.19 156.07,67.87 123.52,63.92 112.09,74.55 131.19,91.51 105.77,94 108.77,109.33 137.41,125.25 149.6,116.4 127.78,104.76 "/><polygon class="st2" points="95.12,101.74 98.18,94.75 84.9,96.05 "/><polygon class="st2" points="106.39,69.49 108.02,62.04 96.41,60.63 "/><polygon class="st3" points="98.18,94.75 95.12,101.74 108.77,109.33 105.77,94 "/><polygon class="st4" points="113.51,37.09 108.02,62.04 123.52,63.92 147.52,41.6 142.87,27.28 125.05,44.43 132.13,11.46 102.96,28.38 113.77,6.13 98.71,6.13 84.9,35.85 91.48,50.01 "/><polygon class="st4" points="73.39,60.63 84.9,53.87 78.32,50.01 73.39,60.63 "/><polygon class="st4" points="103.52,82.52 112.09,74.55 106.39,69.49 "/><polygon class="st5" points="106.39,69.49 112.09,74.55 123.52,63.92 108.02,62.04 "/><polygon class="st6" points="91.48,50.01 84.9,53.87 96.41,60.63 "/><polygon class="st6" points="63.41,69.49 57.7,74.55 66.27,82.52 "/><polygon class="st6" points="56.28,37.09 78.32,50.01 84.9,35.85 71.09,6.13 56.03,6.13 66.83,28.38 37.66,11.46 44.74,44.43 26.92,27.28 22.27,41.6 46.27,63.92 61.77,62.04 "/><polygon class="st7" points="84.9,53.87 91.48,50.01 84.9,35.85 78.32,50.01 "/><polygon class="st8" points="71.62,94.75 74.67,101.74 84.9,96.05 "/><polygon class="st8" points="73.39,60.63 73.39,60.63 73.39,60.63 61.77,62.04 63.41,69.49 73.39,60.63 "/><polygon class="st8" points="38.6,91.51 57.7,74.55 46.27,63.92 13.69,67.87 9.08,82.19 33.58,78.79 8.47,101.3 42.02,104.76 20.2,116.4 32.38,125.25 61.02,109.33 64.02,94 "/><polygon class="st9" points="71.62,94.75 64.02,94 61.02,109.33 74.67,101.74 "/><polygon class="st10" points="63.41,69.49 61.77,62.04 46.27,63.92 57.7,74.55 "/></g>';
+    const svgStart = '<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 720 162" style="enable-background:new 0 0 720 162;" xml:space="preserve">';
+    const xmlV1 = '<?xml version="1.0" encoding="utf-8"?>';
+    const wrapSVG = (a) => {
+      return xmlV1 + svgStart + a.join('') + '</svg>';
+    }
+    const fullStr = wrapSVG([styleStr, wordStr, iconStr]);
+    const doc = parser.parseFromString(fullStr, "image/svg+xml");
+    return doc.children[0];
   },
 
   // Render one story

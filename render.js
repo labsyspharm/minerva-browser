@@ -479,27 +479,32 @@ Render.prototype = {
 
       const logo_svg = this.getLogoImage();
       logo_svg.style = "width: 85px";
-      const logo_class = "minerva-logo-div";
+      const logo_link = "https://minerva.im";
+      const logo_class = "minerva-logo-anchor";
       const menu_class = 'minerva-sidebar-menu';
       const side_menu = document.getElementsByClassName(menu_class)[0];
       const logos = side_menu.getElementsByClassName(logo_class);
       [...logos].forEach((d) => {
         side_menu.removeChild(d);
       })
-      const logo_div = document.createElement('div');
+      const logo_root = document.createElement('a');
       const info_div = document.createElement('div');
-      logo_div.className = `position-fixed ${logo_class}`;
-      logo_div.style.cssText = `
+      logo_root.className = `position-fixed ${logo_class}`;
+      logo_root.style.cssText = `
         left: 0.5em;
         bottom: 0.5em;
+        display: block;
+        color: inherit;
         line-height: 0.9em;
+        text-decoration: none;
         padding: 0.4em 0.3em 0.2em;
         background-color: rgba(0,0,0,0.8);
       `;
+      logo_root.setAttribute('href', logo_link);
       info_div.innerText = 'Made with';
-      logo_div.appendChild(info_div);
-      logo_div.appendChild(logo_svg);
-      side_menu.appendChild(logo_div);
+      logo_root.appendChild(info_div);
+      logo_root.appendChild(logo_svg);
+      side_menu.appendChild(logo_root);
     }
 
     // In editor mode

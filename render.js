@@ -476,6 +476,30 @@ Render.prototype = {
         arrow_0.HideArrow = hide_arrow ? false : true;
         THIS.newView(true);
       });
+
+      const logo_svg = this.getLogoImage();
+      const logo_class = "minerva-logo-div";
+      const menu_class = 'minerva-sidebar-menu';
+      const side_menu = document.getElementsByClassName(menu_class)[0];
+      const logos = side_menu.getElementsByClassName(logo_class);
+      [...logos].forEach((d) => {
+        side_menu.removeChild(d);
+      })
+      const logo_div = document.createElement('div');
+      const info_div = document.createElement('div');
+      logo_div.className = `position-fixed ${logo_class}`;
+      logo_div.style.cssText = `
+        left: 0.5em;
+        bottom: 0.5em;
+        font-size: 1.5em;
+        line-height: 0.9em;
+        padding: 0.4em 0.3em 0.2em;
+        background-color: rgba(0,0,0,0.8);
+      `;
+      info_div.innerText = 'Made with';
+      logo_div.appendChild(info_div);
+      logo_div.appendChild(logo_svg);
+      side_menu.appendChild(logo_div);
     }
 
     // In editor mode
@@ -893,9 +917,7 @@ Render.prototype = {
           this.addStory(story, sid, sid_list);
         }
       }, this);
-      const logo_svg = this.getLogoImage();
       sid_item.appendChild(sid_list);
-      sid_item.appendChild(logo_svg);
       items.appendChild(sid_item);
     }
 

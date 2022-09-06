@@ -478,6 +478,7 @@ Render.prototype = {
       });
 
       const logo_svg = this.getLogoImage();
+      logo_svg.style = "width: 85px";
       const logo_class = "minerva-logo-div";
       const menu_class = 'minerva-sidebar-menu';
       const side_menu = document.getElementsByClassName(menu_class)[0];
@@ -491,7 +492,6 @@ Render.prototype = {
       logo_div.style.cssText = `
         left: 0.5em;
         bottom: 0.5em;
-        font-size: 1.5em;
         line-height: 0.9em;
         padding: 0.4em 0.3em 0.2em;
         background-color: rgba(0,0,0,0.8);

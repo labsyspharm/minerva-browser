@@ -1,6 +1,7 @@
 import * as d3 from "d3"
 import { round4 } from "./render"
 import { greenOrWhite } from "./render"
+import { OsdLensingContext } from "./osdLensingContext"
 
 var lasso_draw_counter = 0;
 // Draw a point of a lasso-style polygon
@@ -34,7 +35,7 @@ const changeSprings = function(viewer, seconds, stiffness) {
 };
 
 // Set the opacity of active channel groups or segmentation masks
-const newMarkers = function(tileSources, group, active_masks) {
+export const newMarkers = function(tileSources, group, active_masks) {
 
   const mask_paths = active_masks.map(m => m.Path);
 
@@ -64,6 +65,19 @@ export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) 
   this.mouseEvent = {};
   this.trackers = [];
   this.eventHandler = eventHandler;
+
+  const config = {
+    id: viewer.id,
+    prefixUrl: viewer.prefixUrl,
+    navigatorPosition: viewer.navigatorPosition,
+    maxZoomPixelRatio: viewer.maxZoomPixelRatio,
+    visibilityRatio: viewer.visibilityRatio,
+    degrees: viewer.degrees,
+  };
+  const lensOptions = {
+    config, hashstate 
+  };
+  this.lensing = new OsdLensingContext(viewer, lensOptions);
 }
 
 RenderOSD.prototype = {
@@ -338,6 +352,7 @@ RenderOSD.prototype = {
     if(redraw) {
       // Update OpenSeadragon
       this.activateViewport();
+      this.lensing.newViewRedraw();
       newMarkers(this.tileSources, HS.group, HS.active_masks);
     }
     this.viewer.forceRedraw();

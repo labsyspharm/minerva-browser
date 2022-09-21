@@ -75,7 +75,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
           // Add an openseadragon tiled image
           viewer.addTiledImage({
             loadTilesWithAjax: useAjax,
-            crossOriginPolicy: useAjax? 'Anonymous': undefined,
+            crossOriginPolicy: 'anonymous',
             ajaxHeaders: ajaxHeaders,
             tileSource: {
               height: image.Height,

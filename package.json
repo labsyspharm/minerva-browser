@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "bootstrap": "4.4.1",
+    "lensing": "https://github.com/jessupjs/lensing/tarball/f800a9d67155db599f8054922cb6d45b673fe5c9",
     "bootstrap-select": "^1.13.18",
     "buffer": "^6.0.3",
     "colorbrewer": "^1.3.0",
@@ -30,7 +31,7 @@
     "build": "webpack --mode production"
   },
   "name": "minerva-browser",
-  "version": "3.2.10",
+  "version": "3.3.0",
   "description": "A storytelling interface atop openseadragon",
   "main": "index.js",
   "repository": {

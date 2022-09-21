@@ -571,6 +571,7 @@ HashState.prototype = {
   get cgs() {
     return this.design.cgs || [];
   },
+
   set cgs(_cgs) {
     var design = this.design;
     design.cgs = _cgs;
@@ -813,6 +814,7 @@ HashState.prototype = {
     const exhibit = this.exhibit;
     const first_g = index_name(this.cgs, this.design.first_group);
     const first_group = (first_g != -1) ? this.cgs[first_g] : this.group;
+    const first_lens = ((this.waypoints || [])[0] || {}).Lensing;
     const group = mode != 'tag' ? first_group : this.group;
     const a = this.a;
     const o = this.o;
@@ -857,6 +859,7 @@ HashState.prototype = {
         Group: group.Name,
         Masks: masks,
         Groups: groups,
+        Lensing: first_lens,
         Description: decode(d),
         Name: name || 'Waypoint',
         Overlays: [{

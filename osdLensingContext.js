@@ -4,14 +4,16 @@ import { newMarkers } from "./osd"
 import { getGetTileUrl } from "./state"
 import LensingFilters from './osdLensingFilters';
 
-const showGroup = (Group, group) => {
+const sameGroup = (Group, group) => {
   return Group && Group == group.Name;
 }
 
-const updateLensing = (lensing, waypoint) => {
+const updateLensing = (lensing, HS) => {
   const pxRatio = window.devicePixelRatio;
-  const { Mag, Rad, Shape } = waypoint.Lensing || {};
-  if (!("Lensing" in waypoint)) {
+  const { Mag, Rad, Shape, Group } = HS.lensing || {};
+  const sameLens = sameGroup(Group, HS.group);
+  const noLens = !HS.lensing;
+  if (noLens || sameLens) {
     lensing.configs.shape = '';
     lensing.configs.counterException = true;
     lensing.manageLensUpdate();
@@ -75,7 +77,6 @@ export class OsdLensingContext {
             showFullPageControl: false,
             ...opts.config
         };
-        const { waypoint } = this.hashstate;
         const lensingViewer = new lensing.construct(
             OSD,
             this.viewerContext.viewport.viewer,
@@ -83,7 +84,7 @@ export class OsdLensingContext {
             {},
             LensingFilters
         );
-        updateLensing(lensingViewer, waypoint);
+        updateLensing(lensingViewer, this.hashstate);
         return {
           lensing: lensingViewer,
           lensingContext: lensingViewer.viewerAux
@@ -91,9 +92,10 @@ export class OsdLensingContext {
     }
 
     initializeChannels() {
-      const { cgs, waypoint, grid } = this.hashstate;
+      const HS = this.hashstate;
+      const { cgs, grid } = HS;;
       const image = (grid.pop() || []).pop();
-      const lens = waypoint.Lensing || {};
+      const lens = HS.lensing || {};
       const viewer = this.lensingContext;
       const { Group } = lens;  
       const layer = [...cgs].forEach(layer => {
@@ -105,7 +107,7 @@ export class OsdLensingContext {
             width:  image.Width,
             maxLevel: image.MaxLevel,
             crossOriginPolicy: 'anonymous',
-            opacity: [0, 1][+showGroup(Group, layer)],
+            opacity: [0, 1][+sameGroup(Group, layer)],
             tileWidth: image.TileSize.slice(0,1).pop(),
             tileHeight: image.TileSize.slice(0,2).pop(),
             getTileUrl: getGetTileUrl(image, layer) 
@@ -135,11 +137,11 @@ export class OsdLensingContext {
       const lensing = this.lensing;
       const HS = this.hashstate;
       this.activateViewport();
-      const lens = HS.waypoint.Lensing || {};
+      const lens = HS.lensing || {};
       const active_masks = []; // TODO: mask support
-      const show_group = showGroup.bind(null, lens.Group);
+      const show_group = sameGroup.bind(null, lens.Group);
       const group = HS.cgs.filter(show_group).pop() || {};
       newMarkers(this.tileSources, group, active_masks);
-      updateLensing(lensing, HS.waypoint);
+      updateLensing(lensing, HS);
     }
 }

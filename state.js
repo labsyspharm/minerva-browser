@@ -707,7 +707,7 @@ HashState.prototype = {
 
   // Get the waypoints of the current story
   get waypoints() {
-    return this.story.Waypoints;
+    return (this.story || {}).Waypoints || [];
   },
   set waypoints(waypoints) {
     const story = this.story;
@@ -721,7 +721,7 @@ HashState.prototype = {
       return this.bufferWaypoint;
     }
     var waypoint = this.waypoints[this.w];
-    if (!waypoint.Overlays) {
+    if (waypoint && !waypoint.Overlays) {
       waypoint.Overlays = [{
         x: -100,
         y: -100,
@@ -740,6 +740,12 @@ HashState.prototype = {
       waypoints[this.w] = waypoint;
       this.waypoints = waypoints;
     }
+  },
+
+  get lensing() {
+    const wp = this.waypoint;
+    const { Lensing } = this.exhibit;
+    return !!wp ? wp.Lensing : Lensing;
   },
 
   // Get the viewport object from the current viewport coordinates
@@ -814,7 +820,7 @@ HashState.prototype = {
     const exhibit = this.exhibit;
     const first_g = index_name(this.cgs, this.design.first_group);
     const first_group = (first_g != -1) ? this.cgs[first_g] : this.group;
-    const first_lens = ((this.waypoints || [])[0] || {}).Lensing;
+    const first_lens = this.lensing || {};
     const group = mode != 'tag' ? first_group : this.group;
     const a = this.a;
     const o = this.o;

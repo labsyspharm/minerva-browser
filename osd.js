@@ -69,6 +69,8 @@ export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) 
   const config = {
     id: viewer.id,
     prefixUrl: viewer.prefixUrl,
+    zoomInButton: viewer.zoomInButton.element.id,
+    zoomOutButton: viewer.zoomOutButton.element.id,
     navigatorPosition: viewer.navigatorPosition,
     maxZoomPixelRatio: viewer.maxZoomPixelRatio,
     visibilityRatio: viewer.visibilityRatio,

@@ -12,9 +12,12 @@ const updateLensing = (lensing, HS) => {
   const pxRatio = window.devicePixelRatio;
   const { Mag, Rad, Shape, Group } = HS.lensing || {};
   const sameLens = sameGroup(Group, HS.group);
+  const radius = Rad ? Rad : 100;
   const noLens = !HS.lensing;
   if (noLens || sameLens) {
     lensing.configs.shape = '';
+    lensing.configs.radDefault = 1;
+    lensing.configs.rad = 1;
     lensing.configs.counterException = true;
     lensing.manageLensUpdate();
     return;

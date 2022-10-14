@@ -120,7 +120,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
           });
         });
       }
-      // Add the image title and white border
+      // Add the image title
       const titleElt = $('<p>');
       const title = image.Description;
       titleElt.addClass('minerva-overlay-title').text(title);
@@ -130,13 +130,6 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
         y: y,
         placement: 'BOTTOM',
         checkResize: false
-      });
-      viewer.addOverlay({
-        x: x,
-        y: y,
-        width: displayWidth,
-        height: image.Height / image.Width * displayWidth,
-        className: 'minerva-slide-border'
       });
     }
   }
@@ -2377,9 +2370,6 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 .minerva-root .minerva-white {
     color: white;
 }
-.minerva-root .minerva-slide-border {
-    border: 1px solid hsl(0, 0%, 20%);
-}
 .minerva-root .minerva-white.minerva-overlay {
     border: 2px solid white;
     background: none;
@@ -2906,7 +2896,7 @@ const exhibitHTML = `
                           <span class="minerva-welcome-markers">
                             You're looking at an image layering
                             <span class="minerva-channel_count"></span>
-                            CyCIF markers.
+                            markers.
                           </span>
                           <span class="minerva-welcome-nav">
                             Use the <i class="fas fa-arrow-left"></i>

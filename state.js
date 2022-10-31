@@ -820,7 +820,9 @@ HashState.prototype = {
     const exhibit = this.exhibit;
     const first_g = index_name(this.cgs, this.design.first_group);
     const first_group = (first_g != -1) ? this.cgs[first_g] : this.group;
-    const first_lens = this.lensing || {};
+    const first_lens = ((l) => {
+      if (l && Object.keys(l).length) return l;
+    })(this.lensing);
     const group = mode != 'tag' ? first_group : this.group;
     const a = this.a;
     const o = this.o;

@@ -38,4 +38,24 @@ infovis.renderCanvasScatterplot = function(wid_waypoint, id, visdata, events) {
   return renderVegaLite(wid_waypoint, id, visdata, events);
 }
 
+infovis.renderMaskAndPan = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events);
+}
+
+infovis.renderChanAndMaskandPanHandler = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events);
+}
+
+infovis.renderMultipleMasksHandler = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events);
+}
+
+infovis.renderMultipleMasksAndPan = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events);
+}
+
+infovis.renderMultipleMasksPanChannel = function(wid_waypoint, id, visdata, events) {
+  return renderVegaLite(wid_waypoint, id, visdata, events);
+}
+
 export default infovis;

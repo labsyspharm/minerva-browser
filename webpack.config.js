@@ -17,4 +17,4 @@ IndexLoader = {
   ]
 }
 
-module.exports = [IndexLoader]
+module.exports = [IndexLoader];

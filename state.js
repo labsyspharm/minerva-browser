@@ -850,10 +850,19 @@ HashState.prototype = {
       'tag': this.active_masks.filter(mask => mask.Name).map(mask => mask.Name),
     }[mode];
 
+    // Add text to the Free Explore page by adding the key "Appendix" with a string value to exhibit.json
+    const waypoint_text = (() => {
+      if (mode === 'explore') {
+        return this.exhibit.Appendix
+      } else {
+          return ''
+      }
+    })();
+
     // Empty story object of a single waypoint
     return {
       Mode: mode,
-      Description: '',
+      Description: waypoint_text,
       Name: name || 'Story',
       Waypoints: [remove_undefined({
         Mode: mode,

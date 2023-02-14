@@ -85,6 +85,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
               tileHeight: image.TileSize.slice(0,2).pop(),
               getTileUrl: getGetTileUrl(image, layer)
             },
+            degrees: image.Rotation || 0,
             x: x,
             y: y,
             opacity: 0,
@@ -895,9 +896,12 @@ a > .minerva-root code { color: inherit; }
 .minerva-root .custom-control-label::before, .minerva-root .custom-file-label, .minerva-root .custom-select { transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
 @media (prefers-reduced-motion: reduce) { .minerva-root .custom-control-label::before, .minerva-root .custom-file-label, .minerva-root .custom-select { transition: none; } }
 .minerva-root .nav { display: flex; flex-wrap: wrap; padding-left: 0; margin-bottom: 0; list-style: none; }
-.minerva-root .nav-link { display: block; padding: 0.5rem 1rem; }
-.minerva-root .nav-link:hover, .minerva-root .nav-link:focus { text-decoration: none; }
-.minerva-root .nav-link.disabled { color: #6c757d; pointer-events: none; cursor: default; }
+.minerva-root .all-layers { background-color: transparent; color: #007bff; text-align: left; border: none; }
+.minerva-root .all-layers:hover { color: #0056b3; border: none; }
+.minerva-root .all-layers:focus-visible, .minerva-root .all-layers:focus { outline: none; }
+.minerva-root .nav-link, .minerva-root .all-layers { display: block; padding: 0.5rem 1rem; }
+.minerva-root .nav-link:hover, .minerva-root .nav-link:focus, .minerva-root .all-layers:hover, .minerva-root .all-layers:focus  { text-decoration: none; }
+.minerva-root .nav-link.disabled, .minerva-root .all-layers.disabled { color: #6c757d; pointer-events: none; cursor: default; }
 .minerva-root .nav-tabs { border-bottom: 1px solid #dee2e6; }
 .minerva-root .nav-tabs .nav-item { margin-bottom: -1px; }
 .minerva-root .nav-tabs .nav-link { border: 1px solid transparent; border-top-left-radius: 0.25rem; border-top-right-radius: 0.25rem; }
@@ -905,8 +909,8 @@ a > .minerva-root code { color: inherit; }
 .minerva-root .nav-tabs .nav-link.disabled { color: #6c757d; background-color: transparent; border-color: transparent; }
 .minerva-root .nav-tabs .nav-link.active, .minerva-root .nav-tabs .nav-item.show .nav-link { color: #495057; background-color: #fff; border-color: #dee2e6 #dee2e6 #fff; }
 .minerva-root .nav-tabs .dropdown-menu { margin-top: -1px; border-top-left-radius: 0; border-top-right-radius: 0; }
-.minerva-root .nav-pills .nav-link { border-radius: 0.25rem; }
-.minerva-root .nav-pills .nav-link.active, .minerva-root .nav-pills .show > .nav-link { color: #fff; background-color: #007bff; }
+.minerva-root .nav-pills .nav-link, .minerva-root .all-layers { border-radius: 0.25rem; }
+.minerva-root .nav-pills .nav-link.active, .minerva-root .nav-pills .show > .nav-link, .minerva-root .all-layers.active  { color: #fff; background-color: #007bff; }
 .minerva-root .nav-fill .nav-item { flex: 1 1 auto; text-align: center; }
 .minerva-root .nav-justified .nav-item { flex-basis: 0; flex-grow: 1; text-align: center; }
 .minerva-root .tab-content > .tab-pane { display: none; }
@@ -916,7 +920,7 @@ a > .minerva-root code { color: inherit; }
 .minerva-root .navbar-brand { display: inline-block; padding-top: 0.3125rem; padding-bottom: 0.3125rem; margin-right: 1rem; font-size: 1.25rem; line-height: inherit; white-space: nowrap; }
 .minerva-root .navbar-brand:hover, .minerva-root .navbar-brand:focus { text-decoration: none; }
 .minerva-root .navbar-nav { display: flex; flex-direction: column; padding-left: 0; margin-bottom: 0; list-style: none; }
-.minerva-root .navbar-nav .nav-link { padding-right: 0; padding-left: 0; }
+.minerva-root .navbar-nav .nav-link, .minvera-root .all-layers { padding-right: 0; padding-left: 0; }
 .minerva-root .navbar-nav .dropdown-menu { position: static; float: none; }
 .minerva-root .navbar-text { display: inline-block; padding-top: 0.5rem; padding-bottom: 0.5rem; }
 .minerva-root .navbar-collapse { flex-basis: 100%; flex-grow: 1; align-items: center; }
@@ -2273,8 +2277,12 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   width: 200px;
 }
 
-.minerva-root .minerva-legend.toggled {
-  margin-right: -200px;
+.minerva-root .minerva-legend.toggled .btn-group-vertical {
+  display: none !important;
+}
+
+.minerva-root .minerva-legend.toggled .minerva-channel-groups-legend {
+  display: none !important;
 }
 
 .minerva-root .minerva-sidebar-menu .minerva-open-sidebar {
@@ -2519,21 +2527,21 @@ const exhibitHTML = `
     <div>
         <div class="minerva-legend position-absolute"
              style="pointer-events: none; top: 1rem; right: 8px">
-            <div>
-                <div class="btn-group-vertical bg-trans p-2"
-                     style="display:inline-block; vertical-align:top;">
-                    <a class="minerva-toggle-legend p-1" href="javascript;;">
-                        <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
-                        <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
-                    </a>
-                    <ul class="minerva-channel-legend list-unstyled m-0"></ul>
-                    <div class="p-1 minerva-only-3d">
-                      Depth:
-                    </div>
-                    <div style="text-align: right;">
-                      <span class="minerva-depth-legend"> </span>
-                    </div>
-                </div> 
+             <div>
+              <a class="minerva-toggle-legend p-1" href="javascript;;">
+                <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
+                <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
+              </a>
+              <div class="btn-group-vertical bg-trans p-2"
+                    style="display:inline-block; vertical-align:top;">
+                   <ul class="minerva-channel-legend list-unstyled m-0"></ul>
+                   <div class="p-1 minerva-only-3d">
+                     Depth:
+                   </div>
+                   <div style="text-align: right;">
+                     <span class="minerva-depth-legend"> </span>
+                   </div>
+               </div> 
                 <div class="minerva-channel-groups-legend nav flex-column nav-pills p-2 bg-trans"
                      style="display:inline-block; vertical-align:top;
                      pointer-events: all; overflow-y: scroll; max-height: 80vh;">
@@ -2854,8 +2862,8 @@ const exhibitHTML = `
                         </form>
                     </div>
                 </div>
+              </div>
             </div>
-        </div>
 
 
         <div class="minerva-edit_description_modal modal fade" role="dialog">
@@ -2928,7 +2936,6 @@ const exhibitHTML = `
                 </div>
             </div>
         </div>
-
         <div class="minerva-copy_link_modal modal fade" role="dialog">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content text-dark">
@@ -2956,7 +2963,6 @@ const exhibitHTML = `
                 </div>
             </div>
         </div>
-
         <div class="minerva-all-overlays d-none">
         </div>
     </div>

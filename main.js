@@ -2475,6 +2475,32 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     fill : white;
 }
 
+.minerva-legend-grid {
+    gap: 8px;
+    display: grid;
+    grid-template-columns: auto auto;
+}
+.minerva-legend-grid > .minerva-channel-legend-wrapper {
+    grid-template-columns: auto auto;
+    pointer-events: all;
+    cursor: pointer;
+    display: grid;
+    gap: 8px;
+}
+.minerva-channel-legend-wrapper > .minerva-channel-legend-info {
+    opacity: 1;
+    max-width: 600px;
+    white-space: nowrap;
+    transition-timing-function: ease-in;
+    transition: max-width 1s, opacity 1s;
+}
+.minerva-channel-legend-wrapper > .minerva-channel-legend-info:not(.toggled) {
+    gap: 8px;
+    opacity: 0;
+    max-width: 0px;
+    transition-timing-function: ease-out;
+    transition: max-width 0.5s, opacity 0.5s;
+}
 body {
   margin: 0;
   height: 100vh;
@@ -2526,7 +2552,13 @@ const exhibitHTML = `
                         <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
                         <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
                     </a>
-                    <ul class="minerva-channel-legend list-unstyled m-0"></ul>
+                    <div class="minerva-legend-grid">
+                      <ul class="minerva-channel-legend list-unstyled m-0"></ul>
+                      <div class="minerva-channel-legend-wrapper">
+                        <ul class="minerva-channel-legend-info list-unstyled m-0"></ul>
+                        <a>&#9432;</a>
+                      </div>
+                    </div>
                     <div class="p-1 minerva-only-3d">
                       Depth:
                     </div>

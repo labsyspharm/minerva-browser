@@ -263,6 +263,14 @@ Render.prototype = {
       title: 'Clone linked view'
     });
 
+    // Toggle legend info
+    ((k) => {
+      const el = document.getElementsByClassName(k).item(0);
+      el.addEventListener('click', () => {
+        $(".minerva-channel-legend-info").toggleClass("toggled");
+      });
+    })('minerva-channel-legend-wrapper');
+
     // Modals to copy shareable link and edit description
     $('#copy_link_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
     $('.minerva-edit_description_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
@@ -858,17 +866,18 @@ Render.prototype = {
   addChannelLegends: function() {
     const HS = this.hashstate;
     $('.minerva-channel-legend').empty();
-    HS.channels.forEach(this.addChannelLegend, this);
+    $('.minerva-channel-legend-info').empty();
+    HS.channel_legend_lines.forEach(this.addChannelLegend, this);
   },
 
   // Add channel legend label
-  addChannelLegend: function(channel, c) {
+  addChannelLegend: function(legend_line, c) {
     const color = this.indexColor(c, '#FFF');
     const HS = this.hashstate;
 
     var label = document.createElement('span');
     label.className = 'legend-label pl-3';
-    label.innerText = channel;
+    label.innerText = legend_line.name;
 
     var badge = document.createElement('span');
     $(badge).css('background-color', color);
@@ -876,11 +885,21 @@ Render.prototype = {
     badge.innerText = '\u00a0';
 
     // Append channel legend to list
-    var ul = HS.el.getElementsByClassName('minerva-channel-legend')[0];
-    var li = document.createElement('li');
-    li.appendChild(badge);
-    li.appendChild(label);
-    ul.appendChild(li);
+    (() => {
+      var ul = HS.el.getElementsByClassName('minerva-channel-legend')[0];
+      var li = document.createElement('li');
+      li.appendChild(badge);
+      li.appendChild(label);
+      ul.appendChild(li);
+    })();
+
+    // Append channel info to list
+    (() => {
+      var ul = HS.el.getElementsByClassName('minerva-channel-legend-info')[0];
+      var li = document.createElement('li');
+      li.innerText = legend_line.description;
+      ul.appendChild(li);
+    })();
   },
 
   // Return map of channels to indices
@@ -1177,7 +1196,7 @@ Render.prototype = {
   // Color all the remaining HTML Code elements
   colorMarkerText: function (wid_waypoint) {
     const HS = this.hashstate;
-    const channelOrders = this.channelOrders(HS.channels);
+    const channelOrders = this.channelOrders(HS.channel_names);
     const wid_code = wid_waypoint.getElementsByTagName('code');
     for (var i = 0; i < wid_code.length; i ++) {
       var code = wid_code[i];

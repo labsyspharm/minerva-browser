@@ -698,11 +698,28 @@ HashState.prototype = {
   },
 
   // Get the names of the current group's channels
-  get channels() {
+  get channel_names() {
     const g_chans = this.group.Channels;
     return g_chans.concat(this.active_masks.reduce((c, m) => {
       return c.concat(m.Channels || []);
     }, []));
+  },
+
+  // Get the descriptions of current group's channels
+  get channel_descriptions() {
+    const g_chans = this.group.Descriptions || [];
+    return g_chans.concat(this.active_masks.reduce((c, m) => {
+      return c.concat(m.Descriptions || []);
+    }, []));
+  },
+
+  // Get channel names and descriptions 
+  get channel_legend_lines() {
+    const channel_descriptions = this.channel_descriptions;
+    return this.channel_names.map((name, i) => {
+      const description = channel_descriptions[i] || '';
+      return { name, description };
+    });
   },
 
   // Get the waypoints of the current story
@@ -945,7 +962,7 @@ HashState.prototype = {
           const welcome = $(this.el).find('.minerva-welcome_modal');
           if (!this.customWelcome) {
             const channel_count = welcome.find('.minerva-channel_count')[0];
-            channel_count.innerText = this.channels.length;
+            channel_count.innerText = this.channel_names.length;
           }
           else {
             const welcome_body = welcome.find('.modal-body')[0];

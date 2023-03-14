@@ -1,6 +1,8 @@
 import * as d3 from "d3"
+import viaWebGL from 'viawebgl';
 import { round4 } from "./render"
 import { greenOrWhite } from "./render"
+import { shaders, to_tile_drawing } from "./channel"
 import { OsdLensingContext } from "./osdLensingContext"
 
 var lasso_draw_counter = 0;
@@ -96,10 +98,58 @@ RenderOSD.prototype = {
 
   // Initialize connection to openseadragon
   init: function () {
-  
+
     const viewer = this.viewer;
     const HS = this.hashstate;
     const THIS = this;
+
+    // Take the nominal tilesize from arbitrary tile source
+    const tileSourceVals = [...Object.values(this.tileSources)];
+    const tileShape = tileSourceVals.reduce((o, tiledImages) => {
+      const shapes = tiledImages.map(({source}) => {
+        const { _tileWidth, _tileHeight } = source;
+        return [ _tileWidth, _tileHeight ];
+      })
+      return shapes.pop() || o;
+    }, [1024, 1024]);
+
+    const opts = (() => {
+      const hex2gl = (hex) => {
+        const val = parseInt(hex.replace('#',''), 16);
+        const bytes = [16, 8, 0].map(shift => {
+          return ((val >> shift) & 255) / 255;
+        });
+        return new Float32Array(bytes);
+      }
+      const visibles = [
+        true, true, true, true, true, true, true, true, true
+      ];
+      const channelSources = HS.cgs.map((group, i) => {
+        const color = hex2gl(group.Colors[0]) // TODO;
+        const visible = visibles[i];
+        return { color, visible };
+      });
+      return { channelSources, tileShape };
+    })();
+  
+    // Initialize WebGL
+    const seaGL = new viaWebGL.openSeadragonGL(viewer);
+    seaGL.viaGL.fShader = shaders.fragment;
+    seaGL.viaGL.vShader = shaders.vertex;
+    seaGL.viaGL.updateShape(...tileShape);
+    const viaGL = seaGL.viaGL;
+
+    viaGL["gl-loaded"] = function (program) {
+      const u_tile_shape = viaGL.gl.getUniformLocation(program, "u_tile_shape");
+      const u_tile_color = viaGL.gl.getUniformLocation(program, "u_tile_color");
+      const uniforms = { u_tile_shape, u_tile_color };
+      const closure = { viaGL, opts, uniforms }
+      seaGL["tile-drawing"] = to_tile_drawing(closure);
+    };
+    seaGL["tile-loaded"] = () => null;
+    viaGL.init().then(seaGL.adder.bind(seaGL));
+
+    // Initialize Openseadragon
 
     // Track mouse drag for lasso polygon drawing
     var mouse_drag = new OpenSeadragon.MouseTracker({

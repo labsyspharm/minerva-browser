@@ -21,11 +21,15 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
   const cgs = hashstate.cgs;
   const masks = hashstate.masks;
 
-  cgs.forEach(g => {
+  cgs.forEach((g, i) => {
     g['Format'] = g['Format'] || 'jpg';
+    g['channelIndex'] = i;
+    g['colorize'] = true;
   });
   masks.forEach(m => {
     m['Format'] = m['Format'] || 'png';
+    m['channelIndex'] = -1;
+    m['colorize'] = false;
   });
   const layers = cgs.concat(masks);
 
@@ -78,6 +82,8 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
             crossOriginPolicy: 'anonymous',
             ajaxHeaders: ajaxHeaders,
             tileSource: {
+              channelIndex: layer.channelIndex,
+              colorize: layer.colorize,
               height: image.Height,
               width:  image.Width,
               maxLevel: image.MaxLevel,
@@ -2488,9 +2494,9 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 }
 .minerva-legend-grid > .minerva-channel-legend > li > div {
     gap: 8px;
-    padding: 8px;
+    padding: 4px;
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: auto;
 }
 .minerva-legend-grid > .minerva-channel-legend > li > div > i {
   filter: drop-shadow(0px 0px 2px rgb(255, 255, 255, 1))

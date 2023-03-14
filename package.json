@@ -8,6 +8,7 @@
     "d3-svg-legend": "^2.25.6",
     "jquery": "3.5.1",
     "js-yaml": "^3.14.0",
+    "viawebgl": "github:thejohnhoffer/viaWebGL#89f77f43134f2d7deb88199570df925ea08cef72",
     "lensing": "https://github.com/thejohnhoffer/lensing/tarball/599d3ec5aa63c3181516d63162aae0b5c0fa13c4",
     "lz-string": "^1.4.4",
     "openseadragon": "^2.4.2",

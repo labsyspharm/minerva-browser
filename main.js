@@ -2134,7 +2134,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 .minerva-root a.text-danger:hover, .minerva-root a.text-danger:focus { color: #a71d2a !important; }
 .minerva-root .text-light { color: #f8f9fa !important; }
 .minerva-root a.text-light:hover, .minerva-root a.text-light:focus { color: #cbd3da !important; }
-.minerva-root .text-dark { color: #343a40 !important; }
+.minerva-root .text-dark { color: #000000 !important; }
 .minerva-root a.text-dark:hover, .minerva-root a.text-dark:focus { color: #121416 !important; }
 .minerva-root .text-body { color: #212529 !important; }
 .minerva-root .text-muted { color: #6c757d !important; }
@@ -2479,6 +2479,24 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     gap: 8px;
     display: grid;
     grid-template-columns: auto auto;
+}
+.minerva-legend-grid > .minerva-channel-legend > li {
+    gap: 8px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: auto auto;
+}
+.minerva-legend-grid > .minerva-channel-legend > li > div {
+    gap: 8px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: auto auto;
+}
+.minerva-legend-grid > .minerva-channel-legend > li > div > i {
+  filter: drop-shadow(0px 0px 2px rgb(255, 255, 255, 1))
+          drop-shadow(0px 0px 6px rgb(255, 255, 255, 1));
+  font-weight: 600;
+  font-size: 2.5em;
 }
 .minerva-legend-grid > .minerva-channel-legend-wrapper {
     grid-template-columns: auto auto;

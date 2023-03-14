@@ -879,10 +879,11 @@ Render.prototype = {
     label.className = 'legend-label pl-3';
     label.innerText = legend_line.name;
 
-    var badge = document.createElement('span');
+    var badge = document.createElement('div');
     $(badge).css('background-color', color);
-    badge.className = 'badge legend-color';
-    badge.innerText = '\u00a0';
+    var show_ico = document.createElement('i');
+    show_ico.className = 'fa fa-eye-dropper text-dark';
+    badge.appendChild(show_ico);
 
     // Append channel legend to list
     (() => {

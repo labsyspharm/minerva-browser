@@ -37,18 +37,20 @@ const changeSprings = function(viewer, seconds, stiffness) {
 };
 
 // Set the opacity of active channel groups or segmentation masks
-export const newMarkers = function(tileSources, group, active_masks) {
+export const newMarkers = function(tileSources, active_subgroups, active_masks) {
 
   const mask_paths = active_masks.map(m => m.Path);
 
   Object.keys(tileSources)
-    .forEach(el => {
-      const mask_path_index = mask_paths.indexOf(el);
-      const opacity = (el === group.Path || mask_path_index >=0) ? 1 : 0;
-      tileSources[el].forEach(tiledImage => {
+    .forEach(chan => {
+      const mask_path_index = mask_paths.indexOf(chan);
+      const is_group = active_subgroups.indexOf(chan) >= 0;
+      const is_mask = mask_path_index >= 0;
+      const opacity = (is_group || is_mask) ? 1 : 0;
+      tileSources[chan].forEach(tiledImage => {
         tiledImage.setOpacity(opacity);
         const {world} = tiledImage.viewer || {};
-        if (world && mask_path_index >= 0) {
+        if (world && is_mask) {
           // Reorder tiled images based on current active mask order
           const itemIndex = world.getItemCount() - 1 - mask_path_index;
           world.setItemIndex(tiledImage, Math.max(itemIndex, 0));
@@ -121,13 +123,9 @@ RenderOSD.prototype = {
         });
         return new Float32Array(bytes);
       }
-      const visibles = [
-        true, true, true, true, true, true, true, true, true
-      ];
       const channelSources = HS.cgs.map((group, i) => {
-        const color = hex2gl(group.Colors[0]) // TODO;
-        const visible = visibles[i];
-        return { color, visible };
+        const color = hex2gl(group.Colors[0]); // TODO
+        return { color };
       });
       return { channelSources, tileShape };
     })();
@@ -405,7 +403,7 @@ RenderOSD.prototype = {
       // Update OpenSeadragon
       this.activateViewport();
       this.lensing.newViewRedraw();
-      newMarkers(this.tileSources, HS.group, HS.active_masks);
+      newMarkers(this.tileSources, HS.active_subgroups, HS.active_masks);
     }
     this.viewer.forceRedraw();
   },

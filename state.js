@@ -689,6 +689,24 @@ HashState.prototype = {
     return this.cgs[this.g];
   },
 
+  // Whether rendering in single-channel mode
+  get subpath_map () {
+    return this.design.subpath_map || {};
+  },
+
+  // Get the paths of the current channel layers
+  get active_subgroups() {
+    const subpath_map = this.subpath_map;
+    if (Object.keys(subpath_map).length > 0) {
+      // Return single-channel subpaths to render
+      return this.group.Channels.filter((key) => {
+        return key in subpath_map;
+      }).map(key => subpath_map[key]);
+    }
+    // Return group subpath
+    return [this.group.Path];
+  },
+
   // Get the colors of the current group's channels
   get colors() {
     const g_colors = this.group.Colors;
@@ -795,6 +813,7 @@ HashState.prototype = {
     const cgs = exhibit.Groups || [];
     const masks = exhibit.Masks || [];
     var stories = exhibit.Stories || [];
+    const channelList = exhibit.channelList || [];
     stories = stories.reduce((_stories, story) => {
       story.Waypoints = story.Waypoints.map(waypoint => {
         if (waypoint.Overlay != undefined) {
@@ -818,6 +837,10 @@ HashState.prototype = {
       z_scale: exhibit['ZPerMicron'] || 0,
       default_group: exhibit.DefaultGroup || '',
       first_group: exhibit.FirstGroup || '',
+      subpath_map: channelList.reduce((o, c) => {
+        o[c.Name] = c.Path;
+        return o;
+      }, {}),
       stories: stories,
       masks: masks,
       cgs: cgs

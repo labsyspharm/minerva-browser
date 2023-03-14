@@ -96,7 +96,7 @@ export class OsdLensingContext {
 
     initializeChannels() {
       const HS = this.hashstate;
-      const { cgs, grid } = HS;;
+      const { cgs, grid } = HS;
       const image = (grid.pop() || []).pop();
       const lens = HS.lensing || {};
       const viewer = this.lensingContext;
@@ -143,8 +143,8 @@ export class OsdLensingContext {
       const lens = HS.lensing || {};
       const active_masks = []; // TODO: mask support
       const show_group = sameGroup.bind(null, lens.Group);
-      const group = HS.cgs.filter(show_group).pop() || {};
-      newMarkers(this.tileSources, group, active_masks);
+      const groups = HS.active_subgroups.filter(show_group); //TODO single-channel
+      newMarkers(this.tileSources, groups, active_masks);
       updateLensing(lensing, HS);
     }
 }

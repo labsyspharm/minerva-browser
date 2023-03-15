@@ -1,8 +1,7 @@
 import * as d3 from "d3"
-import viaWebGL from 'viawebgl';
 import { round4 } from "./render"
 import { greenOrWhite } from "./render"
-import { shaders, to_tile_drawing } from "./channel"
+import { linkShaders } from "./channel"
 import { OsdLensingContext } from "./osdLensingContext"
 
 var lasso_draw_counter = 0;
@@ -37,22 +36,17 @@ const changeSprings = function(viewer, seconds, stiffness) {
 };
 
 // Set the opacity of active channel groups or segmentation masks
-export const newMarkers = function(tileSources, active_subpaths, active_masks) {
-
-  const mask_paths = active_masks.map(m => m.Path);
+export const newMarkers = function(tileSources, isActivePath) {
 
   Object.keys(tileSources)
     .forEach(chan => {
-      const mask_path_index = mask_paths.indexOf(chan);
-      const is_group = active_subpaths.indexOf(chan) >= 0;
-      const is_mask = mask_path_index >= 0;
-      const opacity = (is_group || is_mask) ? 1 : 0;
+      const { active, mask_index } = isActivePath(chan);
       tileSources[chan].forEach(tiledImage => {
-        tiledImage.setOpacity(opacity);
+        tiledImage.setOpacity([0, 1][+active]);
         const {world} = tiledImage.viewer || {};
-        if (world && is_mask) {
+        if (world && mask_index >= 0) {
           // Reorder tiled images based on current active mask order
-          const itemIndex = world.getItemCount() - 1 - mask_path_index;
+          const itemIndex = world.getItemCount() - 1 - mask_index;
           world.setItemIndex(tiledImage, Math.max(itemIndex, 0));
         }
       });
@@ -105,52 +99,11 @@ RenderOSD.prototype = {
     const HS = this.hashstate;
     const THIS = this;
 
-    // Take the nominal tilesize from arbitrary tile source
-    const tileSourceVals = [...Object.values(this.tileSources)];
-    const tileShape = tileSourceVals.reduce((o, tiledImages) => {
-      const shapes = tiledImages.map(({source}) => {
-        const { _tileWidth, _tileHeight } = source;
-        return [ _tileWidth, _tileHeight ];
-      })
-      return shapes.pop() || o;
-    }, [1024, 1024]);
-
-    const opts = (() => {
-      const hex2gl = (hex) => {
-        const val = parseInt(hex.replace('#',''), 16);
-        const bytes = [16, 8, 0].map(shift => {
-          return ((val >> shift) & 255) / 255;
-        });
-        return new Float32Array(bytes);
-      }
-      const channelMap = HS.all_subgroups.filter((group) => {
-        return group.Colors.length === 1;
-      }).reduce((o, {Colors, Name}) => {
-        const color = hex2gl(Colors[0]);
-        o.set(Name, { color });
-        return o;
-      }, new Map());
-      return { channelMap, tileShape };
-    })();
-  
-    // Initialize WebGL
-    const seaGL = new viaWebGL.openSeadragonGL(viewer);
-    seaGL.viaGL.fShader = shaders.fragment;
-    seaGL.viaGL.vShader = shaders.vertex;
-    seaGL.viaGL.updateShape(...tileShape);
-    const viaGL = seaGL.viaGL;
-
-    viaGL["gl-loaded"] = function (program) {
-      const u_tile_shape = viaGL.gl.getUniformLocation(program, "u_tile_shape");
-      const u_tile_color = viaGL.gl.getUniformLocation(program, "u_tile_color");
-      const uniforms = { u_tile_shape, u_tile_color };
-      const closure = { viaGL, opts, uniforms }
-      seaGL["tile-drawing"] = to_tile_drawing(closure);
-    };
-    seaGL["tile-loaded"] = () => null;
-    viaGL.init().then(seaGL.adder.bind(seaGL));
-
     // Initialize Openseadragon
+    linkShaders({
+      viewer, subgroups: HS.all_subgroups,
+      tileSources: this.tileSources
+    });
 
     // Track mouse drag for lasso polygon drawing
     var mouse_drag = new OpenSeadragon.MouseTracker({
@@ -406,7 +359,7 @@ RenderOSD.prototype = {
       // Update OpenSeadragon
       this.activateViewport();
       this.lensing.newViewRedraw();
-      newMarkers(this.tileSources, HS.active_subpaths, HS.active_masks);
+      newMarkers(this.tileSources, HS.isActivePath.bind(HS));
     }
     this.viewer.forceRedraw();
   },

@@ -1,17 +1,14 @@
 import * as lensing from 'lensing';
 import * as OSD from "openseadragon";
 import { newMarkers } from "./osd"
+import { linkShaders } from "./channel"
 import { getGetTileUrl } from "./state"
 import LensingFilters from './osdLensingFilters';
-
-const sameGroup = (Group, group) => {
-  return Group && Group == group.Name;
-}
 
 const updateLensing = (lensing, HS) => {
   const pxRatio = window.devicePixelRatio;
   const { Mag, Rad, Shape, Group } = HS.lensing || {};
-  const sameLens = sameGroup(Group, HS.group);
+  const sameLens = HS.isActiveName(Group);
   const radius = Rad ? Rad : 100;
   const noLens = !HS.lensing;
   if (noLens || sameLens) {
@@ -65,9 +62,16 @@ export class OsdLensingContext {
           lensingContext, lensing
         } = this.newContext(opts);
         this.lensing = lensing;
-        this.lensingContext = lensingContext;
-        this.initializeChannels();
         this.tileSources = {};
+        this.lensingContext = lensingContext;
+        // Initialize Openseadragon
+        this.initializeChannels((viewer) => {
+          const { all_subgroups } = this.hashstate;
+          linkShaders({
+            viewer, subgroups: all_subgroups,
+            tileSources: this.tileSources
+          });
+        });
     }
 
     newContext(opts) {
@@ -94,23 +98,26 @@ export class OsdLensingContext {
         };
     }
 
-    initializeChannels() {
+    initializeChannels(init) {
       const HS = this.hashstate;
-      const { cgs, grid } = HS;
+      const { layers, grid } = HS;
       const image = (grid.pop() || []).pop();
-      const lens = HS.lensing || {};
       const viewer = this.lensingContext;
-      const { Group } = lens;  
-      const layer = [...cgs].forEach(layer => {
+      const nTotal = layers.length;
+      var nLoaded = 0;
+      [...layers].forEach(layer => {
         layer.Format = 'jpg';
         viewer.addTiledImage({
           loadTilesWithAjax: false,
+          compositeOperation: layer.Blend,
+          crossOriginPolicy: 'anonymous',
           tileSource: {
+            colorize: layer.Colorize,
             height: image.Height,
             width:  image.Width,
+            name: layer.Name,
             maxLevel: image.MaxLevel,
-            crossOriginPolicy: 'anonymous',
-            opacity: [0, 1][+sameGroup(Group, layer)],
+            opacity: [0, 1][+HS.isLensName(layer.Name).active],
             tileWidth: image.TileSize.slice(0,1).pop(),
             tileHeight: image.TileSize.slice(0,2).pop(),
             getTileUrl: getGetTileUrl(image, layer) 
@@ -122,6 +129,8 @@ export class OsdLensingContext {
               this.tileSources[layer.Path] = [];
             }
             this.tileSources[layer.Path].push(item);
+            nLoaded += 1;
+            if (nLoaded == nTotal) init(viewer);
           }
         });
       });
@@ -142,9 +151,7 @@ export class OsdLensingContext {
       this.activateViewport();
       const lens = HS.lensing || {};
       const active_masks = []; // TODO: mask support
-      const show_group = sameGroup.bind(null, lens.Group);
-      const groups = HS.active_subpaths.filter(show_group);
-      newMarkers(this.tileSources, groups, active_masks);
+      newMarkers(this.tileSources, HS.isLensPath.bind(HS));
       updateLensing(lensing, HS);
     }
 }

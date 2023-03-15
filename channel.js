@@ -1,3 +1,5 @@
+import viaWebGL from 'viawebgl';
+
 const toSettings = ({ opts, tiles, layers }) => {
   const { channelMap: channel_map } = opts;
   [...tiles.values()].forEach((tile) => {
@@ -151,4 +153,60 @@ void main() {
 }`
 }
 
-export { to_tile_drawing, State, shaders }
+const hex2gl = (hex) => {
+  const val = parseInt(hex.replace('#',''), 16);
+  const bytes = [16, 8, 0].map(shift => {
+    return ((val >> shift) & 255) / 255;
+  });
+  return new Float32Array(bytes);
+}
+
+const toTileShape = (tileSources) => {
+  const tileSourceVals = [...Object.values(tileSources)];
+  return tileSourceVals.reduce((o, tiledImages) => {
+    const shapes = tiledImages.map(({source}) => {
+      const { _tileWidth, _tileHeight } = source;
+      return [ _tileWidth, _tileHeight ];
+    })
+    return shapes.pop() || o;
+  }, [1024, 1024]);
+}
+
+const toOptions = (props) => {
+  const { subgroups, tileSources } = props;
+  const tileShape = toTileShape(tileSources);
+  const channelMap = subgroups.filter((group) => {
+    return group.Colors.length === 1;
+  }).reduce((o, {Colors, Name}) => {
+    const color = hex2gl(Colors[0]);
+    o.set(Name, { color });
+    return o;
+  }, new Map());
+  return { channelMap, tileShape };
+}
+
+const linkShaders = (props) => {
+  const { viewer, subgroups, tileSources } = props;
+  // Take the nominal tilesize from arbitrary tile source
+
+  const opts = toOptions({subgroups, tileSources});
+
+  // Initialize WebGL
+  const seaGL = new viaWebGL.openSeadragonGL(viewer);
+  seaGL.viaGL.fShader = shaders.fragment;
+  seaGL.viaGL.vShader = shaders.vertex;
+  seaGL.viaGL.updateShape(...opts.tileShape);
+  const viaGL = seaGL.viaGL;
+
+  viaGL["gl-loaded"] = function (program) {
+    const u_tile_shape = viaGL.gl.getUniformLocation(program, "u_tile_shape");
+    const u_tile_color = viaGL.gl.getUniformLocation(program, "u_tile_color");
+    const uniforms = { u_tile_shape, u_tile_color };
+    const closure = { viaGL, opts, uniforms }
+    seaGL["tile-drawing"] = to_tile_drawing(closure);
+  };
+  seaGL["tile-loaded"] = () => null;
+  viaGL.init().then(seaGL.adder.bind(seaGL));
+}
+
+export { linkShaders }

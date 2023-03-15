@@ -18,20 +18,7 @@ const flatten = function(items) {
 const arrange_images = function(viewer, tileSources, hashstate, init) {
 
   // Channel groups and segmentation masks
-  const all_subgroups = hashstate.all_subgroups;
-  const masks = hashstate.masks;
-
-  all_subgroups.forEach((g, i) => {
-    g['Format'] = g['Format'] || 'jpg';
-    g['Blend'] = 'lighter';
-    g['Colorize'] = true;
-  });
-  masks.forEach(m => {
-    m['Format'] = m['Format'] || 'png';
-    m['Blend'] = 'source-over';
-    m['Colorize'] = false;
-  });
-  const layers = all_subgroups.concat(masks);
+  const layers = hashstate.layers;
 
   const grid = hashstate.grid;
 

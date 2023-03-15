@@ -193,6 +193,14 @@ const to_subgroups = (subpath_map, group) => {
   return [{ Name, Path, Colors }];
 }
 
+const is_active = ({ masks, subgroups, key, match }) => {
+  const mask_list = masks.map(m => m[key]);
+  const group_list = subgroups.map(g => g[key]);
+  const mask_index = mask_list.indexOf(match);
+  const group_index = group_list.indexOf(match);
+  const active = group_index >= 0 || mask_index >= 0;
+  return { active, group_index, mask_index };
+}
 
 /*
  * The HashState contains all state variables in sync with url hash
@@ -712,9 +720,34 @@ HashState.prototype = {
     return this.cgs[this.g];
   },
 
+  // Get the current lens group
+  get lens_group() {
+    const name = this.lensing?.Group;
+    return this.cgs.find((group) => {
+      return group.Name === name;
+    }) || null;
+  },
+
   // Whether rendering in single-channel mode
   get subpath_map () {
     return this.design.subpath_map || new Map();
+  },
+
+  // Get openseadragon tiled image layers
+  get layers () {
+    const { masks, all_subgroups } = this;
+    const colorize = this.subpath_map.size > 0;
+    all_subgroups.forEach((g, i) => {
+      g['Format'] = g['Format'] || 'jpg';
+      g['Colorize'] = colorize;
+      g['Blend'] = 'lighter';
+    });
+    masks.forEach(m => {
+      m['Format'] = m['Format'] || 'png';
+      m['Blend'] = 'source-over';
+      m['Colorize'] = false;
+    });
+    return all_subgroups.concat(masks);
   },
 
   // Get the subgroups of all possible layers
@@ -736,9 +769,11 @@ HashState.prototype = {
     return to_subgroups(this.subpath_map, this.group);
   },
   
-  // Get the subgroup paths of current layer
-  get active_subpaths() {
-    return this.active_subgroups.map(({Path}) => Path);
+  // Get the subgroups of current lens
+  get lens_subgroups() {
+    const group = this.lens_group;
+    if (group === null) return [];
+    return to_subgroups(this.subpath_map, group);
   },
 
   // Get the colors of the current group's channels
@@ -1173,6 +1208,34 @@ HashState.prototype = {
       noCompatMode: true,
     });
     return wid_yaml.replace('- - - ', '    - ');
+  },
+
+  isActivePath(match) {
+    const key = 'Path';
+    const masks = this.active_masks;
+    const subgroups = this.active_subgroups;
+    return is_active({ masks, subgroups, key, match });
+  },
+
+  isActiveName(match) {
+    const key = 'Name';
+    const masks = this.active_masks;
+    const subgroups = this.active_subgroups;
+    return is_active({ masks, subgroups, key, match });
+  },
+
+  isLensPath(match) {
+    const masks = [];
+    const key = 'Path';
+    const subgroups = this.lens_subgroups;
+    return is_active({ masks, subgroups, key, match });
+  },
+
+  isLensName(match) {
+    const masks = [];
+    const key = 'Name';
+    const subgroups = this.lens_subgroups;
+    return is_active({ masks, subgroups, key, match });
   }
 };
 

@@ -171,26 +171,33 @@ const anon_authenticate = function(username, pass) {
   })
 }
 
-const to_subgroups = (subpath_map, group) => {
+const to_subgroups = (subpath_map, group, all) => {
+  const shown = group.Shown;
   const n_color = group.Colors.length;
   const channels = group.Channels.slice(0, n_color);
-  const cols = channels.reduce((o, Name, idx) => {
-    o.set(Name, group.Colors[idx]);
+  const zipped = channels.reduce((o, Name, idx) => {
+    o.set(Name, {
+      Colors: [ group.Colors[idx] ],
+      Description: (group.Descriptions || [])[idx] || ''
+    });
     return o;
   }, new Map());
   // Return single-channel subpaths to render
   if (subpath_map.size > 0) {
-    return channels.filter(n => {
+    return channels.filter((n, i) => {
+      if (!all && !shown[i]) {
+        return false;
+      }
       return subpath_map.has(n);
     }).map((Name) => {
-      const Colors = [ cols.get(Name) ];
       const Path = subpath_map.get(Name);
-      return { Name, Path, Colors };
+      const { Colors, Description } = zipped.get(Name);
+      return { Name, Path, Colors, Description };
     });
   }
   // Return group subpath
   const { Name, Path, Colors } = group;
-  return [{ Name, Path, Colors }];
+  return [{ Name, Path, Colors, Description: '' }];
 }
 
 const is_active = ({ masks, subgroups, key, match }) => {
@@ -200,6 +207,26 @@ const is_active = ({ masks, subgroups, key, match }) => {
   const group_index = group_list.indexOf(match);
   const active = group_index >= 0 || mask_index >= 0;
   return { active, group_index, mask_index };
+}
+
+const can_mutate_group = (old, group) => {
+  // Don't copy a copy, don't copy if same
+  if ('OriginalGroup' in group) return true;
+  if (old === group) return true;
+  const old_c = old.Channels;
+  const new_c = group.Channels;
+  // Check if channel names are the same
+  if (old_c.length === new_c.length) {
+    return new_c.every((c, i) => c === old_c[i]);
+  }
+  return false;
+}
+
+const add_visibility = (cgs) => {
+  return cgs.map(group => {
+    group.Shown = group.Channels.map(() => true);
+    return group;
+  });
 }
 
 /*
@@ -230,6 +257,8 @@ export const HashState = function(exhibit, options) {
     buffer: {
       waypoint: undefined
     },
+    colorListeners: new Map(),
+    activeChannel: -1,
     drawType: "lasso",
     changed: false,
     design: {},
@@ -468,6 +497,10 @@ HashState.prototype = {
     const g = parseInt(_g, 10);
     const count = this.cgs.length;
     this.state.g = pos_modulo(g, count);
+    // Dispatch color event
+    // TODO: only needed if colors differ
+    this.dispatchColorEvent();
+    this.activeChannel = -1;
   },
 
   /*
@@ -715,9 +748,45 @@ HashState.prototype = {
     }).filter(mask => mask != undefined);
   },
 
+  // Currently editable channel
+  get activeChannel() {
+    return this.state.activeChannel;
+  },
+  
+  // Update current editable channel
+  set activeChannel(c) {
+    if (c < 0) {
+      this.state.activeChannel = -1;
+    }
+    else {
+      const n = this.group.Channels.length;
+      this.state.activeChannel = pos_modulo(c, n);
+    }
+  },
+
   // Get the current group given by group index
   get group() {
     return this.cgs[this.g];
+  },
+
+  // Update or copy the current group
+  set group(group) {
+    const name = group.Name;
+    const cgs = [...this.cgs];
+    // Don't copy on minor changes
+    if (can_mutate_group(this.group, group)) {
+      cgs.splice(this.g, 1, group);
+      this.cgs = cgs;
+    }
+    else {
+      const copied = cgs.filter((group) => {
+        return group.OriginalGroup === name;
+      }).length + 1;
+      group.Name = `${name} (copy ${copied})`;
+      group.OriginalGroup = name;
+      this.cgs = [...cgs, group];
+      this.g = cgs.length;
+    }
   },
 
   // Get the current lens group
@@ -728,9 +797,21 @@ HashState.prototype = {
     }) || null;
   },
 
-  // Whether rendering in single-channel mode
+  // For rendering in single-channel mode
   get subpath_map () {
     return this.design.subpath_map || new Map();
+  },
+
+  get subpath_defaults () {
+    const entries = [...this.subpath_map.entries()];
+    return new Map(entries.map(([k, v]) => {
+      const defaults = this.all_subgroups.find((subgroup) => {
+        return subgroup.Name === k;
+      }) || {
+        Colors: ["ffffff"], Description: '', Name: k, Path: v
+      }
+      return [k, defaults];
+    }));
   },
 
   // Get openseadragon tiled image layers
@@ -753,9 +834,14 @@ HashState.prototype = {
   // Get the subgroups of all possible layers
   get all_subgroups() {
     const { subpath_map } = this;
+    const inactive = this.cgs.filter(({Name}) => {
+      return Name !== this.group.Name;
+    });
+    // Ensure active group has priority
+    const groups = [this.group, ...inactive];
     // Find all unqiue subgroups among groups
-    return [...this.cgs.reduce((o, group) => {
-      const subgroups = to_subgroups(subpath_map, group);
+    return [...groups.reduce((o, group) => {
+      const subgroups = to_subgroups(subpath_map, group, true);
       return subgroups.reduce((o, subgroup) => {
         if (o.has(subgroup.Name)) return o;
         o.set(subgroup.Name, subgroup);
@@ -766,14 +852,14 @@ HashState.prototype = {
 
   // Get the subgroups of the current layer
   get active_subgroups() {
-    return to_subgroups(this.subpath_map, this.group);
+    return to_subgroups(this.subpath_map, this.group, false);
   },
   
   // Get the subgroups of current lens
   get lens_subgroups() {
     const group = this.lens_group;
     if (group === null) return [];
-    return to_subgroups(this.subpath_map, group);
+    return to_subgroups(this.subpath_map, group, false);
   },
 
   // Get the colors of the current group's channels
@@ -910,9 +996,9 @@ HashState.prototype = {
         o.set(c.Name, c.Path);
         return o;
       }, new Map()),
+      cgs: add_visibility(cgs),
       stories: stories,
       masks: masks,
-      cgs: cgs
     };
 
     const outline_story = this.newTempStory('outline');
@@ -1236,6 +1322,16 @@ HashState.prototype = {
     const key = 'Name';
     const subgroups = this.lens_subgroups;
     return is_active({ masks, subgroups, key, match });
+  },
+
+  addColorListener(key, fn) {
+    this.state.colorListeners.set(key, fn);  
+  },
+
+  dispatchColorEvent() {
+    const { all_subgroups } = this;
+    const fns = this.state.colorListeners.values();
+    [...fns].forEach(fn => fn(all_subgroups));
   }
 };
 

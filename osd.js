@@ -100,10 +100,12 @@ RenderOSD.prototype = {
     const THIS = this;
 
     // Initialize Openseadragon
-    linkShaders({
+    const { updater } = linkShaders({
       viewer, subgroups: HS.all_subgroups,
       tileSources: this.tileSources
     });
+    // Add state updater
+    HS.addColorListener('main', updater);
 
     // Track mouse drag for lasso polygon drawing
     var mouse_drag = new OpenSeadragon.MouseTracker({

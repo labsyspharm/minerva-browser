@@ -1,6 +1,7 @@
 import sha1 from 'sha1'
 import { index_name } from './state'
 import { index_regex } from './state'
+import color_convert from 'color-convert'
 import { Clipboard } from './clipboard'
 import infovis from './infovis'
 
@@ -200,9 +201,40 @@ const newCopyButton = function() {
     setTimeout(function() {
       $(this).trigger('relabel', [copy_pre]);
     }, 1000);
-  return false;
+    return false;
   });
 };
+
+const updateColor = (group, color, c) => {
+  group.Colors = group.Colors.map((col, i) => {
+    return [col, color][+(c === i)];
+  });
+  return group;
+}
+
+const addChannel = (group, subgroup) => {
+  return {
+    ...group,
+    Shown: [...group.Shown, true],
+    Channels: [...group.Channels, subgroup.Name],
+    Colors: [...group.Colors, subgroup.Colors[0]],
+    Descriptions: [...group.Descriptions, subgroup.Description]
+  };
+}
+
+const toggleChannelShown = (group, c) => {
+  group.Shown = group.Shown.map((show, i) => {
+    return [show, !show][+(c === i)];
+  });
+  return group;
+}
+
+const sort_by_hue = (to_hex) => {
+  return (k1, k2) => {
+    const to_hue = (hex) => color_convert.hex.hsv(hex)[0];
+    return to_hue(to_hex(k2)) - to_hue(to_hex(k1));
+  }
+}
 
 // Render the non-openseadragon UI
 export const Render = function(hashstate, osd) {
@@ -270,6 +302,15 @@ Render.prototype = {
         $(".minerva-channel-legend-info").toggleClass("toggled");
       });
     })('minerva-channel-legend-wrapper');
+    
+    // Toggle channel selection
+    ((k) => {
+      const el = document.getElementsByClassName(k).item(0);
+      el.addEventListener('click', () => {
+        $(".minerva-channel-legend-adding").toggleClass("toggled");
+      });
+    })('minerva-channel-legend-add');
+
 
     // Modals to copy shareable link and edit description
     $('#copy_link_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
@@ -865,33 +906,117 @@ Render.prototype = {
   // Add channel legend labels
   addChannelLegends: function() {
     const HS = this.hashstate;
+    const { group, activeChannel } = HS;
+    var label = '';
+    var picked = new RegExp("^$");
+    if (activeChannel >= 0) {
+      label = group.Channels[activeChannel]; 
+      const color = group.Colors[activeChannel]; 
+      if (color) picked = new RegExp(color, "i");
+    }
     $('.minerva-channel-legend').empty();
     $('.minerva-channel-legend-info').empty();
-    HS.channel_legend_lines.forEach(this.addChannelLegend, this);
+    $('.minerva-channel-legend-adding').empty();
+    $('.minerva-channel-legend-color-picker').empty();
+    if (activeChannel < 0) {
+      $('.minerva-channel-legend-color-picker').removeClass('toggled');
+    }
+    const legend_lines = HS.channel_legend_lines;
+    legend_lines.forEach(this.addChannelLegend, this);
+    // Add all channels not present in legend
+    const defaults = HS.subpath_defaults;
+    const to_hex = (k) => defaults.get(k).Colors[0];
+    const missing_names = [...defaults.keys()].filter((key) => {
+      return !legend_lines.find(({ name }) => key === name);
+    }).sort(sort_by_hue(to_hex));
+    missing_names.forEach(this.addChannelChoice, this);
+    // Add color selection
+    const COLORS = [
+      [0, 0, 0],
+      [100, 0, 0],
+      [0, 0, 30],
+      [0, 0, 60],
+      [0, 0, 120],
+      [0, 50, 150],
+      [0, 0, 180],
+      [0, 0, 240],
+      [0, 0, 270],
+      [0, 0, 300],
+    ].map(([w, b, h]) => {
+      return color_convert.hwb.hex([h, w, b]);
+    }).sort(sort_by_hue(x => x));
+    ((cls) => {
+      const picker = HS.el.getElementsByClassName(cls)[0];
+      var header = document.createElement('span');
+      header.className = "all-columns";
+      header.innerText = label;
+      picker.appendChild(header);
+      COLORS.forEach(color => {
+        var colorize = document.createElement('span');
+        $(colorize).css('background-color', '#'+color);
+        colorize.addEventListener("click", () => {
+          HS.group = updateColor(group, color, activeChannel);
+          HS.dispatchColorEvent();
+          this.newView(true);
+        });
+        if (picked.test(color)) {
+          colorize.className = "glowing";
+        }
+        picker.appendChild(colorize);
+      });
+      var submit = document.createElement('a');
+      submit.className = "nav-link active";
+      submit.innerText = "Update";
+      picker.appendChild(submit);
+      submit.addEventListener("click", () => {
+        $("."+cls).removeClass("toggled");
+      })
+    })("minerva-channel-legend-color-picker");
   },
 
   // Add channel legend label
   addChannelLegend: function(legend_line, c) {
-    const color = this.indexColor(c, '#FFF');
     const HS = this.hashstate;
+    const color = this.indexColor(c, 'fffff');
+    const shown = HS.group.Shown[c] || false;
+
+    var item = document.createElement('li');
+    item.style.cssText = 'opacity:'+[0.5,1][+shown];
+    item.addEventListener("click", () => {
+      HS.group = toggleChannelShown(HS.group, c);
+      HS.pushState();
+      window.onpopstate();
+    });
+    var visible = document.createElement('div');
+    var colorize = document.createElement('span');
+    $(colorize).css('background-color', '#'+color);
+    colorize.className = "glowing";
+    colorize.addEventListener("click", (e) => {
+      if (!shown) HS.group = toggleChannelShown(HS.group, c);
+      $(".minerva-channel-legend-color-picker").addClass("toggled");
+      HS.activeChannel = c;
+      this.newView(true);
+      e.stopPropagation();
+    });
+
+    var colorize_ico = document.createElement('i');
+    colorize_ico.className = 'fa fa-eye-dropper text-dark';
+    colorize.appendChild(colorize_ico);
+    item.appendChild(colorize);
+
+    var visible_ico = document.createElement('i');
+    visible_ico.className = 'fa fa-eye' + ['-slash', ''][+shown];
+    visible.appendChild(visible_ico);
+    item.appendChild(visible);
 
     var label = document.createElement('span');
-    label.className = 'legend-label pl-3';
     label.innerText = legend_line.name;
-
-    var badge = document.createElement('div');
-    $(badge).css('background-color', color);
-    var show_ico = document.createElement('i');
-    show_ico.className = 'fa fa-eye-dropper text-dark';
-    badge.appendChild(show_ico);
+    item.appendChild(label);
 
     // Append channel legend to list
     (() => {
       var ul = HS.el.getElementsByClassName('minerva-channel-legend')[0];
-      var li = document.createElement('li');
-      li.appendChild(badge);
-      li.appendChild(label);
-      ul.appendChild(li);
+      ul.appendChild(item);
     })();
 
     // Append channel info to list
@@ -901,6 +1026,33 @@ Render.prototype = {
       li.innerText = legend_line.description;
       ul.appendChild(li);
     })();
+  },
+
+  // Add new single channel possibility
+  addChannelChoice: function(name) {
+    const HS = this.hashstate;
+    const defaults = HS.subpath_defaults;
+    const subgroup = defaults.get(name);
+    var item = document.createElement('li');
+    item.addEventListener("click", () => {
+      $(".minerva-channel-legend-adding").toggleClass("toggled");
+      HS.group = addChannel(HS.group, subgroup);
+      HS.pushState();
+      window.onpopstate();
+    });
+    const color = '#' + subgroup.Colors[0];
+    var label = document.createElement('span');
+    var colorize = document.createElement('span');
+    var prefix = document.createElement('span');
+    $(colorize).css('background-color', color);
+    prefix.innerText = "⊕";
+    label.innerText = name;
+    item.appendChild(prefix);
+    item.appendChild(colorize);
+    item.appendChild(label);
+    // Append to list
+    var ul = HS.el.getElementsByClassName('minerva-channel-legend-adding')[0];
+    ul.appendChild(item);
   },
 
   // Return map of channels to indices
@@ -918,7 +1070,7 @@ Render.prototype = {
     if (i === undefined) {
       return empty;
     }
-    return '#' + colors[i % colors.length];
+    return colors[i % colors.length];
   },
 
   // Render all stories
@@ -1215,7 +1367,7 @@ Render.prototype = {
         });
       }
       var color = this.indexColor(index);
-      var border = color? '2px solid ' + color: 'inherit';
+      var border = color? '2px solid #' + color: 'inherit';
       $(code).css('border-bottom', border);
     }
   },

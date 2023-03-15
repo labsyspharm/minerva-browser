@@ -45,8 +45,7 @@ const draw_tile = (ctx, output, viaGL, w, h) => {
   ctx.drawImage(output, 0, 0, gl_w, gl_h, 0, 0, w, h);
 }
 
-const to_tile_drawing = ({ viaGL, opts, uniforms }) => {
-  const state = new State(opts);
+const to_tile_drawing = ({ viaGL, state, uniforms }) => {
   const { u_tile_shape, u_tile_color } = uniforms;
   const { gl } = viaGL;
   return (_, e) => {
@@ -190,6 +189,7 @@ const linkShaders = (props) => {
   // Take the nominal tilesize from arbitrary tile source
 
   const opts = toOptions({subgroups, tileSources});
+  const state = new State(opts);
 
   // Initialize WebGL
   const seaGL = new viaWebGL.openSeadragonGL(viewer);
@@ -202,11 +202,18 @@ const linkShaders = (props) => {
     const u_tile_shape = viaGL.gl.getUniformLocation(program, "u_tile_shape");
     const u_tile_color = viaGL.gl.getUniformLocation(program, "u_tile_color");
     const uniforms = { u_tile_shape, u_tile_color };
-    const closure = { viaGL, opts, uniforms }
+    const closure = { viaGL, state, uniforms }
     seaGL["tile-drawing"] = to_tile_drawing(closure);
   };
   seaGL["tile-loaded"] = () => null;
   viaGL.init().then(seaGL.adder.bind(seaGL));
+
+  // Allow update
+  const updater = (subgroups) => {
+    const opts = toOptions({subgroups, tileSources});
+    state.update(opts);
+  }
+  return { updater }
 }
 
 export { linkShaders }

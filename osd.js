@@ -37,14 +37,14 @@ const changeSprings = function(viewer, seconds, stiffness) {
 };
 
 // Set the opacity of active channel groups or segmentation masks
-export const newMarkers = function(tileSources, active_subgroups, active_masks) {
+export const newMarkers = function(tileSources, active_subpaths, active_masks) {
 
   const mask_paths = active_masks.map(m => m.Path);
 
   Object.keys(tileSources)
     .forEach(chan => {
       const mask_path_index = mask_paths.indexOf(chan);
-      const is_group = active_subgroups.indexOf(chan) >= 0;
+      const is_group = active_subpaths.indexOf(chan) >= 0;
       const is_mask = mask_path_index >= 0;
       const opacity = (is_group || is_mask) ? 1 : 0;
       tileSources[chan].forEach(tiledImage => {
@@ -123,11 +123,14 @@ RenderOSD.prototype = {
         });
         return new Float32Array(bytes);
       }
-      const channelSources = HS.cgs.map((group, i) => {
-        const color = hex2gl(group.Colors[0]); // TODO
-        return { color };
-      });
-      return { channelSources, tileShape };
+      const channelMap = HS.all_subgroups.filter((group) => {
+        return group.Colors.length === 1;
+      }).reduce((o, {Colors, Name}) => {
+        const color = hex2gl(Colors[0]);
+        o.set(Name, { color });
+        return o;
+      }, new Map());
+      return { channelMap, tileShape };
     })();
   
     // Initialize WebGL
@@ -403,7 +406,7 @@ RenderOSD.prototype = {
       // Update OpenSeadragon
       this.activateViewport();
       this.lensing.newViewRedraw();
-      newMarkers(this.tileSources, HS.active_subgroups, HS.active_masks);
+      newMarkers(this.tileSources, HS.active_subpaths, HS.active_masks);
     }
     this.viewer.forceRedraw();
   },

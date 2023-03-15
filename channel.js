@@ -1,17 +1,10 @@
 const toSettings = ({ opts, tiles, layers }) => {
-  const { channelSources } = opts;
-  const color_vecs = channelSources.map(({color}) => {
-    return color;
-  });
-  [...layers.entries()].forEach(([idx, value]) => {
-    const { visible } = channelSources[idx];
-    value.setOpacity([0.0, 1.0][+visible]);
-  });
+  const { channelMap: channel_map } = opts;
   [...tiles.values()].forEach((tile) => {
     delete tile._caching; 
     delete tile._cached; 
   });
-  return { color_vecs };
+  return { channel_map };
 }
 
 class State {
@@ -23,8 +16,8 @@ class State {
     this.update(opts);
   }
 
-  get color_vecs () {
-    return this.settings.color_vecs;
+  get channel_map () {
+    return this.settings.channel_map;
   }
 
   trackTile (tile) {
@@ -40,7 +33,7 @@ class State {
   update (opts) {
     const { tiles, layers } = this;
     const settings = toSettings({ opts, tiles, layers });
-    this.settings.color_vecs = settings.color_vecs;
+    this.settings.channel_map = settings.channel_map;
   }
 }
 
@@ -57,15 +50,14 @@ const to_tile_drawing = ({ viaGL, opts, uniforms }) => {
   return (_, e) => {
     // Read parameters from each tile
     const { source } = e.tiledImage;
-    const { channelIndex } = source;
+    const { name } = source;
     const w = e.rendered.canvas.width;
     const h = e.rendered.canvas.height;
     
     // Unable to colorize this layer
     const missing = [
       source.colorize !== true,
-      isNaN(channelIndex), channelIndex < 0,
-      channelIndex >= state.color_vecs.length
+      !state.channel_map.has(name)
     ].some(x => x);
     if (missing) return; 
 
@@ -89,7 +81,7 @@ const to_tile_drawing = ({ viaGL, opts, uniforms }) => {
 
     // Start webGL rendering
     const output = ((data, w, h) => {
-      const color_3fv = state.color_vecs[channelIndex];
+      const color_3fv = state.channel_map.get(name).color;
       const tile_shape_2fv = new Float32Array([w, h]);
       gl.uniform2fv(u_tile_shape, tile_shape_2fv);
       gl.uniform3fv(u_tile_color, color_3fv);

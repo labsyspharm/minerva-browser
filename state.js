@@ -171,6 +171,29 @@ const anon_authenticate = function(username, pass) {
   })
 }
 
+const to_subgroups = (subpath_map, group) => {
+  const n_color = group.Colors.length;
+  const channels = group.Channels.slice(0, n_color);
+  const cols = channels.reduce((o, Name, idx) => {
+    o.set(Name, group.Colors[idx]);
+    return o;
+  }, new Map());
+  // Return single-channel subpaths to render
+  if (subpath_map.size > 0) {
+    return channels.filter(n => {
+      return subpath_map.has(n);
+    }).map((Name) => {
+      const Colors = [ cols.get(Name) ];
+      const Path = subpath_map.get(Name);
+      return { Name, Path, Colors };
+    });
+  }
+  // Return group subpath
+  const { Name, Path, Colors } = group;
+  return [{ Name, Path, Colors }];
+}
+
+
 /*
  * The HashState contains all state variables in sync with url hash
  */
@@ -691,20 +714,31 @@ HashState.prototype = {
 
   // Whether rendering in single-channel mode
   get subpath_map () {
-    return this.design.subpath_map || {};
+    return this.design.subpath_map || new Map();
   },
 
-  // Get the paths of the current channel layers
+  // Get the subgroups of all possible layers
+  get all_subgroups() {
+    const { subpath_map } = this;
+    // Find all unqiue subgroups among groups
+    return [...this.cgs.reduce((o, group) => {
+      const subgroups = to_subgroups(subpath_map, group);
+      return subgroups.reduce((o, subgroup) => {
+        if (o.has(subgroup.Name)) return o;
+        o.set(subgroup.Name, subgroup);
+        return o;
+      }, o);
+    }, new Map()).values()];
+  },
+
+  // Get the subgroups of the current layer
   get active_subgroups() {
-    const subpath_map = this.subpath_map;
-    if (Object.keys(subpath_map).length > 0) {
-      // Return single-channel subpaths to render
-      return this.group.Channels.filter((key) => {
-        return key in subpath_map;
-      }).map(key => subpath_map[key]);
-    }
-    // Return group subpath
-    return [this.group.Path];
+    return to_subgroups(this.subpath_map, this.group);
+  },
+  
+  // Get the subgroup paths of current layer
+  get active_subpaths() {
+    return this.active_subgroups.map(({Path}) => Path);
   },
 
   // Get the colors of the current group's channels
@@ -813,7 +847,7 @@ HashState.prototype = {
     const cgs = exhibit.Groups || [];
     const masks = exhibit.Masks || [];
     var stories = exhibit.Stories || [];
-    const channelList = exhibit.channelList || [];
+    const channelList = exhibit.Channels || [];
     stories = stories.reduce((_stories, story) => {
       story.Waypoints = story.Waypoints.map(waypoint => {
         if (waypoint.Overlay != undefined) {
@@ -838,9 +872,9 @@ HashState.prototype = {
       default_group: exhibit.DefaultGroup || '',
       first_group: exhibit.FirstGroup || '',
       subpath_map: channelList.reduce((o, c) => {
-        o[c.Name] = c.Path;
+        o.set(c.Name, c.Path);
         return o;
-      }, {}),
+      }, new Map()),
       stories: stories,
       masks: masks,
       cgs: cgs
@@ -1174,7 +1208,7 @@ export const getAjaxHeaders = function(state, image){
 // Return a function for Openseadragon's getTileUrl API
 export const getGetTileUrl = function(image, layer) {
 
-  const renderList = layer.Render;
+  const renderList = layer.Render || [];
 
   // This default function simply requests for rendered jpegs
   const getJpegTile = function(level, x, y) {

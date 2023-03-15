@@ -143,7 +143,7 @@ export class OsdLensingContext {
       const lens = HS.lensing || {};
       const active_masks = []; // TODO: mask support
       const show_group = sameGroup.bind(null, lens.Group);
-      const groups = HS.active_subgroups.filter(show_group); //TODO single-channel
+      const groups = HS.active_subpaths.filter(show_group);
       newMarkers(this.tileSources, groups, active_masks);
       updateLensing(lensing, HS);
     }

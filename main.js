@@ -18,20 +18,20 @@ const flatten = function(items) {
 const arrange_images = function(viewer, tileSources, hashstate, init) {
 
   // Channel groups and segmentation masks
-  const cgs = hashstate.cgs;
+  const all_subgroups = hashstate.all_subgroups;
   const masks = hashstate.masks;
 
-  cgs.forEach((g, i) => {
+  all_subgroups.forEach((g, i) => {
     g['Format'] = g['Format'] || 'jpg';
-    g['channelIndex'] = i;
-    g['colorize'] = true;
+    g['Blend'] = 'lighter';
+    g['Colorize'] = true;
   });
   masks.forEach(m => {
     m['Format'] = m['Format'] || 'png';
-    m['channelIndex'] = -1;
-    m['colorize'] = false;
+    m['Blend'] = 'source-over';
+    m['Colorize'] = false;
   });
-  const layers = cgs.concat(masks);
+  const layers = all_subgroups.concat(masks);
 
   const grid = hashstate.grid;
 
@@ -79,13 +79,14 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
           // Add an openseadragon tiled image
           viewer.addTiledImage({
             loadTilesWithAjax: useAjax,
+            compositeOperation: layer.Blend,
             crossOriginPolicy: 'anonymous',
             ajaxHeaders: ajaxHeaders,
             tileSource: {
-              channelIndex: layer.channelIndex,
-              colorize: layer.colorize,
+              colorize: layer.Colorize,
               height: image.Height,
               width:  image.Width,
+              name: layer.Name,
               maxLevel: image.MaxLevel,
               tileWidth: image.TileSize.slice(0,1).pop(),
               tileHeight: image.TileSize.slice(0,2).pop(),

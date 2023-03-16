@@ -260,6 +260,8 @@ export const HashState = function(exhibit, options) {
     colorListeners: new Map(),
     activeChannel: -1,
     drawType: "lasso",
+    addingOpen: false,
+    infoOpen: false,
     changed: false,
     design: {},
     m: [-1],
@@ -447,6 +449,39 @@ HashState.prototype = {
   set drawing(_d) {
     const d = parseInt(_d, 10);
     this.state.drawing = pos_modulo(d, 3);
+  },
+
+  get allowSingleChannels () {
+    return this.subpath_map.size > 0;
+  },
+
+  get infoOpen() {
+    if (this.allowSingleChannels) {
+      return this.state.infoOpen;
+    }
+    return false;
+  },
+
+  set infoOpen(b) {
+    if (this.allowSingleChannels) {
+      this.state.infoOpen = !!b;
+    }
+  },
+
+  toggleInfo() {
+    this.infoOpen = !this.infoOpen;
+  },
+
+  get addingOpen() {
+    return this.state.addingOpen;
+  },
+
+  set addingOpen(b) {
+    this.state.addingOpen = !!b;
+  },
+
+  toggleAdding() {
+    this.addingOpen = !this.addingOpen;
   },
 
   /*
@@ -782,7 +817,7 @@ HashState.prototype = {
       const copied = cgs.filter((group) => {
         return group.OriginalGroup === name;
       }).length + 1;
-      group.Name = `${name} (copy ${copied})`;
+      group.Name = `${name} (\u202F${copied}\u202F)`;
       group.OriginalGroup = name;
       this.cgs = [...cgs, group];
       this.g = cgs.length;
@@ -817,7 +852,7 @@ HashState.prototype = {
   // Get openseadragon tiled image layers
   get layers () {
     const { masks, all_subgroups } = this;
-    const colorize = this.subpath_map.size > 0;
+    const colorize = this.allowSingleChannels;
     all_subgroups.forEach((g, i) => {
       g['Format'] = g['Format'] || 'jpg';
       g['Colorize'] = colorize;

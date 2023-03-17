@@ -1092,7 +1092,7 @@ Render.prototype = {
       const styles = [
         'opacity:'+[0.5,1][+shown]
       ].concat((c === HS.activeChannel) ? [
-        'text-decoration: underline'
+        'border-bottom: '+ '2px solid #' + color
       ] : []);
       li.style.cssText = styles.join('; ');
       li.addEventListener("click", onClick);

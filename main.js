@@ -2500,15 +2500,16 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 .minerva-legend-grid > .minerva-channel-legend-color-picker {
     filter: drop-shadow(0px 0px 4px rgb(255, 255, 255, 1));
     grid-template-columns: repeat(3, 1fr);
-    border-radius: 0.25rem;
+    border-radius: 0.333rem;
     background-color: black;
     grid-column: 1 / span 2;
     pointer-events: all;
     grid-auto-rows: 1rem;
-    grid-row: 2;
+    margin-left: 4px;
     padding: 8px;
-    display: grid;
     z-index: 1000;
+    display: grid;
+    grid-row: 2;
     gap: 8px;
 }
 

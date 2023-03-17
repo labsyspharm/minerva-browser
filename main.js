@@ -2479,7 +2479,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     cursor: pointer;
     vertical-align: middle;
     grid-template-rows: auto auto auto auto;
-    grid-template-columns: 3em auto auto 3em;
+    grid-template-columns: 50px auto auto 2em;
 }
 
 .minerva-legend-grid > .minerva-channel-legend-color-picker > .nav-link.active { 
@@ -2572,7 +2572,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     grid-row: 2;
 }
 .minerva-legend-grid > .minerva-channel-legend-info-icon {
-    padding: 8px 0 0 0;
+    padding: 8px 8px 0 0;
     background: hsla(0, 0%, 0%, 0.8);
     gap: 8px;
     font-family: sans-serif;

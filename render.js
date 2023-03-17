@@ -301,14 +301,30 @@ Render.prototype = {
       el.addEventListener('click', () => this.toggleInfo());
     })('minerva-channel-legend-info-icon');
     
+    const toggleAdding = () => {
+      HS.toggleAdding();
+      this.newView(true);
+    }
+    const openAdding = () => {
+      if (HS.infoOpen && !HS.addingOpen) {
+        toggleAdding();
+      }
+    }
     // Toggle channel selection
     ((k) => {
       const el = document.getElementsByClassName(k).item(0);
-      el.addEventListener('click', () => {
-        HS.toggleAdding();
-        this.newView(true);
-      });
+      el.addEventListener('click', toggleAdding);
     })('minerva-channel-legend-add-panel');
+
+    ((k) => {
+      var el = HS.el.getElementsByClassName(k).item(0);
+      el.addEventListener("click", openAdding);
+    })('minerva-channel-legend-adding-info-panel');
+
+    ((k) => {
+      var el = HS.el.getElementsByClassName(k).item(0);
+      el.addEventListener("click", openAdding);
+    })('minerva-channel-legend-adding-panel');
 
 
     // Modals to copy shareable link and edit description
@@ -670,14 +686,20 @@ Render.prototype = {
     const single = HS.allowSingleChannels;
     ((k) => {
       const el = HS.el.getElementsByClassName(k)[0];
+      el.innerText = ['⚙\uFE0E','⨂'][+infoOpen];
+    })("minerva-channel-legend-info-icon");
+    ((k) => {
+      const el = HS.el.getElementsByClassName(k)[0];
       el.innerText = ['⊕','⨂'][+addingOpen];
     })("minerva-channel-legend-add");
     classOrNot(".minerva-channel-legend-2", infoOpen, 'toggled');
     classOrNot(".minerva-channel-legend-info", infoOpen, 'toggled');
     classOrNot(".minerva-channel-legend-info-icon", !single, 'disabled');
     classOrNot(".minerva-channel-legend-add-panel", infoOpen, 'toggled');
-    classOrNot(".minerva-channel-legend-adding-panel", addingOpen, "toggled");
-    classOrNot(".minerva-channel-legend-adding-info-panel", addingOpen, "toggled");
+    classOrNot(".minerva-channel-legend-adding", addingOpen, "toggled");
+    classOrNot(".minerva-channel-legend-adding-info", addingOpen, "toggled");
+    classOrNot(".minerva-channel-legend-adding-info", !infoOpen, "disabled");
+    classOrNot(".minerva-channel-legend-adding", !infoOpen, "disabled");
 
     // H&E should not display number of cycif markers
     const is_h_e = HS.group.Name == 'H&E';
@@ -1095,7 +1117,7 @@ Render.prototype = {
         var li = document.createElement('li');
         li.addEventListener("click", onClick);
         const color = '#' + subgroup.Colors[0];
-        li.innerText = "⊕\u00A0"+name;
+        li.innerText = name;
         ul.appendChild(li);
     })('minerva-channel-legend-adding');
 

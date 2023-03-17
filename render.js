@@ -685,13 +685,21 @@ Render.prototype = {
     const { infoOpen, addingOpen } = HS;
     const single = HS.allowSingleChannels;
     ((k) => {
-      const el = HS.el.getElementsByClassName(k)[0];
+      const bar = "minerva-settings-bar";
+      const settings = "minerva-settings-icon";
+      const bar_line = 'border-right: 2px solid grey;';
+      const root = HS.el.getElementsByClassName(k)[0];
+      const bar_el = root.getElementsByClassName(bar)[0];
+      const el = root.getElementsByClassName(settings)[0];
+      bar_el.style.cssText = ['',bar_line][+infoOpen];
       el.innerText = ['⚙\uFE0E','⨂'][+infoOpen];
     })("minerva-channel-legend-info-icon");
     ((k) => {
-      const el = HS.el.getElementsByClassName(k)[0];
+      const add = "minerva-add-icon";
+      const root = HS.el.getElementsByClassName(k)[0];
+      const el = root.getElementsByClassName(add)[0];
       el.innerText = ['⊕','⨂'][+addingOpen];
-    })("minerva-channel-legend-add");
+    })("minerva-channel-legend-add-panel");
     classOrNot(".minerva-channel-legend-2", infoOpen, 'toggled');
     classOrNot(".minerva-channel-legend-info", infoOpen, 'toggled');
     classOrNot(".minerva-channel-legend-info-icon", !single, 'disabled');

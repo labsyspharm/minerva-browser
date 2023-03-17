@@ -2616,7 +2616,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 .minerva-legend-grid > .minerva-channel-legend-add-panel {
     grid-column: 1;
     padding-top: 8px;
-    max-height: 80vh;
+    max-height: max(80vh, 800px);
     pointer-events: all;
     grid-row: 3 / span 2;
     background: hsla(0, 0%, 0%, 0.8);
@@ -2649,7 +2649,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     margin: 0;
     opacity: 1;
     max-width: 800px;
-    max-height: 80vh;
+    max-height: max(80vh, 800px);
     white-space: nowrap;
     padding: 0 0 8px 8px;
     transition-timing-function: ease-in;
@@ -2682,7 +2682,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     margin: 0;
     opacity: 1;
     max-width: 800px;
-    max-height: 80vh;
+    max-height: max(80vh, 800px);
     white-space: nowrap;
     padding: 0 0 8px 8px;
     transition-timing-function: ease-in;
@@ -2764,8 +2764,7 @@ const exhibitHTML = `
     <div>
         <div class="minerva-legend position-absolute"
              style="pointer-events: none; top: 1rem; right: 8px">
-            <div class="legend-box"
-                 style="overflow-x: hidden; max-height: 80vh;">
+            <div class="legend-box">
                 <div class="minerva-legend-grid">
                   <div class="minerva-toggle-legend-panel">
                     <a class="minerva-toggle-legend" href="javascript;;">

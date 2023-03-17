@@ -2572,7 +2572,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     grid-row: 2;
 }
 .minerva-legend-grid > .minerva-channel-legend-info-icon {
-    padding: 8px 0rem 0rem 8px;
+    padding: 8px 0 0 0;
     background: hsla(0, 0%, 0%, 0.8);
     gap: 8px;
     font-family: sans-serif;
@@ -2683,13 +2683,15 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     padding-top: 0px;
     padding-bottom: 0px;
 }
+.minerva-channel-legend-wrapper > .minerva-channel-legend-info > li {
+    padding-left: 8px;
+}
 .minerva-channel-legend-wrapper > .minerva-channel-legend-info {
     gap: 4px;
     opacity: 1;
     display: grid;
     max-width: 800px;
     white-space: nowrap;
-    padding-left: 8px;
     transition-timing-function: ease-in;
     transition: max-width 0.5s, opacity 0.5s;
 }

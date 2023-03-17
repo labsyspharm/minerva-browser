@@ -2531,13 +2531,17 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     display: grid;
     gap: 4px
 }
-.minerva-channel-legend > .minerva-channel-legend-3 {
+.minerva-channel-legend > .minerva-channel-legend-3 > li {
     padding-left: 6px;
+}
+.minerva-channel-legend > .minerva-channel-legend-3 {
     display: grid;
     gap: 4px
 }
-.minerva-channel-legend > .minerva-channel-legend-2 {
+.minerva-channel-legend > .minerva-channel-legend-2 > li {
     padding-left: 6px;
+}
+.minerva-channel-legend > .minerva-channel-legend-2 {
     display: grid;
     gap: 4px;
     margin: 0;

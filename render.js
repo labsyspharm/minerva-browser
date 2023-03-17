@@ -1042,7 +1042,7 @@ Render.prototype = {
 
     var visible = document.createElement('li');
     var colorize = document.createElement('li');
-    var label = document.createElement('div');
+    var label = document.createElement('li');
     label.innerText = legend_line.name;
     colorize.className = "glowing";
     if (HS.infoOpen) {

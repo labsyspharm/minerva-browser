@@ -867,21 +867,30 @@ HashState.prototype = {
     }));
   },
 
-  // Get openseadragon tiled image layers
-  get layers () {
-    const { masks, all_subgroups } = this;
+  // Get openseadragon subgroup layers
+  get subgroup_layers () {
+    const { all_subgroups } = this;
     const colorize = this.allowSingleChannels;
-    all_subgroups.forEach((g, i) => {
+    return all_subgroups.map((subgroup, i) => {
+      const g = { ...subgroup };
       g['Format'] = g['Format'] || 'jpg';
       g['Colorize'] = colorize;
       g['Blend'] = 'lighter';
+      return g;
     });
-    masks.forEach(m => {
+  },
+
+  // Get openseadragon tiled image layers
+  get layers () {
+    const { masks, subgroup_layers } = this;
+    const mask_layers = this.masks.map(mask => {
+      const m = { ...mask };
       m['Format'] = m['Format'] || 'png';
       m['Blend'] = 'source-over';
       m['Colorize'] = false;
+      return m;
     });
-    return all_subgroups.concat(masks);
+    return subgroup_layers.concat(mask_layers);
   },
 
   // Get the subgroups of all possible layers

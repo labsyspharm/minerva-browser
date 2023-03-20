@@ -101,13 +101,12 @@ export class OsdLensingContext {
 
     initializeChannels(init) {
       const HS = this.hashstate;
-      const { layers, grid } = HS;
+      const { subgroup_layers, grid } = HS;
       const image = (grid.pop() || []).pop();
       const viewer = this.lensingContext;
-      const nTotal = layers.length;
+      const nTotal = subgroup_layers.length;
       var nLoaded = 0;
-      [...layers].forEach(layer => {
-        layer.Format = 'jpg';
+      subgroup_layers.forEach(layer => {
         viewer.addTiledImage({
           loadTilesWithAjax: false,
           compositeOperation: layer.Blend,

@@ -18,16 +18,7 @@ const flatten = function(items) {
 const arrange_images = function(viewer, tileSources, hashstate, init) {
 
   // Channel groups and segmentation masks
-  const cgs = hashstate.cgs;
-  const masks = hashstate.masks;
-
-  cgs.forEach(g => {
-    g['Format'] = g['Format'] || 'jpg';
-  });
-  masks.forEach(m => {
-    m['Format'] = m['Format'] || 'png';
-  });
-  const layers = cgs.concat(masks);
+  const layers = hashstate.layers;
 
   const grid = hashstate.grid;
 
@@ -75,11 +66,14 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
           // Add an openseadragon tiled image
           viewer.addTiledImage({
             loadTilesWithAjax: useAjax,
+            compositeOperation: layer.Blend,
             crossOriginPolicy: 'anonymous',
             ajaxHeaders: ajaxHeaders,
             tileSource: {
+              colorize: layer.Colorize,
               height: image.Height,
               width:  image.Width,
+              name: layer.Name,
               maxLevel: image.MaxLevel,
               tileWidth: image.TileSize.slice(0,1).pop(),
               tileHeight: image.TileSize.slice(0,2).pop(),
@@ -2134,7 +2128,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 .minerva-root a.text-danger:hover, .minerva-root a.text-danger:focus { color: #a71d2a !important; }
 .minerva-root .text-light { color: #f8f9fa !important; }
 .minerva-root a.text-light:hover, .minerva-root a.text-light:focus { color: #cbd3da !important; }
-.minerva-root .text-dark { color: #343a40 !important; }
+.minerva-root .text-dark { color: #000000 !important; }
 .minerva-root a.text-dark:hover, .minerva-root a.text-dark:focus { color: #121416 !important; }
 .minerva-root .text-body { color: #212529 !important; }
 .minerva-root .text-muted { color: #6c757d !important; }
@@ -2174,18 +2168,27 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 @media (max-width: 575.98px) { .minerva-root .display-4 { font-size: 2rem; margin-top: 1rem; } }
 .minerva-root .select2-results ul { color: black; }
 
-.minerva-root {
-  display: grid; 
-  grid-template-columns: 1fr; 
-  grid-template-rows: 1fr; 
-  grid-column-gap: 0px;
-  grid-row-gap: 0px; 
+.minerva-root > .minerva-full {
+  position: relative;
   height: 100%;
   width: 100%;
 }
-
-.minerva-root > div {
-  grid-area: 1 / 1 / 2 / 2;
+.minerva-root > .minerva-fixed {
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto 1fr;
+  pointer-events: none;
+  grid-column-gap: 0px;
+  grid-row-gap: 0px; 
+  position: fixed;
+  display: grid;
+  height: 100%;
+  width: 100%;
+  bottom: 0;
+  right: 0;
+}
+.minerva-root {
+  height: 100%;
+  width: 100%;
 }
 
 .minerva-root .minerva-toggle-sidebar {
@@ -2236,6 +2239,8 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   -moz-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
+  grid-column: 1;
+  grid-row: 1;
   margin-left: 0px;
   width: 400px;
   left: 3px;
@@ -2251,30 +2256,54 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 }
 
 .minerva-root .minerva-legend {
+  gap: 0px;
+  grid-row: 1;
+  display: grid;
+  grid-column: 3;
+  grid-template-rows: auto auto auto;
+  grid-template-columns: auto auto 200px;
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
 }
 
-.minerva-root input[type="range"] {
-  transform-origin: left;
-  transform: rotate(270deg);
+.minerva-root .minerva-legend.toggled {
+  margin-right: -200px;
 }
 
-.minerva-root .minerva-z-slider-legend {
+.minerva-legend > .legend-box {
+  display: inline-block;
+  pointer-events: all;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  max-height: 80vh;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.minerva-legend > .minerva-z-slider-legend {
   padding-top: 127px;
   padding-left: 7px;
-  height: 140px;
+  grid-column: 2;
+  grid-row: 1;
   width: 15px;
 }
 
-.minerva-root .minerva-channel-groups-legend {
-  width: 200px;
+.minerva-legend > .minerva-only-3d {
+  grid-column: 3;
+  grid-row: 1;
 }
 
-.minerva-root .minerva-legend.toggled {
-  margin-right: -200px;
+
+.minerva-legend > .minerva-channel-groups-legend {
+  grid-column: 3;
+  grid-row: 1 / -1;
+}
+
+.minerva-root input[type="range"] {
+  transform-origin: left;
+  transform: rotate(270deg);
 }
 
 .minerva-root .minerva-sidebar-menu .minerva-open-sidebar {
@@ -2342,18 +2371,6 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 
 .minerva-root .bg-black {
     background: #000;
-}
-
-.minerva-root .legend-label {
-    display: inline-block;
-    min-width: 4.5em;
-}
-
-.minerva-root .legend-color {
-    margin-left: 0.5em;
-    width: 1.5em;
-    border-radius: 0;
-    vertical-align: middle;
 }
 
 .minerva-root .minerva-overlay-title {
@@ -2475,31 +2492,264 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     fill : white;
 }
 
+.minerva-toggle-legend-panel {
+  grid-template-columns: 1fr;
+  grid-column: 1 / span 3;
+  padding-bottom: .25rem;
+  padding-left: 8px;
+  padding-top: 8px;
+  pointer-events: all;
+  grid-row: 1;
+  display: grid;
+}
+
 .minerva-legend-grid {
-    gap: 8px;
+    gap: 0px;
+    padding: 0;
     display: grid;
-    grid-template-columns: auto auto;
+    cursor: pointer;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    vertical-align: middle;
+    grid-template-rows: auto auto auto auto;
+    grid-template-columns: 50px auto auto 50px;
+}
+
+.minerva-legend-grid.disabled {
+    grid-template-columns: 50px auto auto auto;
+}
+
+.minerva-legend-grid > .minerva-channel-legend-color-picker > .nav-link.active { 
+  color: #fff;
+  grid-row: span 2;
+  grid-column: span 2;
+  margin-top: 8px;
+  border-radius: 0.25rem;
+  background-color: #007bff;
+}
+.minerva-legend-grid > .minerva-channel-legend-color-picker > .glowing {
+  filter: drop-shadow(0px 0px 2px rgb(255, 255, 255, 1))
+          drop-shadow(0px 0px 6px rgb(255, 255, 255, 1));
+}
+.minerva-legend-grid > .minerva-channel-legend-color-picker > .all-columns {
+  grid-column: 1 / -1;
+}
+.minerva-legend-grid > .minerva-channel-legend-color-picker {
+    filter: drop-shadow(0px 0px 4px rgb(255, 255, 255, 1));
+    grid-template-columns: repeat(3, 1fr);
+    border-radius: 0.333rem;
+    background-color: black;
+    grid-column: 1 / span 2;
+    pointer-events: all;
+    grid-auto-rows: 1rem;
+    margin-left: 4px;
+    padding: 8px;
+    z-index: 1000;
+    display: grid;
+    grid-row: 2;
+    gap: 8px;
+}
+
+.minerva-legend-grid > .minerva-channel-legend-color-picker:not(.toggled) {
+    pointer-events: none;
+    display: none;
+}
+.minerva-legend-grid > .minerva-channel-legend {
+    grid-row: 2;
+    display: grid;
+    grid-column: 1 / span 2;
+    grid-auto-flow: column;
+    padding-bottom: 8px;
+    padding-left: 8px;
+    pointer-events: all;
+    grid-template-columns: 20px auto 1fr;
+}
+.minerva-channel-legend > .minerva-channel-legend-1 {
+    display: grid;
+    gap: 4px
+}
+.minerva-channel-legend > .minerva-channel-legend-3 > li {
+    padding-left: 6px;
+}
+.minerva-channel-legend > .minerva-channel-legend-3 {
+    display: grid;
+    gap: 4px
+}
+.minerva-channel-legend > .minerva-channel-legend-2 > li {
+    padding-left: 6px;
+}
+.minerva-channel-legend > .minerva-channel-legend-2 {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    opacity: 1;
+    width: 24px;
+    transition-timing-function: ease-in;
+    transition: width 0.5s, opacity 0.5s;
+}
+.minerva-channel-legend > .minerva-channel-legend-2:not(.toggled) {
+    width: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition-timing-function: ease-out;
+}
+.minerva-legend-grid > .minerva-channel-legend > li {
+    display: contents;
+}
+.minerva-legend-grid .minerva-channel-legend-1 > li {
+    justify-content: center;
+    align-content: center;
+    display: grid;
+}
+.minerva-legend-grid .minerva-channel-legend-1 > li.glowing > svg {
+  filter: drop-shadow(0px 0px 2px rgb(255, 255, 255, 1))
+          drop-shadow(0px 0px 6px rgb(255, 255, 255, 1));
 }
 .minerva-legend-grid > .minerva-channel-legend-wrapper {
     grid-template-columns: auto auto;
     pointer-events: all;
-    cursor: pointer;
+    grid-column: 3;
+    grid-row: 2;
+}
+.minerva-legend-grid > .minerva-channel-legend-info-icon > .minerva-settings-bar {
+    grid-column: 2;
+    grid-row: 2;
+}
+.minerva-legend-grid > .minerva-channel-legend-info-icon > .minerva-settings-icon {
+    grid-column: 2 / span 2;
+}
+.minerva-legend-grid > .minerva-channel-legend-info-icon {
+    grid-template-rows: auto 1fr 8px;
+    grid-template-columns: 1fr 1fr 1fr 8px;
     display: grid;
-    gap: 8px;
+    font-family: sans-serif;
+    text-align: center;
+    pointer-events: all;
+    font-size: 1.75em;
+    font-weight: 600;
+    justify-content: center;
+    align-content: center;
+    grid-row: 1 / span 4;
+    cursor: pointer;
+    grid-column: 4;
 }
-.minerva-channel-legend-wrapper > .minerva-channel-legend-info {
-    opacity: 1;
-    max-width: 600px;
-    white-space: nowrap;
+.minerva-legend-grid > .minerva-channel-legend-info-icon.disabled {
+    pointer-events: none;
+    padding-right: 0px;
+    display: none;
+    width: 0;
+}
+.minerva-legend-grid .minerva-channel-legend-add-panel > .minerva-add-icon {
+    grid-column: 2 / span 2;
+}
+.minerva-legend-grid > .minerva-channel-legend-add-panel > .minerva-add-bar {
+    grid-row: 2;
+    grid-column: 2;
+    border-right: 2px solid grey;
+}
+.minerva-legend-grid > .minerva-channel-legend-add-panel {
+    grid-column: 1;
+    padding-top: 8px;
+    max-height: max(80vh, 800px);
+    pointer-events: all;
+    grid-row: 3 / span 2;
     transition-timing-function: ease-in;
-    transition: max-width 1s, opacity 1s;
+    transition: max-height 0.5s, color 0.5s;
+    grid-template-columns: 8px 1fr 1fr 1fr;
+    grid-template-rows: auto 1fr 8px;
+    justify-content: center;
+    align-content: center;
+    font-size: 1.75em;
+    display: grid;
 }
-.minerva-channel-legend-wrapper > .minerva-channel-legend-info:not(.toggled) {
-    gap: 8px;
+.minerva-legend-grid > .minerva-channel-legend-add-panel:not(.toggled) {
+    max-height: 0;
+    color: transparent;
+    pointer-events: none;
+    padding-bottom: 0px;
+    transition-timing-function: ease-out;
+}
+.minerva-legend-grid > .minerva-channel-legend-adding-info-panel {
+    grid-column: 3;
+    pointer-events: all;
+    grid-row: 3 / span 2;
+}
+.minerva-legend-grid .minerva-channel-legend-adding-info > li:first-child {
+    padding-top: 0.75rem;
+}
+.minerva-legend-grid .minerva-channel-legend-adding-info {
+    margin: 0;
+    opacity: 1;
+    max-width: max(800px, 80vw);
+    max-height: max(80vh, 800px);
+    white-space: nowrap;
+    padding: 0 0 8px 8px;
+    transition-timing-function: ease-in;
+    transition: max-height 0.5s, max-width 0.5s, opacity 0.5s;
+}
+.minerva-legend-grid .minerva-channel-legend-adding-info:not(.toggled) {
+    opacity: 0;
+    max-width: 0;
+    max-height: 32px;
+    pointer-events: none;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    transition-timing-function: ease-out;
+}
+.minerva-legend-grid .minerva-channel-legend-adding-info.disabled {
+    max-height: 0px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+.minerva-legend-grid > .minerva-channel-legend-adding-panel {
+    grid-column: 2;
+    pointer-events: all;
+    grid-row: 3 / span 2;
+}
+.minerva-legend-grid .minerva-channel-legend-adding > li:first-child {
+    padding-top: 0.75rem;
+}
+.minerva-legend-grid .minerva-channel-legend-adding {
+    margin: 0;
+    opacity: 1;
+    max-width: max(800px, 80vw);
+    max-height: max(80vh, 800px);
+    white-space: nowrap;
+    padding: 0 0 8px 8px;
+    transition-timing-function: ease-in;
+    transition: max-width 0.5s, max-height 0.5s, opacity 0.5s;
+}
+.minerva-legend-grid .minerva-channel-legend-adding:not(.toggled) {
     opacity: 0;
     max-width: 0px;
+    max-height: 32px;
+    pointer-events: none;
+    padding-top: 0px;
+    padding-bottom: 0px;
     transition-timing-function: ease-out;
+}
+.minerva-legend-grid .minerva-channel-legend-adding.disabled {
+    max-height: 0px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+.minerva-channel-legend-wrapper > .minerva-channel-legend-info > li {
+    padding-left: 8px;
+}
+.minerva-channel-legend-wrapper > .minerva-channel-legend-info {
+    gap: 4px;
+    opacity: 1;
+    display: grid;
+    max-width: max(800px, 80vw);
+    white-space: nowrap;
+    transition-timing-function: ease-in;
     transition: max-width 0.5s, opacity 0.5s;
+}
+.minerva-channel-legend-wrapper > .minerva-channel-legend-info:not(.toggled) {
+    opacity: 0;
+    max-width: 0px;
+    pointer-events: none;
+    transition-timing-function: ease-out;
 }
 body {
   margin: 0;
@@ -2539,44 +2789,60 @@ body .tooltip {
 
 const exhibitHTML = `
 <div class="minerva-root">
-    <div>
+    <div class="minerva-full">
         <div class="minerva-openseadragon"></div>
     </div>
-    <div>
-        <div class="minerva-legend position-absolute"
-             style="pointer-events: none; top: 1rem; right: 8px">
-            <div>
-                <div class="btn-group-vertical bg-trans p-2"
-                     style="display:inline-block; vertical-align:top;">
-                    <a class="minerva-toggle-legend p-1" href="javascript;;">
+    <div class="minerva-fixed">
+        <div class="minerva-legend">
+            <div class="legend-box">
+                <div class="minerva-legend-grid bg-trans">
+                  <div class="minerva-toggle-legend-panel">
+                    <a class="minerva-toggle-legend" href="javascript;;">
                         <i class="minerva-open-legend fas fa-chevron-left" style="font-size: 25px;"></i>
                         <i class="minerva-close-legend fas fa-chevron-right" style="font-size: 25px;"></i>
                     </a>
-                    <div class="minerva-legend-grid">
-                      <ul class="minerva-channel-legend list-unstyled m-0"></ul>
-                      <div class="minerva-channel-legend-wrapper">
-                        <ul class="minerva-channel-legend-info list-unstyled m-0"></ul>
-                        <a>&#9432;</a>
-                      </div>
-                    </div>
-                    <div class="p-1 minerva-only-3d">
-                      Depth:
-                    </div>
-                    <div style="text-align: right;">
-                      <span class="minerva-depth-legend"> </span>
-                    </div>
-                </div> 
-                <div class="minerva-channel-groups-legend nav flex-column nav-pills p-2 bg-trans"
-                     style="display:inline-block; vertical-align:top;
-                     pointer-events: all; overflow-y: scroll; max-height: 80vh;">
+                  </div>
+                  <div class="minerva-channel-legend">
+                    <ul class="minerva-channel-legend-1 list-unstyled m-0"></ul>
+                    <ul class="minerva-channel-legend-2 list-unstyled m-0"></ul>
+                    <ul class="minerva-channel-legend-3 list-unstyled m-0"></ul>
+                  </div>
+                  <div class="minerva-channel-legend-wrapper">
+                    <ul class="minerva-channel-legend-info list-unstyled m-0"></ul>
+                  </div>
+                  <div class="minerva-channel-legend-info-icon disabled">
+                    <div class="minerva-settings-icon">&#9432;</div>
+                    <div class="minerva-settings-bar"></div>
+                  </div>
+                  <div class="minerva-channel-legend-color-picker"></div>
+                  <div class="minerva-channel-legend-adding-panel">
+                    <ul class="minerva-channel-legend-adding list-unstyled m-0 disabled"></ul>
+                  </div>
+                  <div class="minerva-channel-legend-adding-info-panel">
+                    <ul class="minerva-channel-legend-adding-info list-unstyled m-0 disabled"></ul>
+                  </div>
+                  <div class="minerva-channel-legend-add-panel">
+                    <div class="minerva-add-icon"></div>
+                    <div class="minerva-add-bar"></div>
+                  </div>
                 </div>
-                <div class="minerva-z-slider-legend bg-trans"
-                     style="pointer-events: all; display:inline-block; vertical-align:top;">
-                    <input class="minerva-z-slider" type="range"/>
-                </div>
+            </div> 
+            <div class="minerva-channel-groups-legend nav-pills p-2 bg-trans"
+                 style="display:inline-block; vertical-align:top;
+                 pointer-events: all; overflow-y: scroll; max-height: 80vh;">
+            </div>
+            <div class="minerva-z-slider-legend bg-trans"
+                 style="pointer-events: all; display:inline-block; vertical-align:top;">
+                 <input class="minerva-z-slider" type="range"/>
+            </div>
+            <div class="p-1 minerva-only-3d bg-trans">
+              Depth:
+              <div style="text-align: right;">
+                <span class="minerva-depth-legend"> </span>
+              </div>
             </div>
         </div>
-        <div class="minerva-sidebar-menu container position-absolute">
+        <div class="minerva-sidebar-menu container">
             <div class="row">
                 <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll">
                     <div class="row">

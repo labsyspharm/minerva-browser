@@ -1,6 +1,7 @@
 import * as d3 from "d3"
 import { round4 } from "./render"
 import { greenOrWhite } from "./render"
+import { linkShaders } from "./channel"
 import { OsdLensingContext } from "./osdLensingContext"
 
 var lasso_draw_counter = 0;
@@ -35,20 +36,17 @@ const changeSprings = function(viewer, seconds, stiffness) {
 };
 
 // Set the opacity of active channel groups or segmentation masks
-export const newMarkers = function(tileSources, group, active_masks) {
-
-  const mask_paths = active_masks.map(m => m.Path);
+export const newMarkers = function(tileSources, isActivePath) {
 
   Object.keys(tileSources)
-    .forEach(el => {
-      const mask_path_index = mask_paths.indexOf(el);
-      const opacity = (el === group.Path || mask_path_index >=0) ? 1 : 0;
-      tileSources[el].forEach(tiledImage => {
-        tiledImage.setOpacity(opacity);
+    .forEach(chan => {
+      const { active, mask_index } = isActivePath(chan);
+      tileSources[chan].forEach(tiledImage => {
+        tiledImage.setOpacity([0, 1][+active]);
         const {world} = tiledImage.viewer || {};
-        if (world && mask_path_index >= 0) {
+        if (world && mask_index >= 0) {
           // Reorder tiled images based on current active mask order
-          const itemIndex = world.getItemCount() - 1 - mask_path_index;
+          const itemIndex = world.getItemCount() - 1 - mask_index;
           world.setItemIndex(tiledImage, Math.max(itemIndex, 0));
         }
       });
@@ -96,10 +94,18 @@ RenderOSD.prototype = {
 
   // Initialize connection to openseadragon
   init: function () {
-  
+
     const viewer = this.viewer;
     const HS = this.hashstate;
     const THIS = this;
+
+    // Initialize Openseadragon
+    const { updater } = linkShaders({
+      viewer, subgroups: HS.all_subgroups,
+      tileSources: this.tileSources
+    });
+    // Add state updater
+    HS.addColorListener('main', updater);
 
     // Track mouse drag for lasso polygon drawing
     var mouse_drag = new OpenSeadragon.MouseTracker({
@@ -355,7 +361,7 @@ RenderOSD.prototype = {
       // Update OpenSeadragon
       this.activateViewport();
       this.lensing.newViewRedraw();
-      newMarkers(this.tileSources, HS.group, HS.active_masks);
+      newMarkers(this.tileSources, HS.isActivePath.bind(HS));
     }
     this.viewer.forceRedraw();
   },

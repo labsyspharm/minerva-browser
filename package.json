@@ -17,7 +17,8 @@
     "showdown": "^1.9.1",
     "vega": "^5.20.2",
     "vega-embed": "^6.20.3",
-    "vega-lite": "^5.1.0"
+    "vega-lite": "^5.1.0",
+    "viawebgl": "github:thejohnhoffer/viaWebGL#89f77f43134f2d7deb88199570df925ea08cef72"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",
@@ -27,11 +28,11 @@
     "webpack-cli": "^4.9.1"
   },
   "scripts": {
-    "develop": "webpack --mode development",
+    "develop": "webpack --watch --mode development",
     "build": "webpack --mode production"
   },
   "name": "minerva-browser",
-  "version": "3.4.0",
+  "version": "3.5.0-beta.2",
   "description": "A storytelling interface atop openseadragon",
   "main": "index.js",
   "repository": {

@@ -1,7 +1,6 @@
 import sha1 from 'sha1'
 import { index_name } from './state'
 import { index_regex } from './state'
-import color_convert from 'color-convert'
 import { Clipboard } from './clipboard'
 import infovis from './infovis'
 
@@ -227,13 +226,6 @@ const toggleChannelShown = (group, c) => {
     return [show, !show][+(c === i)];
   });
   return group;
-}
-
-const sort_by_hue = (to_hex) => {
-  return (k1, k2) => {
-    const to_hue = (hex) => color_convert.hex.hsv(hex)[0];
-    return to_hue(to_hex(k2)) - to_hue(to_hex(k1));
-  }
 }
 
 // Render the non-openseadragon UI
@@ -987,26 +979,25 @@ Render.prototype = {
     const to_hex = (k) => defaults.get(k).Colors[0];
     const missing_names = [...defaults.keys()].filter((key) => {
       return !legend_lines.find(({ name }) => key === name);
-    }).sort(sort_by_hue(to_hex));
+    });
 
     // Allow channel choices
     missing_names.forEach(this.addChannelChoice, this);
 
     // Add color selection
     const COLORS = [
-      [0, 0, 0],
-      [100, 0, 0],
-      [0, 0, 30],
-      [0, 0, 60],
-      [0, 0, 120],
-      [0, 50, 150],
-      [0, 0, 180],
-      [0, 0, 240],
-      [0, 0, 270],
-      [0, 0, 300],
-    ].map(([w, b, h]) => {
-      return color_convert.hwb.hex([h, w, b]);
-    }).sort(sort_by_hue(x => x));
+      'FF00FF',
+      '8000FF',
+      '0000FF',
+      '00FFFF',
+      '008040',
+      '00FF00',
+      'FFFF00',
+      'FF8000',
+      'FF0000',
+      'FFFFFF'
+    ];
+
     ((cls) => {
       const picker = HS.el.getElementsByClassName(cls)[0];
       var header = document.createElement('div');

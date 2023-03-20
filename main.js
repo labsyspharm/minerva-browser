@@ -2676,7 +2676,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 .minerva-legend-grid .minerva-channel-legend-adding-info {
     margin: 0;
     opacity: 1;
-    max-width: 800px;
+    max-width: max(800px, 80vw);
     max-height: max(80vh, 800px);
     white-space: nowrap;
     padding: 0 0 8px 8px;
@@ -2708,7 +2708,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 .minerva-legend-grid .minerva-channel-legend-adding {
     margin: 0;
     opacity: 1;
-    max-width: 800px;
+    max-width: max(800px, 80vw);
     max-height: max(80vh, 800px);
     white-space: nowrap;
     padding: 0 0 8px 8px;
@@ -2736,7 +2736,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     gap: 4px;
     opacity: 1;
     display: grid;
-    max-width: 800px;
+    max-width: max(800px, 80vw);
     white-space: nowrap;
     transition-timing-function: ease-in;
     transition: max-width 0.5s, opacity 0.5s;

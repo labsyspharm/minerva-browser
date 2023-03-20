@@ -8,7 +8,7 @@ import LensingFilters from './osdLensingFilters';
 const updateLensing = (lensing, HS) => {
   const pxRatio = window.devicePixelRatio;
   const { Mag, Rad, Shape, Group } = HS.lensing || {};
-  const sameLens = HS.isActiveName(Group);
+  const sameLens = HS.isActiveGroupName(Group).active;
   const radius = Rad ? Rad : 100;
   const noLens = !HS.lensing;
   if (noLens || sameLens) {

@@ -1338,10 +1338,10 @@ HashState.prototype = {
     return is_active({ masks, subgroups, key, match });
   },
 
-  isActiveName(match) {
+  isActiveGroupName(match) {
     const key = 'Name';
     const masks = this.active_masks;
-    const subgroups = this.active_subgroups;
+    const subgroups = [ this.group ];
     return is_active({ masks, subgroups, key, match });
   },
 

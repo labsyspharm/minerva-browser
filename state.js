@@ -451,19 +451,37 @@ HashState.prototype = {
     this.state.drawing = pos_modulo(d, 3);
   },
 
+  get singleChannelInfoOpen () {
+    return [
+      this.infoOpen, this.allowSingleChannels
+    ].every(x => x)
+  },
+
+  get allowInfoIcon () {
+    if (this.allowSingleChannels) return true;
+    if (this.allowInfoLegend) return true;
+    return false;
+  },
+
   get allowSingleChannels () {
     return this.subpath_map.size > 0;
   },
 
+  get allowInfoLegend () {
+    return !!this.channel_legend_lines.find(line => {
+      return line.description !== '';
+    });
+  },
+
   get infoOpen() {
-    if (this.allowSingleChannels) {
+    if (this.allowInfoIcon) {
       return this.state.infoOpen;
     }
     return false;
   },
 
   set infoOpen(b) {
-    if (this.allowSingleChannels) {
+    if (this.allowInfoIcon) {
       this.state.infoOpen = !!b;
     }
   },

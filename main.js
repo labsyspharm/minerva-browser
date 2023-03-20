@@ -2515,6 +2515,10 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     grid-template-columns: 50px auto auto 50px;
 }
 
+.minerva-legend-grid.disabled {
+    grid-template-columns: 50px auto auto auto;
+}
+
 .minerva-legend-grid > .minerva-channel-legend-color-picker > .nav-link.active { 
   color: #fff;
   grid-row: span 2;

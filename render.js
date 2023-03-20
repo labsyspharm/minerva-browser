@@ -683,7 +683,8 @@ Render.prototype = {
 
     // Toggle additional info features
     const { infoOpen, addingOpen } = HS;
-    const single = HS.allowSingleChannels;
+    const hasInfo = HS.allowInfoIcon;
+    const canAdd = HS.singleChannelInfoOpen;
     ((k) => {
       const bar = "minerva-settings-bar";
       const settings = "minerva-settings-icon";
@@ -700,14 +701,15 @@ Render.prototype = {
       const el = root.getElementsByClassName(add)[0];
       el.innerText = ['⊕','⨂'][+addingOpen];
     })("minerva-channel-legend-add-panel");
-    classOrNot(".minerva-channel-legend-2", infoOpen, 'toggled');
+    classOrNot(".minerva-legend-grid", !hasInfo, "disabled");
+    classOrNot(".minerva-channel-legend-2", canAdd, 'toggled');
     classOrNot(".minerva-channel-legend-info", infoOpen, 'toggled');
-    classOrNot(".minerva-channel-legend-info-icon", !single, 'disabled');
-    classOrNot(".minerva-channel-legend-add-panel", infoOpen, 'toggled');
+    classOrNot(".minerva-channel-legend-info-icon", !hasInfo, 'disabled');
+    classOrNot(".minerva-channel-legend-add-panel", canAdd, 'toggled');
     classOrNot(".minerva-channel-legend-adding", addingOpen, "toggled");
     classOrNot(".minerva-channel-legend-adding-info", addingOpen, "toggled");
-    classOrNot(".minerva-channel-legend-adding-info", !infoOpen, "disabled");
-    classOrNot(".minerva-channel-legend-adding", !infoOpen, "disabled");
+    classOrNot(".minerva-channel-legend-adding-info", !canAdd, "disabled");
+    classOrNot(".minerva-channel-legend-adding", !canAdd, "disabled");
 
     // H&E should not display number of cycif markers
     const is_h_e = HS.group.Name == 'H&E';
@@ -1053,7 +1055,15 @@ Render.prototype = {
     var label = document.createElement('li');
     label.innerText = legend_line.name;
     colorize.className = "glowing";
-    if (HS.infoOpen) {
+
+    // Opacities
+    label.style.cssText = 'opacity:'+[0.5,1][+shown];
+    visible.style.cssText = 'opacity:'+[0.5,1][+shown];
+    colorize.style.cssText = 'opacity:'+[0.5,1][+shown];
+    $(colorize).css('background-color', '#'+color);
+
+    // If features are active
+    if (HS.singleChannelInfoOpen) {
       label.addEventListener("click", onClick);
       visible.addEventListener("click", onClick);
       colorize.addEventListener("click", (e) => {
@@ -1066,21 +1076,15 @@ Render.prototype = {
       var colorize_ico = document.createElement('i');
       colorize_ico.className = 'fa fa-eye-dropper text-dark';
       colorize.appendChild(colorize_ico);
+
+      var visible_ico = document.createElement('i');
+      visible_ico.className = 'fa fa-eye' + ['-slash', ''][+shown];
+      visible.appendChild(visible_ico);
     }
     else {
       label.addEventListener("click", () => this.toggleInfo());
       colorize.addEventListener("click", () => this.toggleInfo());
     }
-
-    var visible_ico = document.createElement('i');
-    visible_ico.className = 'fa fa-eye' + ['-slash', ''][+shown];
-    visible.appendChild(visible_ico);
-
-    // Opacities
-    label.style.cssText = 'opacity:'+[0.5,1][+shown];
-    visible.style.cssText = 'opacity:'+[0.5,1][+shown];
-    colorize.style.cssText = 'opacity:'+[0.5,1][+shown];
-    $(colorize).css('background-color', '#'+color);
 
     // Append channel legend to list
     (() => {
@@ -1091,6 +1095,8 @@ Render.prototype = {
       c2.appendChild(visible);
       c3.appendChild(label);
     })();
+
+    if (!HS.allowInfoLegend) return;
 
     // Add legend description
     ((k) => {

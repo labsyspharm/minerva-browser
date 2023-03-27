@@ -12,7 +12,7 @@ specifiers:
   d3-svg-legend: ^2.25.6
   jquery: 3.5.1
   js-yaml: ^3.14.0
-  lensing: https://github.com/thejohnhoffer/lensing/tarball/599d3ec5aa63c3181516d63162aae0b5c0fa13c4
+  lensing: https://github.com/thejohnhoffer/lensing/tarball/cbe67f929a3be3d8843882f526a329ede3d50ec5
   lz-string: ^1.4.4
   openseadragon: ^2.4.2
   popper.js: 1.16.0
@@ -35,7 +35,7 @@ dependencies:
   d3-svg-legend: 2.25.6
   jquery: 3.5.1
   js-yaml: 3.14.1
-  lensing: '@github.com/thejohnhoffer/lensing/tarball/599d3ec5aa63c3181516d63162aae0b5c0fa13c4'
+  lensing: '@github.com/thejohnhoffer/lensing/tarball/cbe67f929a3be3d8843882f526a329ede3d50ec5'
   lz-string: 1.5.0
   openseadragon: 2.4.2
   popper.js: 1.16.0
@@ -3784,8 +3784,8 @@ packages:
       yargs-parser: 21.1.1
     dev: false
 
-  '@github.com/thejohnhoffer/lensing/tarball/599d3ec5aa63c3181516d63162aae0b5c0fa13c4':
-    resolution: {tarball: https://github.com/thejohnhoffer/lensing/tarball/599d3ec5aa63c3181516d63162aae0b5c0fa13c4}
+  '@github.com/thejohnhoffer/lensing/tarball/cbe67f929a3be3d8843882f526a329ede3d50ec5':
+    resolution: {tarball: https://github.com/thejohnhoffer/lensing/tarball/cbe67f929a3be3d8843882f526a329ede3d50ec5}
     name: lensing
     version: 1.0.32
     dependencies:

@@ -72,6 +72,7 @@ export class OsdLensingContext {
             tileSources: this.tileSources
           });
           this.hashstate.addColorListener('lens', updater);
+          this.lensing.recenter();
         });
     }
 

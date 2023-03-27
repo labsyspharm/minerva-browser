@@ -2239,12 +2239,18 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   -moz-transition: all 0.5s ease;
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
+  pointer-events: all;
   grid-column: 1;
   grid-row: 1;
   margin-left: 0px;
   width: 400px;
   left: 3px;
   top: 1rem;
+}
+
+.minerva-root .minerva-leftArrow,
+.minerva-root .minerva-rightArrow {
+  cursor: pointer;
 }
 
 .minerva-root .minerva-sidebar-menu.minimal {

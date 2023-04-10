@@ -45,8 +45,8 @@ const draw_tile = (ctx, output, viaGL, w, h) => {
   ctx.drawImage(output, 0, 0, gl_w, gl_h, 0, 0, w, h);
 }
 
-const to_tile_drawing = ({ viaGL, state, uniforms }) => {
-  const { u_tile_shape, u_tile_color } = uniforms;
+const to_tile_drawing = ({ viaGL, state, uniforms, isRendered }) => {
+  const { u_is_rendered, u_tile_shape, u_tile_color } = uniforms;
   const { gl } = viaGL;
   return (_, e) => {
     // Read parameters from each tile
@@ -82,8 +82,10 @@ const to_tile_drawing = ({ viaGL, state, uniforms }) => {
 
     // Start webGL rendering
     const output = ((data, w, h) => {
+      const is_rendered_1i = isRendered(name) || false;
       const color_3fv = state.channel_map.get(name).color;
       const tile_shape_2fv = new Float32Array([w, h]);
+      gl.uniform1i(u_is_rendered, +is_rendered_1i);
       gl.uniform2fv(u_tile_shape, tile_shape_2fv);
       gl.uniform3fv(u_tile_color, color_3fv);
 
@@ -111,6 +113,7 @@ precision highp int;
 precision highp float;
 precision highp usampler2D;
 
+uniform int u_is_rendered;
 uniform vec2 u_tile_shape;
 uniform vec3 u_tile_color;
 uniform usampler2D u_tile;
@@ -136,7 +139,16 @@ vec4 u8_r_range(float alpha) {
 }
 
 void main() {
-  color = u8_r_range(1.0);
+  if (u_is_rendered == 1) {
+    uvec4 rgb = offset(u_tile, u_tile_shape, uv, vec2(0, 0));
+    float r = float(rgb.r)/255.;
+    float g = float(rgb.g)/255.;
+    float b = float(rgb.b)/255.;
+    color = vec4(r, g, b, 1.0);
+  }
+  else {
+    color = u8_r_range(1.0);
+  }
 }`,
   vertex: `#version 300 es
 in vec2 a_uv;
@@ -185,7 +197,7 @@ const toOptions = (props) => {
 }
 
 const linkShaders = (props) => {
-  const { viewer, subgroups, tileSources } = props;
+  const { viewer, subgroups, tileSources, isRendered } = props;
   // Take the nominal tilesize from arbitrary tile source
 
   const opts = toOptions({subgroups, tileSources});
@@ -200,9 +212,10 @@ const linkShaders = (props) => {
 
   viaGL["gl-loaded"] = function (program) {
     const u_tile_shape = viaGL.gl.getUniformLocation(program, "u_tile_shape");
+    const u_is_rendered = viaGL.gl.getUniformLocation(program, "u_is_rendered");
     const u_tile_color = viaGL.gl.getUniformLocation(program, "u_tile_color");
-    const uniforms = { u_tile_shape, u_tile_color };
-    const closure = { viaGL, state, uniforms }
+    const uniforms = { u_is_rendered, u_tile_shape, u_tile_color };
+    const closure = { viaGL, state, uniforms, isRendered }
     seaGL["tile-drawing"] = to_tile_drawing(closure);
   };
   seaGL["tile-loaded"] = () => null;

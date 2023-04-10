@@ -58,6 +58,9 @@ export class OsdLensingContext {
         // Contexts
         this.hashstate = opts.hashstate;
         this.viewerContext = viewerContext;
+        const isRendered = (n) => {
+          return this.hashstate.isRendered(n);
+        }
         const {
           lensingContext, lensing
         } = this.newContext(opts);
@@ -69,7 +72,8 @@ export class OsdLensingContext {
           const { all_subgroups } = this.hashstate;
           const { updater } = linkShaders({
             viewer, subgroups: all_subgroups,
-            tileSources: this.tileSources
+            tileSources: this.tileSources,
+            isRendered: isRendered 
           });
           this.hashstate.addColorListener('lens', updater);
           this.lensing.recenter();

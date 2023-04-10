@@ -99,10 +99,14 @@ RenderOSD.prototype = {
     const HS = this.hashstate;
     const THIS = this;
 
+    const isRendered = (n) => {
+      return HS.isRendered(n);
+    }
     // Initialize Openseadragon
     const { updater } = linkShaders({
       viewer, subgroups: HS.all_subgroups,
-      tileSources: this.tileSources
+      tileSources: this.tileSources,
+      isRendered: isRendered
     });
     // Add state updater
     HS.addColorListener('main', updater);

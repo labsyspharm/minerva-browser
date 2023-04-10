@@ -1020,6 +1020,13 @@ HashState.prototype = {
     };
   },
 
+  isRendered(name) {
+    if (this.design.is_rendered_map.has(name)) {
+      return this.design.is_rendered_map.get(name);
+    }
+    return false;
+  },
+
   /*
    * State manaagement
    */
@@ -1054,6 +1061,10 @@ HashState.prototype = {
       z_scale: exhibit['ZPerMicron'] || 0,
       default_group: exhibit.DefaultGroup || '',
       first_group: exhibit.FirstGroup || '',
+      is_rendered_map: channelList.reduce((o, c) => {
+        o.set(c.Name, c.Rendered || false);
+        return o;
+      }, new Map()),
       subpath_map: channelList.reduce((o, c) => {
         o.set(c.Name, c.Path);
         return o;

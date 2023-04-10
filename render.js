@@ -657,7 +657,7 @@ Render.prototype = {
     displayOrNot(prefix+'.minerva-waypointName', !edit);
     
     // Show crosshair cursor if drawing
-    toggleCursor(prefix+'.minerva-openseadragon *', 'crosshair', drawing);
+    toggleCursor(prefix+'.minerva-openseadragon > div', 'crosshair', drawing);
     // Show correct switch state based on drawing mode
     greenOrWhite(prefix+'.minerva-draw-switch *', drawing && (drawType == "box"));
     greenOrWhite(prefix+'.minerva-lasso-switch *', drawing && (drawType == "lasso"));

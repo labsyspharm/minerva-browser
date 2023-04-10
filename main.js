@@ -115,11 +115,12 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
         });
       }
       // Add the image title
-      const titleElt = $('<p>');
+      const titleElt = document.createElement('p');
+      titleElt.className = 'minerva-overlay-title';
       const title = image.Description;
-      titleElt.addClass('minerva-overlay-title').text(title);
+      titleElt.innerText = title;
       viewer.addOverlay({
-        element: titleElt[0],
+        element: titleElt,
         x: x + displayWidth / 2,
         y: y,
         placement: 'BOTTOM',
@@ -2457,6 +2458,38 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
     /* margin-left: 5px; */
     height: 100%;
     color: white; 
+}
+
+.minerva-root .overlay_container_lens input[type=range] {
+  -webkit-appearance: none;
+  position: relative;
+  background: none;
+  transform: none;
+}
+
+.minerva-root .overlay_container_lens input[type=range]::-webkit-slider-runnable-track {
+  width: 300px;
+  height: 4px;
+  border: none;
+  background-color: #007bff;
+  border-radius: 3px
+}
+
+.minerva-root .overlay_container_lens input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  -webkit-transform: scale(2);
+  border: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 510%;
+  background: #141414;
+  border: 2px solid #515151;
+  margin-top: -5px;
+  cursor: pointer
+}
+
+.minerva-root .overlay_container_lens input[type=range]:focus {
+  outline: none
 }
 
 .minerva-root .channel-picker {

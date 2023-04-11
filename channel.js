@@ -65,7 +65,7 @@ const to_tile_drawing = ({ viaGL, state, uniforms, isRendered }) => {
     // check cache
     state.trackTile(e.tile);
     if (e.tile._cached) {
-      draw_tile(e.rendered, e.tile._cached, viaGL, w, h);
+//      draw_tile(e.rendered, e.tile._cached, viaGL, w, h);
       return;
     }
      

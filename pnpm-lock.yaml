@@ -12,7 +12,7 @@ specifiers:
   d3-svg-legend: ^2.25.6
   jquery: 3.5.1
   js-yaml: ^3.14.0
-  lensing: github:thejohnhoffer/lensing#3aaf38dd9209ba23a0116ed6cefad0b942059ee2
+  lensing: github:thejohnhoffer/lensing#64dfc0961f084de55d12b2620950cde1b7311e5c
   lz-string: ^1.4.4
   openseadragon: ^2.4.2
   popper.js: 1.16.0
@@ -35,7 +35,7 @@ dependencies:
   d3-svg-legend: 2.25.6
   jquery: 3.5.1
   js-yaml: 3.14.1
-  lensing: github.com/thejohnhoffer/lensing/3aaf38dd9209ba23a0116ed6cefad0b942059ee2
+  lensing: github.com/thejohnhoffer/lensing/64dfc0961f084de55d12b2620950cde1b7311e5c
   lz-string: 1.5.0
   openseadragon: 2.4.2
   popper.js: 1.16.0
@@ -3784,8 +3784,8 @@ packages:
       yargs-parser: 21.1.1
     dev: false
 
-  github.com/thejohnhoffer/lensing/3aaf38dd9209ba23a0116ed6cefad0b942059ee2:
-    resolution: {tarball: https://codeload.github.com/thejohnhoffer/lensing/tar.gz/3aaf38dd9209ba23a0116ed6cefad0b942059ee2}
+  github.com/thejohnhoffer/lensing/64dfc0961f084de55d12b2620950cde1b7311e5c:
+    resolution: {tarball: https://codeload.github.com/thejohnhoffer/lensing/tar.gz/64dfc0961f084de55d12b2620950cde1b7311e5c}
     name: lensing
     version: 1.0.32
     dependencies:

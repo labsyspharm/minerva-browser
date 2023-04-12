@@ -185,10 +185,9 @@ const to_subgroups = (subpath_map, group, all) => {
   // Return single-channel subpaths to render
   if (subpath_map.size > 0) {
     return channels.filter((n, i) => {
-      if (!all && !shown[i]) {
-        return false;
-      }
-      return subpath_map.has(n);
+      if (!all && !shown[i]) return false;
+      if (!subpath_map.has(n)) return false;
+      return true;
     }).map((Name) => {
       const Path = subpath_map.get(Name);
       const { Colors, Description } = zipped.get(Name);
@@ -869,15 +868,20 @@ HashState.prototype = {
 
   // Get openseadragon subgroup layers
   get subgroup_layers () {
-    const { all_subgroups } = this;
+    const used = new Set();
+    const { all_subgroups, subpath_map } = this;
     const colorize = this.allowSingleChannels;
-    return all_subgroups.map((subgroup, i) => {
+    return all_subgroups.reduce((out, subgroup, i) => {
+      // Disallow duplicate subpaths
+      const path = subpath_map.get(subgroup.Name);
+      if (used.has(path)) return out; 
+      used.add(path);
       const g = { ...subgroup };
       g['Format'] = g['Format'] || 'jpg';
       g['Colorize'] = colorize;
       g['Blend'] = 'lighter';
-      return g;
-    });
+      return [...out, g];
+    }, []);
   },
 
   // Get openseadragon tiled image layers
@@ -924,12 +928,27 @@ HashState.prototype = {
     return to_subgroups(this.subpath_map, group, false);
   },
 
+  // Get the colors of the current lens's channels
+  get lens_colors() {
+    return this.lens_group.Colors;
+  },
+
   // Get the colors of the current group's channels
   get colors() {
     const g_colors = this.group.Colors;
     return g_colors.concat(this.active_masks.reduce((c, m) => {
       return c.concat(m.Colors || []);
     }, []));
+  },
+
+  // Get the names of the current lens's channels
+  get lens_channel_names() {
+    return this.lens_group.Channels;
+  },
+
+  // Get the descriptions of the current lens's channels
+  get lens_channel_descriptions() {
+    return this.lens_group.Descriptions;
   },
 
   // Get the names of the current group's channels
@@ -950,11 +969,26 @@ HashState.prototype = {
 
   // Get channel names and descriptions 
   get channel_legend_lines() {
-    const channel_descriptions = this.channel_descriptions;
-    return this.channel_names.map((name, i) => {
+    const channel_descriptions = [
+      ...this.channel_descriptions,
+      ...this.lens_channel_descriptions
+    ];
+    const channel_colors = [
+      ...this.colors, ...this.lens_colors
+    ];
+    const channel_names = [
+      ...this.channel_names, ...this.lens_channel_names
+    ];
+    return channel_names.reduce((out, name, i) => {
+      if (out.find(o => o.name === name)) return out;
       const description = channel_descriptions[i] || '';
-      return { name, description };
-    });
+      const color = channel_colors[i] || '';
+      const rendered = this.isRendered(name);
+      const line = { 
+        rendered, name, description, color
+      };
+      return [...out, line];
+    }, []);
   },
 
   // Get the waypoints of the current story

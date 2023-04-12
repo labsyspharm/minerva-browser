@@ -18,7 +18,6 @@
     "vega": "^5.20.2",
     "vega-embed": "^6.20.3",
     "vega-lite": "^5.1.0",
-    "lensing": "github:thejohnhoffer/lensing#3aaf38dd9209ba23a0116ed6cefad0b942059ee2",
     "viawebgl": "github:thejohnhoffer/viaWebGL#89f77f43134f2d7deb88199570df925ea08cef72"
   },
   "devDependencies": {

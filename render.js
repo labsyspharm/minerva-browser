@@ -1032,8 +1032,11 @@ Render.prototype = {
   // Add channel legend label
   addChannelLegend: function(legend_line, c) {
     const HS = this.hashstate;
-    const color = this.indexColor(c, 'fffff');
-    const shown = HS.group.Shown[c] || false;
+    const color = legend_line.color;
+    const shown_idx = (() => {
+      if (legend_line.rendered) return 2;
+      return [0, 1][+HS.group.Shown[c]];
+    })();
 
     const onClick = () => {
       HS.group = toggleChannelShown(HS.group, c);
@@ -1048,9 +1051,9 @@ Render.prototype = {
     colorize.className = "glowing";
 
     // Opacities
-    label.style.cssText = 'opacity:'+[0.5,1][+shown];
-    visible.style.cssText = 'opacity:'+[0.5,1][+shown];
-    colorize.style.cssText = 'opacity:'+[0.5,1][+shown];
+    label.style.cssText = 'opacity:'+[0.5,1,1][shown_idx];
+    visible.style.cssText = 'opacity:'+[0.5,1,0][shown_idx];
+    colorize.style.cssText = 'opacity:'+[0.5,1,1][shown_idx];
     $(colorize).css('background-color', '#'+color);
 
     // If features are active
@@ -1058,18 +1061,21 @@ Render.prototype = {
       label.addEventListener("click", onClick);
       visible.addEventListener("click", onClick);
       colorize.addEventListener("click", (e) => {
-        if (!shown) HS.group = toggleChannelShown(HS.group, c);
+        if (!shown_idx) HS.group = toggleChannelShown(HS.group, c);
         $(".minerva-channel-legend-color-picker").addClass("toggled");
         HS.activeChannel = c;
         this.newView(true);
         e.stopPropagation();
       });
-      var colorize_ico = document.createElement('i');
-      colorize_ico.className = 'fa fa-eye-dropper text-dark';
+      const text_hide = 'color: transparent';
+      const colorize_ico = document.createElement('i');
+      const text_col = ['text-dark', 'text-dark', ''][shown_idx];
+      colorize_ico.style.cssText = ['', '', text_hide][shown_idx];
+      colorize_ico.className = `fa fa-eye-dropper ${text_col}`;
       colorize.appendChild(colorize_ico);
 
       var visible_ico = document.createElement('i');
-      visible_ico.className = 'fa fa-eye' + ['-slash', ''][+shown];
+      visible_ico.className = 'fa fa-eye' + ['-slash', '', ''][shown_idx];
       visible.appendChild(visible_ico);
     }
     else {
@@ -1095,7 +1101,7 @@ Render.prototype = {
       var ul = HS.el.getElementsByClassName(k).item(0);
       var li = document.createElement('li');
       const styles = [
-        'opacity:'+[0.5,1][+shown]
+        'opacity:'+[0.5,1,1][shown_idx]
       ].concat((c === HS.activeChannel) ? [
         'border-bottom: '+ '2px solid #' + color
       ] : []);

@@ -3387,7 +3387,7 @@ const to_empty_pyramid = (image, grid_shape) => {
     },
     x: 0,
     y: 0,
-    opacity: 0,
+    opacity: 1,
     width: displayWidth,
   }
 }

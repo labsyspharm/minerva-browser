@@ -1436,9 +1436,11 @@ HashState.prototype = {
   },
 
   dispatchColorEvent() {
-    const { active_subgroups } = this;
-    const fns = this.state.colorListeners.values();
-    [...fns].forEach(fn => fn(active_subgroups));
+    const fns = this.state.colorListeners.entries();
+    [...fns].forEach(([key, fn]) => {
+      if (key === 'lens') fn(this.lens_subgroups);
+      else fn(this.active_subgroups);
+    });
   }
 };
 

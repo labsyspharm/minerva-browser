@@ -1,11 +1,11 @@
 import viaWebGL from 'viawebgl';
 
-const toSettings = ({ opts, tiles, layers }) => {
-  const { channelMap: channel_map } = opts;
-  [...tiles.values()].forEach((tile) => {
-    delete tile._cached; 
-  });
-  return { channel_map };
+const is_tile_source = (tile, state, isRendered) => {
+  return [
+    tile.colorize === true,
+    !isRendered(tile.name),
+    state.channel_map.has(tile.name)
+  ].every(x => x);
 }
 
 const is_tile_target = (tile) => {
@@ -18,33 +18,41 @@ const to_target_key = (tile) => {
   return `${level}-${x}-${y}`;
 }
 
+const toChannelMap = (subgroups) => {
+  const channel_map = subgroups.filter((group) => {
+    return group.Colors.length === 1;
+  }).reduce((o, {Colors, Name}) => {
+    const color = hex2gl(Colors[0]);
+    o.set(Name, { color });
+    return o;
+  }, new Map());
+  return channel_map;
+}
+
 class State {
 
   constructor(opts) {
-    this.layers = new Map();
-    this.targets = new Map();
+//    this.channel_map = toChannelMap(opts.subgroups);
+    this.channel_map = toChannelMap(opts.active_subgroups);
+    this.active_subgroups = opts.active_subgroups;
+    this.callbacks = new Map();
     this.sources = new Map();
     this.tiles = new Map();
     this.settings = {};
-    this.update(opts);
   }
 
-  get channel_map () {
-    return this.settings.channel_map;
-  }
-
-  trackTile ({ rendered, tile }) {
-    this.tiles.set(tile.url, tile);
+  trackSource (tile) {
     const tk = to_target_key(tile);
-    if (is_tile_target(tile)) {
-      this.targets.set(tk, rendered);
-    }
-    else {
-      const _sources = this.sources.get(tk);
-      const sources = _sources || new Set;
-      sources.add(tile);
-      this.sources.set(tk, sources);
-    }
+    const _sources = this.sources.get(tk);
+    const sources = _sources || new Set;
+    sources.add({
+      x: tile.x,
+      y: tile.y,
+      level: tile.level,
+      name: tile.name,
+      data: tile._image 
+    });
+    this.sources.set(tk, sources);
   }
 
   getSources (tile) {
@@ -53,92 +61,122 @@ class State {
     return this.sources.get(tk);
   }
 
-  getTarget (tile) {
+  getCallbacks (tile) {
     const tk = to_target_key(tile);
-    if (!this.targets.has(tk)) return null;
-    return this.targets.get(tk);
+    if (!this.callbacks.has(tk)) return null;
+    return this.callbacks.get(tk);
   }
 
-  trackLayer (idx) {
-    return ({item: tiledImage}) => {
-      this.layers.set(idx, tiledImage);
-    }
-  }
-
-  update (opts) {
-    const { tiles, layers } = this;
-    const settings = toSettings({ opts, tiles, layers });
-    this.settings.channel_map = settings.channel_map;
-    this.sources = new Map();
+  update (active_subgroups) {
+    const { tiles } = this;
+    this.channel_map = toChannelMap(active_subgroups);
+    this.active_subgroups = active_subgroups;
+    [...tiles.values()].forEach((tile) => {
+      delete tile._cached; 
+    });
   }
 }
 
-const draw_tile = (ctx, output, viaGL, w, h) => {
+const to_tile_frame = (e) => {
+  const px_size = OpenSeadragon.pixelDensityRatio;
+  const pos = e.tile.position.times(px_size);
+  const size = e.tile.size.times(px_size);
+  return {
+    x: pos.x, y: pos.y, w: size.x, h: size.y
+  };
+}
+
+const draw_tile = (props, output, viaGL) => {
+  const { rendered, frame } = props;
+  const { w, h } = frame;
   const gl_w = viaGL.width;
   const gl_h = viaGL.height;
-  ctx.drawImage(output, 0, 0, gl_w, gl_h, 0, 0, w, h);
+  rendered.drawImage( output, 0, 0, gl_w, gl_h, 0, 0, w, h);
 }
 
-const to_tile_props = (state, isRendered, tile) => {
-  const { name, _data } = tile;
-  const is_rendered_1i = isRendered(name) || false;
-  if (!state.channel_map.has(name)) {
-    console.error(name);
-  }
-  const color_3fv = state.channel_map.get(name).color;
-  return {
-    name, _data, is_rendered_1i, color_3fv 
-  }
+// TODO?
+const draw_tile_full = (props, output, viaGL) => {
+  const { context, frame } = props;
+  const { w, h, x, y } = frame;
+  const gl_w = viaGL.width;
+  const gl_h = viaGL.height;
+  context.drawImage( output, 0, 0, gl_w, gl_h, x, y, w, h);
 }
 
-const render_tile = (tile_props, uniforms, gl, w, h) => {
+const render_tile = (props, uniforms, viaGL) => {
+  const { gl } = viaGL;
   const { 
-    name, _data, is_rendered_1i, color_3fv
-  } = tile_props;
+    frame, name, data, is_rendered_1i, color_3fv
+  } = props;
   const {
     u_is_rendered, u_tile_shape, u_tile_color
   } = uniforms;
+  const w = data.width;
+  const h = data.height;
   const tile_shape_2fv = new Float32Array([w, h]);
   gl.uniform1i(u_is_rendered, +is_rendered_1i);
   gl.uniform2fv(u_tile_shape, tile_shape_2fv);
   gl.uniform3fv(u_tile_color, color_3fv);
+  console.log(name, [...color_3fv]);
 
   // Send the tile to the texture
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
-            gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, _data);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB8UI, w, h, 0,
+            gl.RGB_INTEGER, gl.UNSIGNED_BYTE, data);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  return gl.canvas;
+  draw_tile(props, gl.canvas, viaGL);
 }
 
-const to_gl_relation = (e, state, is_t) => {
-  const target = state.getTarget(e.tile);
+const to_tile_props = (closure, sources, d, e) => {
+  const { state, isRendered } = closure;
+  const { name, data } = sources[0]; // TODO
+  const is_rendered_1i = isRendered(name) || false;
+  const color_3fv = state.channel_map.get(name).color;
+  const context = d._getContext(false)
+  const rendered = e.rendered;
+  const frame = to_tile_frame(e);
+  return {
+    rendered, context, frame, name, data, is_rendered_1i, color_3fv 
+  }
+}
+
+const to_render_target = (closure, sources) => {
+  const { viaGL, state, uniforms } = closure;
+  return (d, e) => {
+    const props = to_tile_props(closure, sources, d, e);
+    if (props) render_tile(props, uniforms, viaGL);
+  }
+}
+
+const copy_sources = (closure, e) => {
+  const { state, viewer } = closure;
+  const is_t = is_tile_target(e.tile);
   const sources = state.getSources(e.tile);
-  const ready = [
-    target !== null,
-    sources.size === state.channel_map.size
-  ].every(x => x);
-
-  console.log(sources.size, state.channel_map.size);
-
-  if (!ready) return null;
-  if (!is_t) return [[...sources], target];
-  return [[...sources], e.rendered];
+  const source_count = state.active_subgroups.length;
+  const all_sources = sources.size === source_count;
+  const ready = [ all_sources ].every(x => x);
+  const d = viewer.drawer;
+  if (!ready) return null; // TODO? still necessary?
+  if (!sources.size) return null;
+  // Redraw the target with correct info
+  // TODO: use mutiple channels
+  const favored = state.active_subgroups[0].Name
+  const visible = [...sources].filter(source => {
+    return state.channel_map.has(source.name);
+  });
+  const source = visible.find((source, i) => {
+    if (source.name === favored) return true;
+    return i = visible.size - 1; // catch-all
+  });
+  to_render_target(closure, [source])(d, e);
 }
 
-const to_tile_drawing = ({ viaGL, state, uniforms, isRendered }) => {
+const to_tile_drawing = (closure) => {
+  const { 
+    viaGL, state, uniforms, isRendered, viewer
+  } = closure;
   return (_, e) => {
-    // Read parameters from each tile
-    const { source } = e.tiledImage;
-    const { name } = source;
-    e.tile.name = name;
-    const w = e.rendered.canvas.width;
-    const h = e.rendered.canvas.height;
-    
-    const is_source = [
-      source.colorize === true,
-      state.channel_map.has(name)
-    ].every(x => x);
     const is_target = is_tile_target(e.tile);
+    const is_source = is_tile_source(e.tile, state, isRendered);
     const missing = ![ is_source, is_target ].some(x => x);
     // Unable to colorize this layer
     if (missing) return; 
@@ -146,34 +184,25 @@ const to_tile_drawing = ({ viaGL, state, uniforms, isRendered }) => {
     if (e.tile._cached) {
       return;
     }
-
-    // Clear the rendered tile
-    e.rendered.fillStyle = "black";
-    e.rendered.fillRect(0, 0, w, h);
-
-    console.log(['source', 'target'][+is_target])
-    if (is_source) {
-      console.error('is_source');
-      // Load image into array
-      e.tile._data = ((e, w, h) => {
-        const { tile, rendered } = e;
-        if (tile._data) return tile._data;
-        return rendered.getImageData(0, 0, w, h).data;
-      })(e, w, h);
+    if (is_target) {
+      // Clear any rendered tile
+      const w = e.rendered.canvas.width;
+      const h = e.rendered.canvas.height;
+      e.rendered.fillStyle = "black";
+      e.rendered.fillRect(0, 0, w, h);
+      // redraw target if possible
+      copy_sources(closure, e);
     }
-    // Count current tile 
-    state.trackTile(e);
+    if (is_source) {
+      // Clear any rendered tile
+      const w = e.rendered.canvas.width;
+      const h = e.rendered.canvas.height;
+//      e.rendered.fillStyle = "black";
+//      e.rendered.fillRect(0, 0, w, h);
+      // redraw target if possible
+      copy_sources(closure, e);
+    }
     e.tile._cached = true;
-    // Count all existing sources
-    const relation = to_gl_relation(e, state, is_target);
-    if (relation === null) return;
-
-    // Start webGL rendering
-    const [sources, target] = relation;
-    const tile_props = to_tile_props(state, isRendered, sources[0]); //TODO
-    const output = render_tile(tile_props, uniforms, viaGL.gl, w, h);
-    // Draw the target tile
-    draw_tile(target, output, viaGL, w, h);
   }
 }
 
@@ -253,31 +282,18 @@ const toTileShape = (tileSources) => {
   }, [1024, 1024]);
 }
 
-const toOptions = (props) => {
-  const { subgroups, tileSources } = props;
-  const tileShape = toTileShape(tileSources);
-  const channelMap = subgroups.filter((group) => {
-    return group.Colors.length === 1;
-  }).reduce((o, {Colors, Name}) => {
-    const color = hex2gl(Colors[0]);
-    o.set(Name, { color });
-    return o;
-  }, new Map());
-  return { channelMap, tileShape };
-}
-
 const linkShaders = (props) => {
-  const { viewer, subgroups, tileSources, isRendered } = props;
+  const { viewer, active_subgroups, subgroups, tileSources, isRendered } = props;
   // Take the nominal tilesize from arbitrary tile source
 
-  const opts = toOptions({subgroups, tileSources});
-  const state = new State(opts);
+  const state = new State({ active_subgroups, subgroups });
 
   // Initialize WebGL
   const seaGL = new viaWebGL.openSeadragonGL(viewer);
   seaGL.viaGL.fShader = shaders.fragment;
   seaGL.viaGL.vShader = shaders.vertex;
-  seaGL.viaGL.updateShape(...opts.tileShape);
+  const tileShape = toTileShape(tileSources);
+  seaGL.viaGL.updateShape(...tileShape);
   const viaGL = seaGL.viaGL;
 
   viaGL["gl-loaded"] = function (program) {
@@ -285,16 +301,44 @@ const linkShaders = (props) => {
     const u_is_rendered = viaGL.gl.getUniformLocation(program, "u_is_rendered");
     const u_tile_color = viaGL.gl.getUniformLocation(program, "u_tile_color");
     const uniforms = { u_is_rendered, u_tile_shape, u_tile_color };
-    const closure = { viaGL, state, uniforms, isRendered }
+    const closure = { viaGL, viewer, state, uniforms, isRendered };
     seaGL["tile-drawing"] = to_tile_drawing(closure);
   };
-  seaGL["tile-loaded"] = () => null;
+  seaGL["tile-loaded"] = (_, e) => {
+    const { getCompletionCallback } = e;
+    const { image, tiledImage, tile } = e;
+    const { name, colorize } = tiledImage.source;
+    state.tiles.set(tile.url, tile);
+    tile.colorize = colorize;
+    tile.name = name;
+    if (image === null) {
+      tile._image = null;
+      return;
+    }
+    const tk = to_target_key(tile);
+    if (is_tile_target(tile)) {
+      // One callback for each active subgroup
+      const callbacks = active_subgroups.map(() => {
+        return getCompletionCallback();
+      });
+      state.callbacks.set(tk, callbacks);
+    }
+    else if (is_tile_source(tile, state, isRendered)) {
+      const callbacks = state.callbacks.get(tk) || [];
+      tile._image = image.cloneNode();
+      tile._image.onload = () => {
+        // Count current tile 
+        state.trackSource(tile);
+        const cb = callbacks.pop();
+        if (cb !== undefined) cb();
+      }
+    }
+  };
   viaGL.init().then(seaGL.adder.bind(seaGL));
 
   // Allow update
-  const updater = (subgroups) => {
-    const opts = toOptions({subgroups, tileSources});
-    state.update(opts);
+  const updater = (active_subgroups) => {
+    state.update(active_subgroups);
   }
   return { updater }
 }

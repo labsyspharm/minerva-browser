@@ -1436,9 +1436,9 @@ HashState.prototype = {
   },
 
   dispatchColorEvent() {
-    const { all_subgroups } = this;
+    const { active_subgroups } = this;
     const fns = this.state.colorListeners.values();
-    [...fns].forEach(fn => fn(all_subgroups));
+    [...fns].forEach(fn => fn(active_subgroups));
   }
 };
 

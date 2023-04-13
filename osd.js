@@ -104,7 +104,7 @@ RenderOSD.prototype = {
     }
     // Initialize Openseadragon
     const { updater } = linkShaders({
-      viewer, subgroups: HS.all_subgroups,
+      viewer, subgroups: HS.active_subgroups,
       tileSources: this.tileSources,
       isRendered: isRendered
     });

@@ -65,7 +65,6 @@ const to_tile_drawing = ({ viaGL, state, uniforms, isRendered }) => {
     // check cache
     state.trackTile(e.tile);
     if (e.tile._cached) {
-//      draw_tile(e.rendered, e.tile._cached, viaGL, w, h);
       return;
     }
      
@@ -96,13 +95,7 @@ const to_tile_drawing = ({ viaGL, state, uniforms, isRendered }) => {
       return gl.canvas;
     })(e.tile._data, w, h);
     // Begin caching current tile 
-    if (!e.tile._caching) {
-      e.tile._caching = createImageBitmap(output);
-      e.tile._caching.then(bitmap => {
-        delete e.tile._caching;
-        e.tile._cached = bitmap;
-      });
-    }
+    e.tile._cached = true;
     draw_tile(e.rendered, output, viaGL, w, h);
   }
 }

@@ -69,9 +69,9 @@ export class OsdLensingContext {
         this.lensingContext = lensingContext;
         // Initialize Openseadragon
         this.initializeChannels((viewer) => {
-          const { all_subgroups } = this.hashstate;
+          const { lens_subgroups } = this.hashstate;
           const { updater } = linkShaders({
-            viewer, subgroups: all_subgroups,
+            viewer, subgroups: lens_subgroups,
             tileSources: this.tileSources,
             isRendered: isRendered 
           });

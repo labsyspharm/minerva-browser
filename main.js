@@ -21,6 +21,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
   const layers = hashstate.layers;
 
   const grid = hashstate.grid;
+  const grid_shape = to_grid_shape(grid);
 
   const images = hashstate.images;
 
@@ -31,22 +32,13 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
     : hashstate.exhibit.Name
 
   // Read the grid arangement from the configuration file
-  const numRows = grid.length;
-  const numColumns = grid[0].length;
+  const { maxImageHeight, spacingFraction } = grid_shape;
+  const { numRows, numColumns } = grid_shape;
+  const { cellWidth, cellHeight } = grid_shape;
 
   const nTotal = numRows * numColumns * layers.length;
   var nLoaded = 0;
 
-  const spacingFraction = 0.05;
-  const maxImageWidth = flatten(grid).reduce(function(max, img) {
-    return Math.max(max, img.Width);
-  }, 0);
-  const maxImageHeight = flatten(grid).reduce(function(max, img) {
-    return Math.max(max, img.Height);
-  }, 0);
-
-  const cellHeight = (1 + spacingFraction) / numRows - spacingFraction;
-  const cellWidth = cellHeight * maxImageWidth / maxImageHeight;
   const aspect_ratio = (cellWidth * numColumns) / (cellHeight * numRows);
 
   // Iterate through the rows
@@ -55,8 +47,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
     // Iterate through the columns
     for (var xi = 0; xi < numColumns; xi++) {
       const image = grid[yi][xi];
-      const displayHeight = (1 - (numRows-1) * spacingFraction) / numRows * image.Height / maxImageHeight;
-      const displayWidth = displayHeight * image.Width / image.Height;
+      const { displayHeight, displayWidth } = to_image_shape(image, grid_shape)
       const x = xi * (cellWidth + spacingFraction) + (cellWidth - displayWidth) / 2;
       // Iterate through the layers
       for (var j=0; j < layers.length; j++) {
@@ -3339,7 +3330,74 @@ const makeTwinViewer = function(e) {
     });
 }
 
+const to_image_shape = (image, grid_shape) => {
+  const {
+    numRows, maxImageHeight, spacingFraction
+  } = grid_shape;
+
+  const displayHeight = (1 - (numRows-1) * spacingFraction) / numRows * image.Height / maxImageHeight;
+  const displayWidth = displayHeight * image.Width / image.Height;
+  return { displayWidth, displayHeight }
+}
+
+const to_grid_shape = (grid) => {
+
+  const numRows = grid.length;
+  const numColumns = grid[0].length;
+  const spacingFraction = 0.05;
+
+  const maxImageWidth = flatten(grid).reduce(function(max, img) {
+    return Math.max(max, img.Width);
+  }, 0);
+  const maxImageHeight = flatten(grid).reduce(function(max, img) {
+    return Math.max(max, img.Height);
+  }, 0);
+
+  const cellHeight = (1 + spacingFraction) / numRows - spacingFraction;
+  const cellWidth = cellHeight * maxImageWidth / maxImageHeight;
+  return {
+    numRows, numColumns, cellWidth, cellHeight, maxImageHeight, spacingFraction
+  };
+} 
+
+const to_empty_pyramid = (image, grid_shape) => {
+  const { displayWidth } = to_image_shape(image, grid_shape)
+  const tileWidth = image.TileSize.slice(0,1).pop();
+  const tileHeight = image.TileSize.slice(0,2).pop();
+  const url = (c => {
+      c.width = 1024;
+      c.height = 1024;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "green";
+      ctx.fillRect(0, 0, c.width, c.height);
+      return c.toDataURL();
+  })(document.createElement("canvas"));
+  return {
+    loadTilesWithAjax: false,
+    compositeOperation: 'lighter',
+    tileSource: {
+      colorize: true,
+      tileHeight: tileHeight,
+      tileWidth: tileWidth,
+      height: image.Height,
+      width:  image.Width,
+      name: "rendering-layer",
+      maxLevel: image.MaxLevel,
+      getTileUrl: () => url
+    },
+    x: 0,
+    y: 0,
+    opacity: 0,
+    width: displayWidth,
+  }
+}
+
 const build_page_with_exhibit = function(exhibit, options) {
+  // Initialize state
+  const hashstate = new HashState(exhibit, options);
+  const grid = hashstate.grid;
+  const grid_shape = to_grid_shape(grid);
+
   // Initialize openseadragon
   const viewer = OpenSeadragon({
     id: options.id + '-openseadragon',
@@ -3351,6 +3409,9 @@ const build_page_with_exhibit = function(exhibit, options) {
     maxZoomPixelRatio: 10,
     visibilityRatio: .9,
     degrees: exhibit.Rotation || 0,
+    tileSources: [
+      to_empty_pyramid(grid[0][0], grid_shape)
+    ]
   });
 
   // Constantly reset each arrow transform property
@@ -3400,7 +3461,6 @@ const build_page_with_exhibit = function(exhibit, options) {
   //set up event handler
   const eventHandler = new SimpleEventHandler(d3.select('body').node());
 
-  const hashstate = new HashState(exhibit, options);
   const tileSources = {};
   const osd = new RenderOSD(hashstate, viewer, tileSources, eventHandler);
   const render = new Render(hashstate, osd);

@@ -239,7 +239,7 @@ const hex2gl = (hex) => {
 const split_url = (full_url) => {
   const parts = full_url.split('/');
   if (parts.length < 2) return null;
-  return parts.slice(-2).pop();
+  return parts.slice(-2)[0];
 }
 
 const toChannelMap = (layers) => {
@@ -256,15 +256,24 @@ const toChannelMap = (layers) => {
 class GLState {
 
   constructor(HS) {
-    this.channel_map = toChannelMap(HS.active_subgroups);
-    this.active_subgroups = HS.active_subgroups;
-    this.layers = HS.layers;
     this.callbacks = new Map();
     this.sources = new Map();
     this.tiles = new Map();
     this.settings = {};
+    this.HS = HS;
   }
 
+  get active_subgroups() {
+    return this.HS.active_subgroups
+  }
+
+  get channel_map() {
+    return toChannelMap(this.HS.active_subgroups);
+  }
+
+  get layers() {
+    return this.HS.layers;
+  }
 
   trackSource(key, {full_url, data }) {
     const _sources = this.sources.get(key);

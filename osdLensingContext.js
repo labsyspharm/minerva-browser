@@ -71,6 +71,7 @@ export class OsdLensingContext {
         this.initializeChannels((viewer) => {
           const { all_subgroups } = this.hashstate;
           const { lens_subgroups } = this.hashstate;
+          /*
           const { updater } = linkShaders({
             viewer, subgroups: all_subgroups,
             active_subgroups: lens_subgroups,
@@ -78,6 +79,7 @@ export class OsdLensingContext {
             isRendered: isRendered 
           });
           this.hashstate.addColorListener('lens', updater);
+          */
           this.lensing.recenter();
         });
     }

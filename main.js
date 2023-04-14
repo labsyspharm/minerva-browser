@@ -73,8 +73,8 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
             x: x,
             y: y,
             opacity: 0,
+            preload: true,
             width: displayWidth,
-            //preload: true,
             success: function(data) {
               const item = data.item;
               if (!tileSources.hasOwnProperty(layer.Path)) {
@@ -3360,18 +3360,21 @@ const to_grid_shape = (grid) => {
   };
 } 
 
+const getEmptyTileUrl = (level, x, y) => {
+  return (c => {
+      c.width = 1024;
+      c.height = 1024;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = `rgb(${level}, ${x}, ${y}, 1.0)`;
+      ctx.fillRect(0, 0, c.width, c.height);
+      return c.toDataURL();
+  })(document.createElement("canvas"));
+}
+
 const to_empty_pyramid = (image, grid_shape) => {
   const { displayWidth } = to_image_shape(image, grid_shape)
   const tileWidth = image.TileSize.slice(0,1).pop();
   const tileHeight = image.TileSize.slice(0,2).pop();
-  const url = (c => {
-      c.width = 1024;
-      c.height = 1024;
-      const ctx = c.getContext("2d");
-      ctx.fillStyle = "green";
-      ctx.fillRect(0, 0, c.width, c.height);
-      return c.toDataURL();
-  })(document.createElement("canvas"));
   return {
     loadTilesWithAjax: false,
     compositeOperation: 'lighter',
@@ -3383,7 +3386,7 @@ const to_empty_pyramid = (image, grid_shape) => {
       width:  image.Width,
       name: "rendering-layer",
       maxLevel: image.MaxLevel,
-      getTileUrl: () => url
+      getTileUrl: getEmptyTileUrl
     },
     x: 0,
     y: 0,

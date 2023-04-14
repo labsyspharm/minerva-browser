@@ -877,8 +877,8 @@ HashState.prototype = {
       if (used.has(path)) return out; 
       used.add(path);
       const g = { ...subgroup };
+      g['Colorize'] = !this.isRendered(subgroup.Name);
       g['Format'] = g['Format'] || 'jpg';
-      g['Colorize'] = colorize;
       g['Blend'] = 'lighter';
       return [...out, g];
     }, []);
@@ -930,7 +930,7 @@ HashState.prototype = {
 
   // Get the colors of the current lens's channels
   get lens_colors() {
-    return this.lens_group.Colors;
+    return this.lens_group?.Colors || [];
   },
 
   // Get the colors of the current group's channels
@@ -943,12 +943,12 @@ HashState.prototype = {
 
   // Get the names of the current lens's channels
   get lens_channel_names() {
-    return this.lens_group.Channels;
+    return this.lens_group?.Channels || [];
   },
 
   // Get the descriptions of the current lens's channels
   get lens_channel_descriptions() {
-    return this.lens_group.Descriptions;
+    return this.lens_group?.Descriptions || [];
   },
 
   // Get the names of the current group's channels
@@ -1403,11 +1403,21 @@ HashState.prototype = {
     return wid_yaml.replace('- - - ', '    - ');
   },
 
-  isActivePath(match) {
+  isVisibleLayer(match) {
     const key = 'Path';
     const masks = this.active_masks;
     const subgroups = this.active_subgroups;
-    return is_active({ masks, subgroups, key, match });
+    const activity = is_active({ masks, subgroups, key, match });
+    const inactive = { active: false, mask_index: -1, group_index: -1 };
+    if (activity.active) {
+      const ok = !!this.layers.find(layer => {
+        if (layer.Colorize === true) return false;
+        if (layer.Path !== match) return false;
+        return true;
+      });
+      if (ok) return activity;
+    }
+    return inactive;
   },
 
   isActiveGroupName(match) {

@@ -1,5 +1,6 @@
 import SimpleEventHandler from "./simpleEventHandler.js"
 import { get_links_alias } from "./links_alias.js"
+import { customizeTileSource } from "./channel"
 import { getAjaxHeaders } from "./state"
 import { getGetTileUrl } from "./state"
 import { HashState } from "./state"
@@ -60,7 +61,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
             compositeOperation: layer.Blend,
             crossOriginPolicy: 'anonymous',
             ajaxHeaders: ajaxHeaders,
-            tileSource: {
+            tileSource: customizeTileSource(hashstate, {
               colorize: layer.Colorize,
               height: image.Height,
               width:  image.Width,
@@ -68,8 +69,10 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
               maxLevel: image.MaxLevel,
               tileWidth: image.TileSize.slice(0,1).pop(),
               tileHeight: image.TileSize.slice(0,2).pop(),
-              getTileUrl: getGetTileUrl(image, layer)
-            },
+              getTileUrl: getGetTileUrl(
+                image.Path, layer.Path, image.MaxLevel, layer.Format
+              )
+            }),
             x: x,
             y: y,
             opacity: 0,
@@ -3360,25 +3363,21 @@ const to_grid_shape = (grid) => {
   };
 } 
 
-const getEmptyTileUrl = (level, x, y) => {
-  return (c => {
-      c.width = 1024;
-      c.height = 1024;
-      const ctx = c.getContext("2d");
-      ctx.fillStyle = `rgb(${level}, ${x}, ${y}, 1.0)`;
-      ctx.fillRect(0, 0, c.width, c.height);
-      return c.toDataURL();
-  })(document.createElement("canvas"));
+const getEmptyTileUrl = (max, format) => {
+  const getTileUrl = getGetTileUrl('foo', 'bar', max, format);
+  return (level, x, y) => {
+    return getTileUrl(level, x, y).split('/').pop();
+  }
 }
 
-const to_empty_pyramid = (image, grid_shape) => {
+const to_empty_pyramid = (image, grid_shape, hashstate) => {
   const { displayWidth } = to_image_shape(image, grid_shape)
   const tileWidth = image.TileSize.slice(0,1).pop();
   const tileHeight = image.TileSize.slice(0,2).pop();
   return {
     loadTilesWithAjax: false,
     compositeOperation: 'lighter',
-    tileSource: {
+    tileSource: customizeTileSource(hashstate, {
       colorize: true,
       tileHeight: tileHeight,
       tileWidth: tileWidth,
@@ -3386,8 +3385,8 @@ const to_empty_pyramid = (image, grid_shape) => {
       width:  image.Width,
       name: "rendering-layer",
       maxLevel: image.MaxLevel,
-      getTileUrl: getEmptyTileUrl
-    },
+      getTileUrl: getEmptyTileUrl(image.MaxLevel, 'jpg')
+    }),
     x: 0,
     y: 0,
     opacity: 1,
@@ -3413,7 +3412,7 @@ const build_page_with_exhibit = function(exhibit, options) {
     visibilityRatio: .9,
     degrees: exhibit.Rotation || 0,
     tileSources: [
-      to_empty_pyramid(grid[0][0], grid_shape)
+      to_empty_pyramid(grid[0][0], grid_shape, hashstate)
     ]
   });
 

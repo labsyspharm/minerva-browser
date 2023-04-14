@@ -228,6 +228,67 @@ const add_visibility = (cgs) => {
   });
 }
 
+const hex2gl = (hex) => {
+  const val = parseInt(hex.replace('#',''), 16);
+  const bytes = [16, 8, 0].map(shift => {
+    return ((val >> shift) & 255) / 255;
+  });
+  return new Float32Array(bytes);
+}
+
+const split_url = (full_url) => {
+  const parts = full_url.split('/');
+  if (parts.length < 2) return null;
+  return parts.slice(-2).pop();
+}
+
+const toChannelMap = (layers) => {
+  const channel_map = layers.filter((group) => {
+    return group.Colors.length === 1;
+  }).reduce((o, {Colors, Path}) => {
+    const color = hex2gl(Colors[0]);
+    o.set(Path, { color });
+    return o;
+  }, new Map());
+  return channel_map;
+}
+
+class GLState {
+
+  constructor(HS) {
+    this.channel_map = toChannelMap(HS.active_subgroups);
+    this.active_subgroups = HS.active_subgroups;
+    this.layers = HS.layers;
+    this.callbacks = new Map();
+    this.sources = new Map();
+    this.tiles = new Map();
+    this.settings = {};
+  }
+
+
+  trackSource(key, {full_url, data }) {
+    const _sources = this.sources.get(key);
+    const sources = _sources || new Set;
+    const subfolder = split_url(full_url);
+    sources.add({ subfolder, data });
+    this.sources.set(key, sources);
+  }
+
+  getSources (tk) {
+    if (!this.sources.has(tk)) return new Set;
+    return this.sources.get(tk);
+  }
+
+  update (active_subgroups) {
+    const { tiles } = this;
+    this.channel_map = toChannelMap(active_subgroups);
+    this.active_subgroups = active_subgroups;
+    [...tiles.values()].forEach((tile) => {
+      //TODO: unload cache?
+    });
+  }
+}
+
 /*
  * The HashState contains all state variables in sync with url hash
  */
@@ -252,6 +313,7 @@ export const HashState = function(exhibit, options) {
   this.hideWelcome = options.hideWelcome || false;
   this.noHome = options.noHome || false;
 
+  this._gl_state = null;
   this.state = {
     buffer: {
       waypoint: undefined
@@ -278,7 +340,7 @@ export const HashState = function(exhibit, options) {
   };
 
   this.newExhibit();
-
+  this._gl_state = new GLState(this)
 };
 
 HashState.prototype = {
@@ -380,6 +442,10 @@ HashState.prototype = {
 
   get edit() {
     return !!this.state.edit;
+  },
+
+  get gl_state() {
+    return this._gl_state;
   },
 
   /*
@@ -1483,79 +1549,16 @@ export const getAjaxHeaders = function(state, image){
   return Promise.resolve({});
 };
 
+
 // Return a function for Openseadragon's getTileUrl API
-export const getGetTileUrl = function(image, layer) {
-
-  const renderList = layer.Render || [];
-
+export const getGetTileUrl = function(ipath, lpath, max, format) {
   // This default function simply requests for rendered jpegs
-  const getJpegTile = function(level, x, y) {
-    const fileExt = '.' + layer.Format;
-    return image.Path + '/' + layer.Path + '/' + (image.MaxLevel - level) + '_' + x + '_' + y + fileExt;
+  return function(level, x, y) {
+    const fileExt = '.' + format;
+    const fname = (max - level) + '_' + x + '_' + y + fileExt;
+    return ipath + '/' + lpath + '/' + fname;
   };
 
-  // Handle Optional AWS lambda functionality rendering images
-  if (image.Provider == 'minerva' || image.Provider == 'minerva-public') {
-    const channelList = renderList.reduce(function(list, settings, i) {
-
-      const allowed = settings.Images;
-      if (allowed.indexOf(image.Name) >= 0) {
-        const index = settings.Index;
-        const color = settings.Color;
-        const min = settings.Range[0];
-        const max = settings.Range[1];
-        const specs = [index, color, min, max];
-        list.push(specs.join(','));
-      }
-      return list;
-    }, []);
-
-    let api = image.Path;
-    let channelPath = channelList.join('/');
-    if (image.Path.includes('/prerendered-tile/')) {
-      channelPath = layer.Path;
-    }
-
-    const getMinervaTile = function(level, x, y) {
-      const lod = (image.MaxLevel - level) + '/';
-      const pos = x + '/' + y + '/0/0/';
-      const url = api + pos + lod + channelPath;
-      return url; 
-    };
-
-    return getMinervaTile;
-  }
-  // Handle optional Omero functionality for rendering images
-  else if (image.Provider == 'omero') {
-    const channelList = renderList.reduce(function(list, settings, i) {
-
-      const allowed = settings.Images;
-      if (allowed.indexOf(image.Name) >= 0) {
-        const index = settings.Index;
-        const color = settings.Color;
-        const min = Math.round(settings.Range[0] * 65535);
-        const max = Math.round(settings.Range[1] * 65535);
-        list.push(index + '|' + min + ':' + max + '$' + color);
-      }
-      return list;
-    }, []);
-    const channelPath = channelList.join(',');
-
-    const getOmeroTile = function(level, x, y) {
-      const api = image.Path + '?c=' + channelPath;
-      const lod = (image.MaxLevel - level);
-      const pos = lod + ',' + x + ',' + y + ',';
-      const trash = '&m=c&z=1&t=1&format=jpeg&tile=';
-      const url = api + trash + pos + image.TileSize.join(','); 
-      return url; 
-    };
-
-    return getOmeroTile; 
-  }
-  // Default function is returned
-  else {
-    return getJpegTile; 
-  }
 };
 
 // Get index of name in a list of names

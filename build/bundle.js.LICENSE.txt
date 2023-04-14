@@ -84,12 +84,12 @@
  * SOFTWARE.
  */
 
-//! Built on 2020-03-05
+//! Built on 2022-12-16
 
-//! Git commit: v2.4.2-0-c450749
+//! Git commit: v4.0.0-0-8e6196a
 
 //! License: http://openseadragon.github.io/license/
 
 //! http://openseadragon.github.io
 
-//! openseadragon 2.4.2
+//! openseadragon 4.0.0

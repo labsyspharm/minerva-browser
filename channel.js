@@ -1,24 +1,8 @@
 
-const is_tile_source = (tile, state) => {
-  const { layers } = state; 
-  const found = layers.find(sub => {
-    return sub.Name === tile.name;
-  });
-  return found !== undefined;
-}
-
-/*
-const is_active_tile_source = (tile, state) => {
-  return [
-    is_tile_source(tile, state),
-    state.channel_map.has(tile.name)
-  ].every(x => x);
-}
-*/
-
 const is_tile_target = (tile) => {
   const regex = /^data:image\/png;/;
-  return tile.url.match(regex) !== null;
+  const url = tile.getUrl()
+  return url.match(regex) !== null;
 }
 
 const to_target_key = (tile) => {
@@ -26,64 +10,10 @@ const to_target_key = (tile) => {
   return `${level}-${x}-${y}`;
 }
 
-const toChannelMap = (layers) => {
-  const channel_map = layers.filter((group) => {
-    return group.Colors.length === 1;
-  }).reduce((o, {Colors, Name}) => {
-    const color = hex2gl(Colors[0]);
-    o.set(Name, { color });
-    return o;
-  }, new Map());
-  return channel_map;
-}
-
-class State {
-
-  constructor(opts) {
-//    this.channel_map = toChannelMap(opts.layers);
-    this.channel_map = toChannelMap(opts.active_subgroups);
-    this.active_subgroups = opts.active_subgroups;
-    this.layers = opts.layers;
-    this.callbacks = new Map();
-    this.sources = new Map();
-    this.tiles = new Map();
-    this.settings = {};
-  }
-
-  trackSource(tile) {
-    const tk = to_target_key(tile);
-    const _sources = this.sources.get(tk);
-    const sources = _sources || new Set;
-    const idx = this.layers.map(l => l.Name).indexOf(tile.name);
-    sources.add({
-      x: tile.x,
-      y: tile.y,
-      name: tile.name,
-      data: tile._image 
-    });
-    this.sources.set(tk, sources);
-  }
-
-  getSources (tile) {
-    const tk = to_target_key(tile);
-    if (!this.sources.has(tk)) return new Set;
-    return this.sources.get(tk);
-  }
-
-  getCallbacks (tile) {
-    const tk = to_target_key(tile);
-    if (!this.callbacks.has(tk)) return null;
-    return this.callbacks.get(tk);
-  }
-
-  update (active_subgroups) {
-    const { tiles } = this;
-    this.channel_map = toChannelMap(active_subgroups);
-    this.active_subgroups = active_subgroups;
-    [...tiles.values()].forEach((tile) => {
-      delete tile._cached; 
-    });
-  }
+const split_url = (full_url) => {
+  const parts = full_url.split('/');
+  if (parts.length < 2) return null;
+  return parts.slice(-2).pop();
 }
 
 const to_tile_frame = (e) => {
@@ -96,8 +26,7 @@ const to_tile_frame = (e) => {
 }
 
 const draw_tile = (props, output, via) => {
-  const { rendered, frame } = props;
-//  const { w, h } = frame;
+  const { rendered } = props;
   const gl_w = via.width;
   const gl_h = via.height;
   const w = props.data.width;
@@ -106,8 +35,11 @@ const draw_tile = (props, output, via) => {
 }
 
 const render_tile = (props, uniforms, via) => {
+  if (props === null) {
+    return via.gl.canvas;
+  }
   const { gl } = via;
-  const { frame, data, colors } = props;
+  const { data } = props;
   const {
     u_shape, u_t0_color, u_t1_color,
     u_t2_color, u_t3_color, u_t4_color,
@@ -118,14 +50,14 @@ const render_tile = (props, uniforms, via) => {
   const tile_shape_2fv = new Float32Array([w, h]);
   const black = hex2gl("000000");
   gl.uniform2fv(u_shape, tile_shape_2fv);
-  gl.uniform3fv(u_t0_color, colors[0] || black);
-  gl.uniform3fv(u_t1_color, colors[1] || black);
-  gl.uniform3fv(u_t2_color, colors[2] || black);
-  gl.uniform3fv(u_t3_color, colors[3] || black);
-  gl.uniform3fv(u_t4_color, colors[4] || black);
-  gl.uniform3fv(u_t5_color, colors[5] || black);
-  gl.uniform3fv(u_t6_color, colors[6] || black);
-  gl.uniform3fv(u_t7_color, colors[7] || black);
+  gl.uniform3fv(u_t0_color, data.colors[0] || black);
+  gl.uniform3fv(u_t1_color, data.colors[1] || black);
+  gl.uniform3fv(u_t2_color, data.colors[2] || black);
+  gl.uniform3fv(u_t3_color, data.colors[3] || black);
+  gl.uniform3fv(u_t4_color, data.colors[4] || black);
+  gl.uniform3fv(u_t5_color, data.colors[5] || black);
+  gl.uniform3fv(u_t6_color, data.colors[6] || black);
+  gl.uniform3fv(u_t7_color, data.colors[7] || black);
 
   // Send the tile channels to the texture
   [0,1,2,3,4,5,6,7].forEach((i) => {
@@ -136,84 +68,19 @@ const render_tile = (props, uniforms, via) => {
               gl.RGB_INTEGER, gl.UNSIGNED_BYTE, from.data);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   });
-  draw_tile(props, gl.canvas, via);
+  return gl.canvas;
 }
 
-const to_tile_props = (closure, shown, d, e) => {
-  const { state } = closure;
+const to_tile_props = (shown) => {
+  if (shown.channels.length < 1) return null;
+  if (shown.colors.length < 1) return null;
   const data = {
-    channels: shown,
-    width: shown[0].data.width,
-    height: shown[0].data.height
+    colors: shown.colors,
+    channels: shown.channels,
+    width: shown.channels[0].data.width,
+    height: shown.channels[0].data.height
   }
-  const colors = shown.map(show => {
-    return state.channel_map.get(show.name).color;
-  });
-  const context = d._getContext(false)
-  const rendered = e.rendered;
-  const frame = to_tile_frame(e);
-
-  return {
-    rendered, context, frame, data, colors 
-  }
-}
-
-const to_render_target = (closure, shown) => {
-  const { via, state, uniforms } = closure;
-  return (d, e) => {
-    const props = to_tile_props(closure, shown, d, e);
-    if (props) render_tile(props, uniforms, via);
-  }
-}
-
-const copy_sources = (closure, e) => {
-  const { state, viewer } = closure;
-  const is_t = is_tile_target(e.tile);
-  const sources = state.getSources(e.tile);
-  const source_count = state.active_subgroups.length;
-  const all_sources = sources.size === source_count;
-  const d = viewer.drawer;
-  if (!sources.size) return;
-  // Redraw the target with correct info
-  const source_map = [...sources].reduce((o, source) => {
-    o.set(source.name, source);
-    return o;
-  }, new Map);
-  const shown = state.active_subgroups.filter((sub) => {
-    if (!state.channel_map.has(sub.Name)) return false;
-    if (!source_map.has(sub.Name)) return false;
-    return true;
-  }).map(sub => source_map.get(sub.Name));
-  if (!shown.length) return;
-  to_render_target(closure, shown)(d, e);
-}
-
-const to_tile_drawing = (closure) => {
-  const { 
-    via, state, uniforms, viewer
-  } = closure;
-  return (e) => {
-    const is_target = is_tile_target(e.tile);
-    const is_source = is_tile_source(e.tile, state);
-    const missing = ![ is_source, is_target ].some(x => x);
-    // Unable to colorize this layer
-    if (missing) return; 
-    if (e.tile._cached) return;
-
-    console.log('HI');
-
-    // Clear any rendered tile
-    const w = e.rendered.canvas.width;
-    const h = e.rendered.canvas.height;
-    e.rendered.fillStyle = "black";
-    e.rendered.fillRect(0, 0, w, h);
-
-    // Copy all sources to target
-    if (is_target) {
-      copy_sources(closure, e);
-      e.tile._cached = true;
-    }
-  }
+  return { data };
 }
 
 const shaders = {
@@ -365,10 +232,12 @@ const toBuffers = (program, via) => {
   })
 }
 
-const update_shape = (gl, { width, height }) => {
-  gl.canvas.width = width;
-  gl.canvas.height = height;
-  gl.viewport(0, 0, width, height);
+const update_shape = (gl, tileShape) => {
+  const w = tileShape.tileWidth;
+  const h = tileShape.tileHeight;
+  gl.canvas.width = w;
+  gl.canvas.height = h;
+  gl.viewport(0, 0, w, h);
 }
 
 const initialize_gl = (tileShape) => {
@@ -381,7 +250,7 @@ const initialize_gl = (tileShape) => {
     gl, ...to_vertices(), buffer: gl.createBuffer(),
     textures: [0,1,2,3,4,5,6,7].map(() => gl.createTexture())
   });
-  const via = { ...tileShape, gl };
+  const via = { gl };
   return { program, via };
 }
 
@@ -397,25 +266,101 @@ const toTileShape = (tileSources) => {
   const tileSourceVals = [...Object.values(tileSources)];
   return tileSourceVals.reduce((o, tiledImages) => {
     const shapes = tiledImages.map(({source}) => {
-      const width = source.getTileWidth();
-      const height = source.getTileHeight();
-      return { width, height };
+      const tileWidth = source.getTileWidth();
+      const tileHeight = source.getTileHeight();
+      return { tileWidth, tileHeight };
     });
     return shapes.pop() || o;
-  }, {width: 1024, height: 1024 });
+  }, {tileWidth: 1024, tileHeight: 1024 });
 }
 
-const linkShaders = (props) => {
-  const { viewer, active_subgroups, tileSources } = props;
-  // Take the nominal tilesize from arbitrary tile source
-  const layers = props.layers.filter(sub => {
-    return sub.Colorize === true;
+const to_shown = (state, key) => {
+  const sources = state.getSources(key);
+  console.log(key, sources, 'target');
+  const source_map = [...sources].reduce((o, source) => {
+    o.set(source.subfolder, source);
+    return o;
+  }, new Map);
+  const subgroups = state.active_subgroups.filter((sub) => {
+    if (!state.channel_map.has(sub.Path)) return false;
+    if (!source_map.has(sub.Path)) return false;
+    return true;
   });
+  const colors = subgroups.map(sub => {
+    return state.channel_map.get(sub.Path).color;
+  });
+  const channels = subgroups.map(sub => {
+    return source_map.get(sub.Path);
+  });
+  return { channels, colors };
+}
 
-  const state = new State({ active_subgroups, layers });
+const customizeTileSource = (HS, tileSource) => {
+  const { tileWidth, tileHeight } = tileSource;
+  const tileShape = { tileWidth, tileHeight };
+  const closure = to_closure(HS.gl_state, tileShape);
+  return {
+    ...tileSource,
+    createTileCache: function(cache, out) {
+        //data is webgl canvas
+        cache._out = out;
+    },
+    destroyTileCache: function(cache) {
+        cache._out = null;
+    },
+    getTileCacheData: function(cache) {
+        return cache._out;
+    },
+    getTileCacheDataAsImage: function() {
+        throw "Image-based drawing unsupported";
+    },
+    downloadTileStart: function(imageJob) {
+      const parts = imageJob.src.split('/');
+      const is_target = parts.length <= 1;
+      const key = parts.pop();
+      if (is_target) {
+        setTimeout(() => {
+          const shown = to_shown(HS.gl_state, key || '');
+          const { via, uniforms } = closure;
+          const props = to_tile_props(shown);
+          const out = render_tile(props, uniforms, via)
+          imageJob.finish(out);
+        }, 1000);
+        return;
+      }
+      const image = new Image();
+      image.src = imageJob.src;
+      image.onload = () => {
+        const { via } = closure;
+        console.log(key, 'source');
+        HS.gl_state.trackSource(key, {
+          full_url: imageJob.src, data: image 
+        });
+        imageJob.finish(via.gl.canvas);
+      }
+      imageJob.userData.image = image;
+    },
+    downloadTileAbort: function(imageJob) {
+      const image = imageJob.userData.image;
+      image.onload = image.onerror = image.onabort = null;
+    },
+    getTileCacheDataAsContext2D: function(cache) {
+        const out = cache._out;
+        // Create 2D canvas context
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext('2d');
+        canvas.height = out.height;
+        canvas.width = out.width;
+        const h = out.height;
+        const w = out.width;
+        // Draw cached webgl2 context to 2d context
+        ctx.drawImage( out, 0, 0, w, h, 0, 0, w, h);
+        return ctx;
+    }
+  }
+}
 
-  // Initialize WebGL
-  const { program, via } = initialize_gl(toTileShape(tileSources))
+const to_uniforms = (via, program) => {
   const u_shape = via.gl.getUniformLocation(program, "u_shape");
   const u_t0_color = via.gl.getUniformLocation(program, "u_t0_color");
   const u_t1_color = via.gl.getUniformLocation(program, "u_t1_color");
@@ -425,23 +370,46 @@ const linkShaders = (props) => {
   const u_t5_color = via.gl.getUniformLocation(program, "u_t5_color");
   const u_t6_color = via.gl.getUniformLocation(program, "u_t6_color");
   const u_t7_color = via.gl.getUniformLocation(program, "u_t7_color");
-  const uniforms = {
+  return {
     u_shape, u_t0_color, u_t1_color,
     u_t2_color, u_t3_color, u_t4_color,
     u_t5_color, u_t6_color, u_t7_color
   };
-  viewer.addHandler('tile-drawing', to_tile_drawing({
-    via, viewer, state, uniforms
-  }));
+}
+
+const to_closure = (state, tileShape) => {
+  const { program, via } = initialize_gl(tileShape);
+  const uniforms = to_uniforms(via, program);
+  return { state, via, uniforms };
+}
+
+const linkShaders = (props) => {
+  return { updater: () => null }; // TODO TODO
+
+  //TODO
+  const layers = props.layers.filter(sub => {
+    return sub.Colorize === true;
+  });
+  const { viewer, active_subgroups, tileSources } = props;
+  const state = new State({ active_subgroups, layers });
+  const tileShape = toTileShape(tileSources);
+
+  // TODO
+  const closure = to_closure(state, tileShape);
+  
+  viewer.addHandler('tile-unloaded', (e) => {
+    console.log(e.tile.level, e.tile.x, e.tile.y)
+  });
   viewer.addHandler('tile-loaded', (e) => {
     const { getCompletionCallback } = e;
-    const { image, tiledImage, tile } = e;
+    const { data, tiledImage, tile } = e;
     const { name, colorize } = tiledImage.source;
-    state.tiles.set(tile.url, tile);
+    const url = tile.getUrl();
+    state.tiles.set(url, tile);
     tile.colorize = colorize;
     tile.name = name;
-    tile._image = image;
-    if (image === null) {
+    tile._data = data;
+    if (data === null) {
       return;
     }
     const tk = to_target_key(tile);
@@ -451,10 +419,12 @@ const linkShaders = (props) => {
         return getCompletionCallback();
       });
       state.callbacks.set(tk, callbacks);
-  }
+    }
     else if (is_tile_source(tile, state)) {
       const callbacks = state.callbacks.get(tk) || [];
-      state.trackSource(tile);
+      state.trackSource(tk, {
+        full_url: url, data: tile._data 
+      });
       const cb = callbacks.pop();
       if (cb !== undefined) cb();
       const cbl = callbacks.length;
@@ -475,4 +445,4 @@ const linkShaders = (props) => {
   return { updater }
 }
 
-export { linkShaders }
+export { linkShaders, customizeTileSource }

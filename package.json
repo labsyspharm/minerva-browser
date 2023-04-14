@@ -10,7 +10,7 @@
     "js-yaml": "^3.14.0",
     "lensing": "github:thejohnhoffer/lensing#64dfc0961f084de55d12b2620950cde1b7311e5c",
     "lz-string": "^1.4.4",
-    "openseadragon": "^2.4.2",
+    "openseadragon": "^4.0.0",
     "popper.js": "1.16.0",
     "process": "^0.11.10",
     "sha1": "^1.1.1",

@@ -129,7 +129,9 @@ export class OsdLensingContext {
             opacity: [0, 1][+HS.isLensName(layer.Name).active],
             tileWidth: image.TileSize.slice(0,1).pop(),
             tileHeight: image.TileSize.slice(0,2).pop(),
-            getTileUrl: getGetTileUrl(image, layer) 
+            getTileUrl: getGetTileUrl(
+              image.Path, layer.Path, image.MaxLevel, layer.Format
+            )
           },
           width: image.Width / image.Height,
           success: (data) => {

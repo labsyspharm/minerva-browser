@@ -1,7 +1,5 @@
 import * as lensing from 'lensing';
 import * as OSD from "openseadragon";
-import { newMarkers } from "./osd"
-import { linkShaders } from "./channel"
 import { getGetTileUrl } from "./state"
 import LensingFilters from './osdLensingFilters';
 
@@ -71,15 +69,6 @@ export class OsdLensingContext {
         this.initializeChannels((viewer) => {
           const { all_subgroups } = this.hashstate;
           const { lens_subgroups } = this.hashstate;
-          /*
-          const { updater } = linkShaders({
-            viewer, subgroups: all_subgroups,
-            active_subgroups: lens_subgroups,
-            tileSources: this.tileSources,
-            isRendered: isRendered 
-          });
-          this.hashstate.addColorListener('lens', updater);
-          */
           this.lensing.recenter();
         });
     }
@@ -162,7 +151,6 @@ export class OsdLensingContext {
       this.activateViewport();
       const lens = HS.lensing || {};
       const active_masks = []; // TODO: mask support
-      newMarkers(this.tileSources, HS.isLensPath.bind(HS));
       updateLensing(lensing, HS);
     }
 }

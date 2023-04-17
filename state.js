@@ -2,6 +2,7 @@ import { encode } from './render'
 import { decode } from './render'
 import { unpackGrid } from './render'
 import { remove_undefined } from './render'
+import { GLState } from './channel'
 
 import LZString from "lz-string"
 const yaml = require('js-yaml');
@@ -171,12 +172,14 @@ const anon_authenticate = function(username, pass) {
   })
 }
 
-const to_subgroups = (subpath_map, group, all) => {
+const to_subgroups = (subpath_map, rendered_map, group, all) => {
+  const used = new Set();
   const shown = group.Shown;
   const n_color = group.Colors.length;
   const channels = group.Channels.slice(0, n_color);
   const zipped = channels.reduce((o, Name, idx) => {
     o.set(Name, {
+      Index: idx,
       Colors: [ group.Colors[idx] ],
       Description: (group.Descriptions || [])[idx] || ''
     });
@@ -188,15 +191,25 @@ const to_subgroups = (subpath_map, group, all) => {
       if (!all && !shown[i]) return false;
       if (!subpath_map.has(n)) return false;
       return true;
-    }).map((Name) => {
+    }).reduce((out, Name) => {
+      // Disallow duplicate subpaths
       const Path = subpath_map.get(Name);
-      const { Colors, Description } = zipped.get(Name);
-      return { Name, Path, Colors, Description };
-    });
+      if (used.has(Path)) return out; 
+      used.add(Path);
+      const Colorize = !rendered_map.get(Name);
+      const { Index, Colors, Description } = zipped.get(Name);
+      return [...out, {
+        Index, Name, Path, Colors,
+        Colorize, Description
+      }];
+    }, []);
   }
   // Return group subpath
-  const { Name, Path, Colors } = group;
-  return [{ Name, Path, Colors, Description: '' }];
+  const { Index, Name, Path, Colors } = group;
+  return [{
+    Index, Name, Path, Colors,
+    Colorize: false, Description: ''
+  }];
 }
 
 const is_active = ({ masks, subgroups, key, match }) => {
@@ -222,80 +235,11 @@ const can_mutate_group = (old, group) => {
 }
 
 const add_visibility = (cgs) => {
-  return cgs.map(group => {
+  return cgs.map((group, idx) => {
     group.Shown = group.Channels.map(() => true);
+    group.Index = idx;
     return group;
   });
-}
-
-const hex2gl = (hex) => {
-  const val = parseInt(hex.replace('#',''), 16);
-  const bytes = [16, 8, 0].map(shift => {
-    return ((val >> shift) & 255) / 255;
-  });
-  return new Float32Array(bytes);
-}
-
-const split_url = (full_url) => {
-  const parts = full_url.split('/');
-  if (parts.length < 2) return null;
-  return parts.slice(-2)[0];
-}
-
-const toChannelMap = (layers) => {
-  const channel_map = layers.filter((group) => {
-    return group.Colors.length === 1;
-  }).reduce((o, {Colors, Path}) => {
-    const color = hex2gl(Colors[0]);
-    o.set(Path, { color });
-    return o;
-  }, new Map());
-  return channel_map;
-}
-
-class GLState {
-
-  constructor(HS) {
-    this.callbacks = new Map();
-    this.sources = new Map();
-    this.tiles = new Map();
-    this.settings = {};
-    this.HS = HS;
-  }
-
-  get active_subgroups() {
-    return this.HS.active_subgroups
-  }
-
-  get channel_map() {
-    return toChannelMap(this.HS.active_subgroups);
-  }
-
-  get layers() {
-    return this.HS.layers;
-  }
-
-  trackSource(key, {full_url, data }) {
-    const _sources = this.sources.get(key);
-    const sources = _sources || new Set;
-    const subfolder = split_url(full_url);
-    sources.add({ subfolder, data });
-    this.sources.set(key, sources);
-  }
-
-  getSources (tk) {
-    if (!this.sources.has(tk)) return new Set;
-    return this.sources.get(tk);
-  }
-
-  update (active_subgroups) {
-    const { tiles } = this;
-    this.channel_map = toChannelMap(active_subgroups);
-    this.active_subgroups = active_subgroups;
-    [...tiles.values()].forEach((tile) => {
-      //TODO: unload cache?
-    });
-  }
 }
 
 /*
@@ -943,19 +887,12 @@ HashState.prototype = {
 
   // Get openseadragon subgroup layers
   get subgroup_layers () {
-    const used = new Set();
     const { all_subgroups, subpath_map } = this;
     const colorize = this.allowSingleChannels;
-    return all_subgroups.reduce((out, subgroup, i) => {
-      // Disallow duplicate subpaths
-      const path = subpath_map.get(subgroup.Name);
-      if (used.has(path)) return out; 
-      used.add(path);
+    return all_subgroups.map((subgroup, i) => {
       const g = { ...subgroup };
-      g['Colorize'] = !this.isRendered(subgroup.Name);
       g['Format'] = g['Format'] || 'jpg';
-      g['Blend'] = 'lighter';
-      return [...out, g];
+      return g;
     }, []);
   },
 
@@ -965,7 +902,6 @@ HashState.prototype = {
     const mask_layers = this.masks.map(mask => {
       const m = { ...mask };
       m['Format'] = m['Format'] || 'png';
-      m['Blend'] = 'source-over';
       m['Colorize'] = false;
       return m;
     });
@@ -974,7 +910,7 @@ HashState.prototype = {
 
   // Get the subgroups of all possible layers
   get all_subgroups() {
-    const { subpath_map } = this;
+    const { subpath_map, rendered_map } = this;
     const inactive = this.cgs.filter(({Name}) => {
       return Name !== this.group.Name;
     });
@@ -982,7 +918,7 @@ HashState.prototype = {
     const groups = [this.group, ...inactive];
     // Find all unqiue subgroups among groups
     return [...groups.reduce((o, group) => {
-      const subgroups = to_subgroups(subpath_map, group, true);
+      const subgroups = to_subgroups(subpath_map, rendered_map, group, true);
       return subgroups.reduce((o, subgroup) => {
         if (o.has(subgroup.Name)) return o;
         o.set(subgroup.Name, subgroup);
@@ -993,14 +929,16 @@ HashState.prototype = {
 
   // Get the subgroups of the current layer
   get active_subgroups() {
-    return to_subgroups(this.subpath_map, this.group, false);
+    const { subpath_map, rendered_map, group } = this;
+    return to_subgroups(subpath_map, rendered_map, group, false);
   },
   
   // Get the subgroups of current lens
   get lens_subgroups() {
+    const { subpath_map, rendered_map, lens_group } = this;
     const group = this.lens_group;
     if (group === null) return [];
-    return to_subgroups(this.subpath_map, group, false);
+    return to_subgroups(subpath_map, rendered_map, lens_group, false);
   },
 
   // Get the colors of the current lens's channels
@@ -1129,9 +1067,13 @@ HashState.prototype = {
     };
   },
 
+  get rendered_map() {
+    return this.design.is_rendered_map;
+  },
+
   isRendered(name) {
-    if (this.design.is_rendered_map.has(name)) {
-      return this.design.is_rendered_map.get(name);
+    if (this.rendered_map.has(name)) {
+      return this.rendered_map.get(name);
     }
     return false;
   },
@@ -1478,23 +1420,6 @@ HashState.prototype = {
     return wid_yaml.replace('- - - ', '    - ');
   },
 
-  isVisibleLayer(match) {
-    const key = 'Path';
-    const masks = this.active_masks;
-    const subgroups = this.active_subgroups;
-    const activity = is_active({ masks, subgroups, key, match });
-    const inactive = { active: false, mask_index: -1, group_index: -1 };
-    if (activity.active) {
-      const ok = !!this.layers.find(layer => {
-        if (layer.Colorize === true) return false;
-        if (layer.Path !== match) return false;
-        return true;
-      });
-      if (ok) return activity;
-    }
-    return inactive;
-  },
-
   isActiveGroupName(match) {
     const key = 'Name';
     const masks = this.active_masks;
@@ -1523,8 +1448,8 @@ HashState.prototype = {
   dispatchColorEvent() {
     const fns = this.state.colorListeners.entries();
     [...fns].forEach(([key, fn]) => {
-      if (key === 'lens') fn(this.lens_subgroups);
-      else fn(this.active_subgroups);
+      if (key === 'lens') fn();
+      else fn();
     });
   }
 };

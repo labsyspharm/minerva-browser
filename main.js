@@ -62,7 +62,6 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
             crossOriginPolicy: 'anonymous',
             ajaxHeaders: ajaxHeaders,
             tileSource: customizeTileSource(hashstate, {
-              colorize: layer.Colorize,
               height: image.Height,
               width:  image.Width,
               name: layer.Name,

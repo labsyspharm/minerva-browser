@@ -3399,8 +3399,22 @@ const build_page_with_exhibit = function(exhibit, options) {
   const grid = hashstate.grid;
   const grid_shape = to_grid_shape(grid);
 
+  const layers = hashstate.layers;
+  const max_max_cache_count = (([w=0, h=0]) => {
+    const rgba = 4;
+    const gb = 1024**3;
+    const max_memory_gb = 4; // GiB;
+    const t = Math.max(w*h, 256**2) * rgba;
+    return (max_memory_gb * 4*gb) / t;
+  })(grid[0][0].TileSize);
+  const ideal_cache_count = 50 * layers.length;
+  const maxImageCacheCount = Math.min(
+    max_max_cache_count, ideal_cache_count 
+  );
+
   // Initialize openseadragon
   const viewer = OpenSeadragon({
+    maxImageCacheCount,
     id: options.id + '-openseadragon',
     prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.3.1/images/',
     navigatorPosition: 'BOTTOM_RIGHT',

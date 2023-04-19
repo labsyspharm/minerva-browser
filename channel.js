@@ -66,11 +66,10 @@ const render_tile = (props, uniforms, tile, via) => {
   return gl.canvas;
 }
 
-const to_tile_props = (shown, HS, lens_scale, cache_gl) => {
+const to_tile_props = (shown, HS, lens_scale, lens_center, cache_gl) => {
   const { 
     tile_square, max_level, full_height
   } = cache_gl.shape_opts;
-  const lens_center = HS.gl_state.lens_center;
   if (shown.channels.length < 1) return null;
   if (shown.colors.length < 1) return null;
   if (shown.modes.length < 1) return null;
@@ -386,8 +385,7 @@ const to_shape_opts = (tileSource) => {
   };
 }
 
-const render_from_cache = (HS, lens_scale, channels, tile, cache_gl) => {
-  const lens_center = HS.gl_state.lens_center;
+const render_from_cache = (HS, lens_scale, lens_center, channels, tile, cache_gl) => {
   const lens_rad = HS.lensing?.Rad || 100;
   const { 
     tile_square, max_level, full_height
@@ -408,13 +406,13 @@ const render_from_cache = (HS, lens_scale, channels, tile, cache_gl) => {
   return render_tile({ data }, cache_gl.uniforms, tile, cache_gl.via);
 }
 
-const render_to_cache = (HS, lens_scale, key, tile, target, cache_gl) => {
+const render_to_cache = (HS, lens_scale, lens_center, key, tile, target, cache_gl) => {
   const shown = HS.gl_state.to_shown(key || '', target);
-  const props = to_tile_props(shown, HS, lens_scale, cache_gl);
+  const props = to_tile_props(shown, HS, lens_scale, lens_center, cache_gl);
   return render_tile(props, cache_gl.uniforms, tile, cache_gl.via);
 }
 
-const render_output = (HS, lens_scale, cache_2d, cache_gl, out, shape_opts) => {
+const render_output = (HS, lens_scale, lens_center, cache_2d, cache_gl, out) => {
 
   // Render the top layer
   const { key, tile } = out;
@@ -424,7 +422,7 @@ const render_output = (HS, lens_scale, cache_2d, cache_gl, out, shape_opts) => {
   // Render both layers from cache
   const rendered_layer = document.createElement("canvas");
   const rendered_ctx = rendered_layer.getContext('2d');
-  const done = render_from_cache(HS, lens_scale, channels, tile, cache_gl);
+  const done = render_from_cache(HS, lens_scale, lens_center, channels, tile, cache_gl);
 
   // Copy both layers to resulting context
   rendered_layer.height = done.height;
@@ -474,10 +472,11 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const cache_gl_1 = set_cache_gl(HS.gl_state, tile, shape_opts, 1);
       // Measure viewport scale
       const lens_scale = HS.gl_state.toLensScale(viewer);
+      const lens_center = HS.gl_state.toLensCenter(viewer);
       // Return the cached 2D canvas output
       if (hash === cache_2d?.hash) {
         // Render both layers from cache
-        return render_output(HS, lens_scale, cache_2d, cache_gl_0, out, shape_opts);
+        return render_output(HS, lens_scale, lens_center, cache_2d, cache_gl_0, out);
       }
       else if (cache_2d) {
         cache_2d.hash = hash;
@@ -488,7 +487,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const top_ctx = top_layer.getContext('2d');
 
       // Copy bottom layer to 2d context
-      const bottom_out = render_to_cache(HS, lens_scale, key, tile, 'base', cache_gl_1);
+      const bottom_out = render_to_cache(HS, lens_scale, lens_center, key, tile, 'base', cache_gl_1);
       const h = bottom_out.height;
       const w = bottom_out.width;
       bottom_layer.height = h;
@@ -496,7 +495,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       bottom_ctx.drawImage(bottom_out, 0, 0, w, h, 0, 0, w, h);
 
       // Copy top layer to 2d context
-      const top_out = render_to_cache(HS, lens_scale, key, tile, 'lens', cache_gl_1);
+      const top_out = render_to_cache(HS, lens_scale, lens_center, key, tile, 'lens', cache_gl_1);
       top_layer.height = h;
       top_layer.width = w;
       top_ctx.drawImage(top_out, 0, 0, w, h, 0, 0, w, h);
@@ -505,7 +504,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const new_cache_2d = { top_layer, bottom_layer, w, h, hash };
       HS.gl_state.set_cache_2D(key, new_cache_2d);
 
-      return render_output(HS, lens_scale, new_cache_2d, cache_gl_0, out, shape_opts);
+      return render_output(HS, lens_scale, lens_center, new_cache_2d, cache_gl_0, out);
     }
   }
 }
@@ -630,6 +629,19 @@ class GLState {
 
   setTargetImage(item) {
     this.target_image = item;
+  }
+
+  toLensCenter(viewer) {
+    const [x, y] = this.HS.lensCenter;
+    const center = ((vp) => {
+      const p = new OpenSeadragon.Point(x, y);
+      const point = vp.viewerElementToViewportCoordinates(p);
+      if (this.target_image === null) {
+        return vp.viewportToImageCoordinates(point);
+      }
+      return this.target_image.viewportToImageCoordinates(point);
+    })(viewer.viewport);
+    return new Float32Array([center.x, center.y]);
   }
 
   toLensScale(viewer) {
@@ -768,14 +780,6 @@ class GLState {
 
   getImageData(tk) {
     return this.image_data.get(tk) || new Map;
-  }
-
-  get lens_center() {
-    const center = this.HS.lensCenter;
-    if (center.length !== 2) {
-      return new Float32Array([-1, -1]);
-    }
-    return new Float32Array(center);
   }
 }
 

@@ -331,7 +331,6 @@ RenderOSD.prototype = {
     if(redraw) {
       // Update OpenSeadragon
       this.activateViewport();
-      HS.redrawLens();
       newMarkers(this.tileSources, HS.isVisibleLayer.bind(HS));
     }
     this.viewer.forceRedraw();

@@ -8,7 +8,6 @@
     "d3-svg-legend": "^2.25.6",
     "jquery": "3.5.1",
     "js-yaml": "^3.14.0",
-    "lensing": "github:thejohnhoffer/lensing#64dfc0961f084de55d12b2620950cde1b7311e5c",
     "lz-string": "^1.4.4",
     "openseadragon": "^4.0.0",
     "popper.js": "1.16.0",

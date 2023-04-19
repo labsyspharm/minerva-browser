@@ -2,7 +2,6 @@ import { encode } from './render'
 import { decode } from './render'
 import { unpackGrid } from './render'
 import { remove_undefined } from './render'
-import { createLens } from "./osdLensingContext.js"
 import { GLState } from './channel'
 
 import LZString from "lz-string"
@@ -266,11 +265,11 @@ export const HashState = function(exhibit, options) {
   this.noHome = options.noHome || false;
 
   this._gl_state = null;
-  this._lensing = null;
   this.state = {
     buffer: {
       waypoint: undefined
     },
+    eventPoint: [0, 0],
     colorListeners: new Map(),
     activeChannel: -1,
     drawType: "lasso",
@@ -295,28 +294,87 @@ export const HashState = function(exhibit, options) {
   this.newExhibit();
   this._gl_state = new GLState(this)
 };
+ 
+const to_container = (nav_gap) => {
+   const container = document.createElement('div');
+   container.setAttribute('class', `overlay_container`);
+   container.setAttribute('style', `
+     display: grid;
+     position: absolute;
+     grid-template-columns: ${nav_gap}px auto ${nav_gap}px;
+     grid-template-rows: ${nav_gap}px auto ${nav_gap}px;
+     justify-content: center;
+     align-content: center;
+   `);
+  const padding = document.createElement('div');
+  padding.setAttribute('style', `
+    grid-column: 2; grid-row: 2;
+    justify-content: center;
+    align-content: center;
+    display: grid;
+  `);
+  container.append(padding);
+  return { container, padding };
+}
+
+const to_pad = (rad, nav_gap) => {
+  return Math.ceil(2*rad - 2*nav_gap);
+}
+
+const to_chord = (rad, pad) => {
+  const solution = 2*rad - Math.sqrt(4*rad**2 - pad**2);
+  return Math.ceil(pad - solution / 2);
+}
+
+const update_container = ({ container, padding, nav_gap, rad, x, y }) => {
+  const pad = to_pad(rad, nav_gap);
+  const chord = to_chord(rad, pad);
+  const css_x = Math.round(x - rad) + 'px';
+  const css_y = Math.round(y - rad) + 'px';
+  padding.style.border = "3px solid red";
+  container.style.height = 2*rad + 'px';
+  container.style.width = 2*rad + 'px';
+  padding.style.height = chord + 'px';
+  padding.style.width = pad + 'px';
+  container.style.left = css_x;
+  container.style.top = css_y;
+}
 
 HashState.prototype = {
 
-
   createLens (viewer) {
-    this._lensing = createLens(viewer, this);
-    viewer.addHandler('canvas-drag', (e) => {
-      e.eventSource.forceRedraw();
+    const nav_gap = 40;
+    const rad = this.lensing?.Rad || 100;
+    const { 
+      container, padding
+    }= to_container(nav_gap);
+    const vp = viewer.viewport;
+    const first_point = vp.viewportToViewerElementCoordinates(
+      vp.getCenter(true)
+    );
+    const first_center = [first_point.x, first_point.y];
+    console.log(first_center);
+    this.lensCenter = first_center;
+    const [x, y] = first_center;
+    update_container({ container, padding, nav_gap, rad, x, y});
+    container.addEventListener('mousemove', (e) => {
+      if (e.buttons !== 0) {
+        const [x, y] = [Math.round(e.x), Math.round(e.y)];
+        update_container({ container, padding, nav_gap, rad, x, y});
+        this.lensCenter = [x, y];
+        viewer.forceRedraw();
+      }
     });
-  },
-
-  redrawLens () {
-    this._lensing?.newViewRedraw();
+    const { parentElement } = viewer.element;
+    parentElement.append(container);
   },
 
   get lensCenter () {
-    const { _lensing } = this;
-    if (!_lensing) return [];
-    const { lensing } = _lensing;
-    if (!lensing) return [];
-    const { positionData } = lensing;
-    return positionData?.posFull || [];
+    return this.state.eventPoint;
+  },
+
+  set lensCenter (xy) {
+    this.state.eventPoint = xy;
   },
 
   /*

@@ -308,13 +308,13 @@ const parseImageJob = (imageJob) => {
   return { full_url, key, tile };
 }
 
-const customTileCache = (HS) => {
+const customTileCache = (HS, is_source) => {
   return {
     createTileCache: function(cache_gl, out) {
       cache_gl._out = out;
     },
     destroyTileCache: function(cache_gl) {
-      if (cache_gl._out.subpath !== "") {
+      if (is_source) {
         const { key, subpath } = cache_gl._out;
         HS.gl_state.untrackImageData(key, subpath);
       }
@@ -331,42 +331,9 @@ const customTileCache = (HS) => {
 
 const toTileTarget = (HS, tileSource) => {
   const caches_2d = HS.gl_state.caches_2d;
-  const caches_gl = HS.gl_state.caches_gl;
-  const image_waiters = HS.gl_state.image_waiters;
-  const set_image_waiter = (defer, key) => {
-    const unset = (path) => {
-      defer.callbacks.delete(path);
-    }
-    const image_data = HS.gl_state.getImageData(key || '');
-    HS.gl_state.active_sources.forEach((source) => {
-      // Check if image data exists
-      if (image_data.has(source.Path)) return;
-      if (defer.callbacks.has(source.Path)) return;
-      defer.promises.push(new Promise((resolve, reject) => {
-        const timeout_sec = 15; // Timeout per Image File
-        setTimeout(() => resolve(false), timeout_sec*1000);
-        if (image_data)
-        // Load image data
-        defer.callbacks.set(source.Path, {
-          resolve: (success) => {
-            unset(source.Path);
-            resolve(success);
-          },
-          reject: () => {
-            unset(source.Path);
-            reject();
-          }
-        });
-      }));
-    }, defer);
-    image_waiters.set(key, defer);
-  }
-  const set_cache_2D = (key, v) => {
-    caches_2d.set(key, v);
-  }
-  const get_cache_2D = (key) => {
-    if (caches_2d.has(key)) return caches_2d.get(key);
-    return null;
+  const set_image_callbacks = (key) => {
+    const callbacks = HS.gl_state.get_image_callbacks(key);
+    return HS.gl_state.update_active_callbacks(callbacks, key);
   }
   const render_to_cache = (key, cache_gl) => {
     const shown = to_shown(HS.gl_state, key || '');
@@ -376,14 +343,13 @@ const toTileTarget = (HS, tileSource) => {
   }
   return {
     ...tileSource,
-    ...customTileCache(HS),
+    ...customTileCache(HS, false),
     downloadTileStart: function(imageJob) {
       const { full_url, key, tile } = parseImageJob(imageJob);
-      const defer = HS.gl_state.make_image_waiter(key);
       set_cache_gl(HS.gl_state, tile);
-      set_image_waiter(defer, key);
+      const promises = set_image_callbacks(key);
       // Wait for all source images to resolve 
-      const promise = Promise.all(defer.promises).then((results) => {
+      const promise = Promise.all(promises).then((results) => {
         const all_failed = results.every(x => !x);
         const msg = "All sources failed for tile.";
         if (all_failed) imageJob.finish(null, null, msg);
@@ -392,7 +358,7 @@ const toTileTarget = (HS, tileSource) => {
         imageJob.finish(null);
       });
       promise.controller = {
-        abort: () => null
+        abort: () => promise.reject()
       };
       imageJob.userData.promise = promise;
       return;
@@ -402,7 +368,7 @@ const toTileTarget = (HS, tileSource) => {
     },
     getTileCacheDataAsContext2D: function(cache) {
       const out = cache._out;
-      const cache_2d = get_cache_2D(out.key);
+      const cache_2d = HS.gl_state.get_cache_2D(out.key);
       const hash = HS.gl_state.active_hash(out.key);
       // Return the cached 2D canvas output
       if (hash === cache_2d?.hash) {
@@ -422,17 +388,15 @@ const toTileTarget = (HS, tileSource) => {
       canvas.width = w;
       // Copy webgl2 context to 2d context
       ctx.drawImage(out.canvas, 0, 0, w, h, 0, 0, w, h);
-      set_cache_2D(out.key, { ctx, hash });
+      HS.gl_state.set_cache_2D(out.key, { ctx, hash });
       return ctx;
     }
   }
 }
 
 const toTileSource = (HS, tileSource) => {
-  const caches_2d = HS.gl_state.caches_2d;
-  const caches_gl = HS.gl_state.caches_gl;
-  const to_image_waiter = (key, path) => {
-    const { callbacks } = HS.gl_state.make_image_waiter(key);
+  const to_image_callbacks = (key, path) => {
+    const callbacks = HS.gl_state.get_image_callbacks(key);
     if (!callbacks.has(path)) {
       return null; 
     };
@@ -440,13 +404,13 @@ const toTileSource = (HS, tileSource) => {
   }
   return {
     ...tileSource,
-    ...customTileCache(HS),
+    ...customTileCache(HS, true),
     downloadTileStart: function(imageJob) {
       const { full_url, key, tile } = parseImageJob(imageJob);
       const subpath = split_url(full_url);
       set_cache_gl(HS.gl_state, tile);
       const resolver = (success) => {
-        const waiter = to_image_waiter(key, subpath);
+        const waiter = to_image_callbacks(key, subpath);
         if (waiter !== null) waiter.resolve(success);
         imageJob.finish({ tile, key, subpath });
       }
@@ -531,15 +495,58 @@ class GLState {
     this.caches_2d = new Map();
     this.caches_gl = new Map();
     this.image_data = new Map();
-    this.image_waiters = new Map();
+    this.file_callbacks = new Map();
     this.settings = {};
     this.HS = HS;
   }
 
-  make_image_waiter(key) {
-    return this.image_waiters.get(key) || {
-      promises: [], callbacks: new Map
-    };
+  set_cache_2D(key, v) {
+    this.caches_2d.set(key, v);
+  }
+
+  get_cache_2D(key) {
+    if (!this.caches_2d.has(key)) return null;
+    return this.caches_2d.get(key);
+  }
+
+  get_image_callbacks(key) {
+    return this.file_callbacks.get(key) || new Map;
+  }
+
+  update_callbacks(sources, callbacks, key) {
+    const unset = (path) => {
+      callbacks.delete(path);
+    }
+    const image_data = this.getImageData(key || '');
+    const defer = sources.reduce((defer, source) => {
+      // Check if image data exists
+      if (image_data.has(source.Path)) return defer;
+      if (defer.callbacks.has(source.Path)) return defer;
+      defer.promises.push(new Promise((resolve, reject) => {
+        const timeout_sec = 15; // Timeout per Image File
+        setTimeout(() => resolve(false), timeout_sec*1000);
+        // Load image data
+        defer.callbacks.set(source.Path, {
+          resolve: (success) => {
+            unset(source.Path);
+            resolve(success);
+          },
+          reject: () => {
+            unset(source.Path);
+            reject();
+          }
+        });
+      }));
+      return defer;
+    }, { callbacks, promises: [] });
+    const file_callbacks = this.file_callbacks;
+    file_callbacks.set(key, defer.callbacks);
+    return defer.promises;
+  }
+
+  update_active_callbacks(callbacks, key) {
+    const sources = this.active_sources;
+    return this.update_callbacks(sources, callbacks, key);
   }
 
   loaded_sources(key) {

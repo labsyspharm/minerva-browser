@@ -179,7 +179,6 @@ const to_subgroups = (subpath_map, rendered_map, group, all) => {
   const channels = group.Channels.slice(0, n_color);
   const zipped = channels.reduce((o, Name, idx) => {
     o.set(Name, {
-      Index: idx,
       Colors: [ group.Colors[idx] ],
       Description: (group.Descriptions || [])[idx] || ''
     });
@@ -197,17 +196,17 @@ const to_subgroups = (subpath_map, rendered_map, group, all) => {
       if (used.has(Path)) return out; 
       used.add(Path);
       const Colorize = !rendered_map.get(Name);
-      const { Index, Colors, Description } = zipped.get(Name);
+      const { Colors, Description } = zipped.get(Name);
       return [...out, {
-        Index, Name, Path, Colors,
+        Name, Path, Colors,
         Colorize, Description
       }];
     }, []);
   }
   // Return group subpath
-  const { Index, Name, Path, Colors } = group;
+  const { Name, Path, Colors } = group;
   return [{
-    Index, Name, Path, Colors,
+    Name, Path, Colors,
     Colorize: false, Description: ''
   }];
 }
@@ -237,7 +236,6 @@ const can_mutate_group = (old, group) => {
 const add_visibility = (cgs) => {
   return cgs.map((group, idx) => {
     group.Shown = group.Channels.map(() => true);
-    group.Index = idx;
     return group;
   });
 }
@@ -1451,6 +1449,14 @@ HashState.prototype = {
       if (key === 'lens') fn();
       else fn();
     });
+  },
+
+  isVisibleLayer(match) {
+    const key = 'Path';
+    const masks = this.active_masks;
+    const subgroups = this.active_subgroups;
+    const result = is_active({ masks, subgroups, key, match });
+    return result.active;
   }
 };
 

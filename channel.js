@@ -275,23 +275,18 @@ const split_url = (full_url) => {
 }
 
 const to_shown = (state, key) => {
-  const image_data = state.getImageData(key);
-  const subgroups = state.active_sources.filter((sub) => {
-    if (!state.channel_map.has(sub.Path)) return false;
-    if (!image_data.has(sub.Path)) return false;
-    return true;
-  });
-  const colors = subgroups.map(sub => {
+  const sources = state.loaded_sources(key);
+  const colors = sources.map(sub => {
     return state.channel_map.get(sub.Path).color;
   });
-  const modes = subgroups.map(sub => {
+  const modes = sources.map(sub => {
     if (sub.Colorize === false) return 1;
     return 2;
   });
-  const channels = subgroups.map(sub => {
-    return image_data.get(sub.Path);
+  const channels = sources.map(sub => {
+    return sub.ImageData;
   });
-  return { image_data, channels, colors, modes };
+  return { channels, colors, modes };
 }
 
 const customizeTileSource = (HS, tileSource) => {
@@ -316,7 +311,7 @@ const customizeTileSource = (HS, tileSource) => {
     const unset = (path) => {
       defer.callbacks.delete(path);
     }
-    const { image_data } = to_shown(HS.gl_state, key || '');
+    const image_data = HS.gl_state.getImageData(key || '');
     HS.gl_state.active_sources.forEach((source) => {
       // Check if image data exists
       if (image_data.has(source.Path)) return;
@@ -461,7 +456,7 @@ const customizeTileSource = (HS, tileSource) => {
     getTileCacheDataAsContext2D: function(cache) {
       const out = cache._out;
       const cache_2d = get_cache_2D(out.key);
-      const hash = HS.gl_state.active_hash;
+      const hash = HS.gl_state.active_hash(out.key);
       // Return the cached 2D canvas output
       if (hash === cache_2d?.hash) {
         return cache_2d.ctx;
@@ -532,16 +527,28 @@ class GLState {
     this.HS = HS;
   }
 
-  get active_sources() {
-    return this.HS.active_subgroups;
+  loaded_sources(key) {
+    const image_data = this.getImageData(key);
+    return this.active_sources.filter((sub) => {
+      if (!this.channel_map.has(sub.Path)) return false;
+      if (!image_data.has(sub.Path)) return false;
+      return true;
+    }).map((sub) => {
+      const ImageData = image_data.get(sub.Path);
+      return { ...sub, ImageData }; 
+    });
   }
 
-  get active_hash() {
-    const hash = this.active_sources.map((source) => {
-      const { Index, Colors } = source;
-      return Index + '_' + Colors.join('_');
+  active_hash(key) {
+    const hash = this.loaded_sources(key).map((source) => {
+      const { Name, Colors } = source;
+      return Name + '_' + Colors.join('_');
     }).join('-');
     return hash;
+  }
+
+  get active_sources() {
+    return this.HS.active_subgroups;
   }
 
   get channel_map() {

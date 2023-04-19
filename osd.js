@@ -33,6 +33,16 @@ const changeSprings = function(viewer, seconds, stiffness) {
   });
 };
 
+// Set the opacity of active channel groups or segmentation masks
+export const newMarkers = function(tileSources, isVisibleLayer) {
+  Object.keys(tileSources).forEach(chan => {
+    const active = isVisibleLayer(chan);
+    tileSources[chan].forEach(tiledImage => {
+      tiledImage.setPreload(active);
+    });
+  });
+};
+
 // Render openseadragon from given hash state
 export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) {
 
@@ -335,6 +345,7 @@ RenderOSD.prototype = {
     if(redraw) {
       // Update OpenSeadragon
       this.activateViewport();
+      newMarkers(this.tileSources, HS.isVisibleLayer.bind(HS));
     }
     this.viewer.forceRedraw();
   },

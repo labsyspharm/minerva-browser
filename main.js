@@ -55,6 +55,8 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
         const layer = layers[j];
         getAjaxHeaders(hashstate, image).then(function(ajaxHeaders){
           const useAjax = (image.Provider == 'minerva' || image.Provider == 'minerva-public');
+          const tileWidth = image.TileSize.slice(0,1).pop();
+          const tileHeight = image.TileSize.slice(0,2).pop();
           // Add an openseadragon tiled image
           viewer.addTiledImage({
             loadTilesWithAjax: useAjax,
@@ -66,8 +68,8 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
               width:  image.Width,
               name: layer.Name,
               maxLevel: image.MaxLevel,
-              tileWidth: image.TileSize.slice(0,1).pop(),
-              tileHeight: image.TileSize.slice(0,2).pop(),
+              tileWidth: tileWidth,
+              tileHeight: tileHeight,
               getTileUrl: getGetTileUrl(
                 image.Path, layer.Path, image.MaxLevel, layer.Format
               )
@@ -83,21 +85,6 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
                 tileSources[layer.Path] = [];
               }
               tileSources[layer.Path].push(item);
-
-              // Set preload flags of neighboring layers if in 3D mode
-              if (hashstate.design.is3d) {
-                const item_idx = viewer.world.getIndexOfItem(item);
-                item.addHandler('fully-loaded-change', function(e){
-                  const next_item = viewer.world.getItemAt(item_idx + 1);
-                  const last_item = viewer.world.getItemAt(item_idx - 1);
-                  if (next_item) {
-                    next_item.setPreload(e.fullyLoaded);
-                  }
-                  if (last_item) {
-                    last_item.setPreload(e.fullyLoaded);
-                  }
-                })
-              }
               // Initialize hash state
               nLoaded += 1;
               if (nLoaded == nTotal) {
@@ -3369,14 +3356,14 @@ const getEmptyTileUrl = (max, format) => {
   }
 }
 
-const to_empty_pyramid = (image, grid_shape, hashstate) => {
+const to_tile_target = (image, grid_shape, hashstate, viewer) => {
   const { displayWidth } = to_image_shape(image, grid_shape)
   const tileWidth = image.TileSize.slice(0,1).pop();
   const tileHeight = image.TileSize.slice(0,2).pop();
   return {
     loadTilesWithAjax: false,
     compositeOperation: 'lighter',
-    tileSource: toTileTarget(hashstate, {
+    tileSource: toTileTarget(hashstate, viewer, 'lens', {
       colorize: true,
       tileHeight: tileHeight,
       tileWidth: tileWidth,
@@ -3390,6 +3377,9 @@ const to_empty_pyramid = (image, grid_shape, hashstate) => {
     y: 0,
     opacity: 1,
     width: displayWidth,
+    success: ({ item }) => {
+      hashstate.gl_state.setTargetImage(item);
+    }
   }
 }
 
@@ -3423,11 +3413,10 @@ const build_page_with_exhibit = function(exhibit, options) {
     immediateRender: true,
     maxZoomPixelRatio: 10,
     visibilityRatio: .9,
-    degrees: exhibit.Rotation || 0,
-    tileSources: [
-      to_empty_pyramid(grid[0][0], grid_shape, hashstate)
-    ]
+    degrees: exhibit.Rotation || 0
   });
+  const tile_target = to_tile_target(grid[0][0], grid_shape, hashstate, viewer);
+  viewer.addTiledImage(tile_target);
   hashstate.createLens(viewer);
 
   // Constantly reset each arrow transform property
@@ -3445,22 +3434,6 @@ const build_page_with_exhibit = function(exhibit, options) {
 	});
 
 	viewer.addHandler("animation", updateOverlays);
-
-  viewer.world.addHandler('add-item', function(addItemEvent) {
-      const tiledImage = addItemEvent.item;
-      tiledImage.addHandler('fully-loaded-change', function(fullyLoadedChangeEvent) {
-          const fullyLoaded = fullyLoadedChangeEvent.fullyLoaded;
-          if (fullyLoaded) {
-            tiledImage.immediateRender = false;
-          }
-      });
-      tiledImage.addHandler('opacity-change', function(opacityChangeEvent) {
-          const opacity = opacityChangeEvent.opacity;
-          if (opacity == 0) {
-            tiledImage.immediateRender = true;
-          }
-      });
-  });
 
   // Add size scalebar
   viewer.scalebar({

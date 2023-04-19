@@ -301,8 +301,9 @@ HashState.prototype = {
 
   createLens (viewer) {
     this._lensing = createLens(viewer, this);
-//    viewer.addHandler('canvas-drag', (e) => {
-//    });
+    viewer.addHandler('canvas-drag', (e) => {
+      e.eventSource.forceRedraw();
+    });
   },
 
   redrawLens () {
@@ -950,7 +951,8 @@ HashState.prototype = {
   // Get the subgroups of the current layer
   get active_subgroups() {
     const { subpath_map, rendered_map, group } = this;
-    return to_subgroups(subpath_map, rendered_map, group, false);
+    const out = to_subgroups(subpath_map, rendered_map, group, false);
+    return out.map(sub => ({ ...sub, Lens: false }));
   },
   
   // Get the subgroups of current lens
@@ -958,7 +960,8 @@ HashState.prototype = {
     const { subpath_map, rendered_map, lens_group } = this;
     const group = this.lens_group;
     if (group === null) return [];
-    return to_subgroups(subpath_map, rendered_map, lens_group, false);
+    const out = to_subgroups(subpath_map, rendered_map, lens_group, false);
+    return out.map(sub => ({ ...sub, Lens: true }));
   },
 
   // Get the colors of the current lens's channels
@@ -1476,7 +1479,9 @@ HashState.prototype = {
   isVisibleLayer(match) {
     const key = 'Path';
     const masks = this.active_masks;
-    const subgroups = this.active_subgroups;
+    const subgroups = [
+      ...this.active_subgroups, ...this.lens_subgroups
+    ];
     const result = is_active({ masks, subgroups, key, match });
     return result.active;
   }

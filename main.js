@@ -1,6 +1,6 @@
 import SimpleEventHandler from "./simpleEventHandler.js"
 import { get_links_alias } from "./links_alias.js"
-import { customizeTileSource } from "./channel"
+import { toTileTarget, toTileSource } from "./channel"
 import { getAjaxHeaders } from "./state"
 import { getGetTileUrl } from "./state"
 import { HashState } from "./state"
@@ -61,7 +61,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
             compositeOperation: layer.Blend,
             crossOriginPolicy: 'anonymous',
             ajaxHeaders: ajaxHeaders,
-            tileSource: customizeTileSource(hashstate, {
+            tileSource: toTileSource(hashstate, {
               height: image.Height,
               width:  image.Width,
               name: layer.Name,
@@ -3376,7 +3376,7 @@ const to_empty_pyramid = (image, grid_shape, hashstate) => {
   return {
     loadTilesWithAjax: false,
     compositeOperation: 'lighter',
-    tileSource: customizeTileSource(hashstate, {
+    tileSource: toTileTarget(hashstate, {
       colorize: true,
       tileHeight: tileHeight,
       tileWidth: tileWidth,
@@ -3428,6 +3428,7 @@ const build_page_with_exhibit = function(exhibit, options) {
       to_empty_pyramid(grid[0][0], grid_shape, hashstate)
     ]
   });
+  hashstate.createLens(viewer);
 
   // Constantly reset each arrow transform property
 	function updateOverlays() {

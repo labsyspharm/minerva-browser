@@ -45,7 +45,7 @@ const updateLensing = (lensing, HS) => {
   }
 }
 
-export class OsdLensingContext {
+class OsdLensingContext {
 
     // Class vars
     lensingContext = null;
@@ -65,12 +65,8 @@ export class OsdLensingContext {
         this.lensing = lensing;
         this.tileSources = {};
         this.lensingContext = lensingContext;
-        // Initialize Openseadragon
-        this.initializeChannels((viewer) => {
-          const { all_subgroups } = this.hashstate;
-          const { lens_subgroups } = this.hashstate;
-          this.lensing.recenter();
-        });
+        // Recenter Lens
+        this.lensing.recenter();
     }
 
     newContext(opts) {
@@ -97,46 +93,6 @@ export class OsdLensingContext {
         };
     }
 
-    initializeChannels(init) {
-      const HS = this.hashstate;
-      const { subgroup_layers, grid } = HS;
-      const image = (grid.pop() || []).pop();
-      const viewer = this.lensingContext;
-      const nTotal = subgroup_layers.length;
-      var nLoaded = 0;
-      subgroup_layers.forEach(layer => {
-        viewer.addTiledImage({
-          loadTilesWithAjax: false,
-          compositeOperation: layer.Blend,
-          crossOriginPolicy: 'anonymous',
-          tileSource: {
-            colorize: layer.Colorize,
-            height: image.Height,
-            width:  image.Width,
-            name: layer.Name,
-            maxLevel: image.MaxLevel,
-            opacity: [0, 1][+HS.isLensName(layer.Name).active],
-            tileWidth: image.TileSize.slice(0,1).pop(),
-            tileHeight: image.TileSize.slice(0,2).pop(),
-            getTileUrl: getGetTileUrl(
-              image.Path, layer.Path, image.MaxLevel, layer.Format
-            )
-          },
-          width: image.Width / image.Height,
-          success: (data) => {
-            const item = data.item;
-            if (!(layer.Path in this.tileSources)) {
-              this.tileSources[layer.Path] = [];
-            }
-            this.tileSources[layer.Path].push(item);
-            nLoaded += 1;
-            if (nLoaded == nTotal) init(viewer);
-          }
-        });
-      });
-      return viewer;
-    }
-
     activateViewport() {
       const HS = this.hashstate;
       const { viewport } = this.lensingContext;
@@ -154,3 +110,22 @@ export class OsdLensingContext {
       updateLensing(lensing, HS);
     }
 }
+
+const createLens = (viewer, hashstate) => {
+  const config = {
+    id: viewer.id,
+    prefixUrl: viewer.prefixUrl,
+    zoomInButton: viewer.zoomInButton.element.id,
+    zoomOutButton: viewer.zoomOutButton.element.id,
+    navigatorPosition: viewer.navigatorPosition,
+    maxZoomPixelRatio: viewer.maxZoomPixelRatio,
+    visibilityRatio: viewer.visibilityRatio,
+    degrees: viewer.degrees,
+  };
+  const lensOptions = {
+    config, hashstate 
+  };
+  return new OsdLensingContext(viewer, lensOptions);
+}
+
+export { createLens }

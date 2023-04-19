@@ -2,6 +2,7 @@ import { encode } from './render'
 import { decode } from './render'
 import { unpackGrid } from './render'
 import { remove_undefined } from './render'
+import { createLens } from "./osdLensingContext.js"
 import { GLState } from './channel'
 
 import LZString from "lz-string"
@@ -265,6 +266,7 @@ export const HashState = function(exhibit, options) {
   this.noHome = options.noHome || false;
 
   this._gl_state = null;
+  this._lensing = null;
   this.state = {
     buffer: {
       waypoint: undefined
@@ -295,6 +297,26 @@ export const HashState = function(exhibit, options) {
 };
 
 HashState.prototype = {
+
+
+  createLens (viewer) {
+    this._lensing = createLens(viewer, this);
+//    viewer.addHandler('canvas-drag', (e) => {
+//    });
+  },
+
+  redrawLens () {
+    this._lensing?.newViewRedraw();
+  },
+
+  get lensCenter () {
+    const { _lensing } = this;
+    if (!_lensing) return [];
+    const { lensing } = _lensing;
+    if (!lensing) return [];
+    const { positionData } = lensing;
+    return positionData?.posFull || [];
+  },
 
   /*
    * Editor buffers

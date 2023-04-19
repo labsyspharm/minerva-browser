@@ -53,20 +53,6 @@ export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) 
   this.mouseEvent = {};
   this.trackers = [];
   this.eventHandler = eventHandler;
-
-  const config = {
-    id: viewer.id,
-    prefixUrl: viewer.prefixUrl,
-    zoomInButton: viewer.zoomInButton.element.id,
-    zoomOutButton: viewer.zoomOutButton.element.id,
-    navigatorPosition: viewer.navigatorPosition,
-    maxZoomPixelRatio: viewer.maxZoomPixelRatio,
-    visibilityRatio: viewer.visibilityRatio,
-    degrees: viewer.degrees,
-  };
-  const lensOptions = {
-    config, hashstate 
-  };
 }
 
 RenderOSD.prototype = {
@@ -345,6 +331,7 @@ RenderOSD.prototype = {
     if(redraw) {
       // Update OpenSeadragon
       this.activateViewport();
+      HS.redrawLens();
       newMarkers(this.tileSources, HS.isVisibleLayer.bind(HS));
     }
     this.viewer.forceRedraw();

@@ -289,24 +289,50 @@ const to_shown = (state, key) => {
   return { channels, colors, modes };
 }
 
-const customizeTileSource = (HS, tileSource) => {
-  const { tileWidth, tileHeight } = tileSource;
-  const tileShape = { tileWidth, tileHeight };
+const set_cache_gl = (gl_state, tile) => {
+  const key = to_gl_tile_key(tile);
+  const caches_gl = gl_state.caches_gl;
+  if (caches_gl.has(key)) return caches_gl.get(key);
+  const cache_gl = to_cache_gl(gl_state, tile, key, () => {
+    caches_gl.delete(key);
+  });
+  caches_gl.set(key, cache_gl);
+  return cache_gl;
+}
+
+const parseImageJob = (imageJob) => {
+  const full_url = imageJob.src;
+  const parts = full_url.split('/');
+  const { tile } = imageJob;
+  const key = parts.pop();
+  return { full_url, key, tile };
+}
+
+const customTileCache = (HS) => {
+  return {
+    createTileCache: function(cache_gl, out) {
+      cache_gl._out = out;
+    },
+    destroyTileCache: function(cache_gl) {
+      if (cache_gl._out.subpath !== "") {
+        const { key, subpath } = cache_gl._out;
+        HS.gl_state.untrackImageData(key, subpath);
+      }
+      delete cache_gl._out;
+    },
+    getTileCacheData: function(cache_gl) {
+      return cache_gl._out;
+    },
+    getTileCacheDataAsImage: function() {
+      throw "Image-based drawing unsupported";
+    }
+  }
+}
+
+const toTileTarget = (HS, tileSource) => {
   const caches_2d = HS.gl_state.caches_2d;
   const caches_gl = HS.gl_state.caches_gl;
   const image_waiters = HS.gl_state.image_waiters;
-  const make_image_waiter = (key) => {
-    return image_waiters.get(key) || {
-      promises: [], callbacks: new Map
-    };
-  }
-  const to_image_waiter = (key, path) => {
-    const callbacks = make_image_waiter(key).callbacks
-    if (!callbacks.has(path)) {
-      return null; 
-    };
-    return callbacks.get(path);
-  }
   const set_image_waiter = (defer, key) => {
     const unset = (path) => {
       defer.callbacks.delete(path);
@@ -342,113 +368,34 @@ const customizeTileSource = (HS, tileSource) => {
     if (caches_2d.has(key)) return caches_2d.get(key);
     return null;
   }
-  const set_cache_gl = (tile) => {
-    const key = to_gl_tile_key(tile);
-    if (caches_gl.has(key)) return caches_gl.get(key);
-    const cache_gl = to_cache_gl(HS.gl_state, tile, key, () => {
-      caches_gl.delete(key);
-    });
-    caches_gl.set(key, cache_gl);
-    return cache_gl;
-  }
   const render_to_cache = (key, cache_gl) => {
     const shown = to_shown(HS.gl_state, key || '');
     const { via, uniforms } = cache_gl;
     const props = to_tile_props(shown);
     return render_tile(props, uniforms, via);
   }
-  const to_empty_tile = (tile) => {
-    const [w, h] = to_tile_shape(tile);
-    const c = document.createElement("canvas")
-    c.width = 1024;
-    c.height = 1024;
-    const ctx = c.getContext("2d");
-    ctx.fillStyle = `rgb(255, 255, 255, 1.0)`;
-    ctx.fillRect(0, 0, c.width, c.height);
-    return c;
-  }
   return {
     ...tileSource,
-    createTileCache: function(cache_gl, out) {
-      cache_gl._out = out;
-    },
-    destroyTileCache: function(cache_gl) {
-      if (cache_gl._out.subpath !== "") {
-        const { key, subpath } = cache_gl._out;
-        HS.gl_state.untrackImageData(key, subpath);
-      }
-      delete cache_gl._out;
-    },
-    getTileCacheData: function(cache_gl) {
-      return cache_gl._out;
-    },
-    getTileCacheDataAsImage: function() {
-      throw "Image-based drawing unsupported";
-    },
+    ...customTileCache(HS),
     downloadTileStart: function(imageJob) {
-      const full_url = imageJob.src;
-      const parts = full_url.split('/');
-      const is_target = parts.length <= 1;
-      const { tile } = imageJob;
-      const key = parts.pop();
-      const { canvas } = set_cache_gl(tile).via.gl;
-      if (is_target) {
-        const defer = make_image_waiter(key);
-        set_image_waiter(defer, key);
-
-        const r1 = (Math.random() + 1).toString(36).substring(2);
-        const r2 = (Math.random() + 1).toString(36).substring(2);
-        const defer_id = `${r1}-${r2}`;
-        // Wait for all source images to resolve 
-        const promise = Promise.all(defer.promises).then((results) => {
-          const all_failed = results.every(x => !x);
-          const msg = "All sources failed for tile.";
-          if (all_failed) imageJob.finish(null, null, msg);
-          else imageJob.finish({ tile, key, subpath: "" });
-        }).catch(() => {
-          imageJob.finish(null);
-        });
-        promise.controller = {
-          abort: () => null
-        };
-        imageJob.userData.promise = promise;
-        return;
-      }
-      const subpath = split_url(full_url);
-      const resolver = (success) => {
-        const waiter = to_image_waiter(key, subpath);
-        if (waiter !== null) waiter.resolve(success);
-        imageJob.finish({ tile, key, subpath });
-      }
-      if (HS.gl_state.forsaken.has(full_url)) {
-        return resolver(false);
-      }
-      const controller = new AbortController();
-      const abort = () => controller.abort();
-      const on_failure = (e) => {
-        HS.gl_state.forsaken.add(full_url);
-        resolver(false);
-      }
-      const promise = fetch(full_url, {
-        method: "GET", signal: controller.signal
-      }).then(result => {
-        if (!result.ok) {
-          throw new Error(`Status ${result.status}`);
-        }
-        return result.blob();
-      }).then(blob => {
-        return createImageBitmap(blob);
-      }).then(data => {
-        HS.gl_state.trackImageData(key, subpath, data);
-        resolver(true);
-      }).catch(on_failure);
+      const { full_url, key, tile } = parseImageJob(imageJob);
+      const defer = HS.gl_state.make_image_waiter(key);
+      set_cache_gl(HS.gl_state, tile);
+      set_image_waiter(defer, key);
+      // Wait for all source images to resolve 
+      const promise = Promise.all(defer.promises).then((results) => {
+        const all_failed = results.every(x => !x);
+        const msg = "All sources failed for tile.";
+        if (all_failed) imageJob.finish(null, null, msg);
+        else imageJob.finish({ tile, key, subpath: "" });
+      }).catch(() => {
+        imageJob.finish(null);
+      });
       promise.controller = {
-        abort: () => {
-          controller.abort();
-          waiter.reject();
-        }
-      }
+        abort: () => null
+      };
       imageJob.userData.promise = promise;
+      return;
     },
     downloadTileAbort: function(imageJob) {
       imageJob.userData.promise.controller.abort();
@@ -465,7 +412,7 @@ const customizeTileSource = (HS, tileSource) => {
         cache_2d.hash = hash;
       }
       // Render to new 2D canvas output
-      const cache_gl = set_cache_gl(out.tile);
+      const cache_gl = set_cache_gl(HS.gl_state, out.tile);
       out.canvas = render_to_cache(out.key, cache_gl);
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext('2d');
@@ -477,6 +424,68 @@ const customizeTileSource = (HS, tileSource) => {
       ctx.drawImage(out.canvas, 0, 0, w, h, 0, 0, w, h);
       set_cache_2D(out.key, { ctx, hash });
       return ctx;
+    }
+  }
+}
+
+const toTileSource = (HS, tileSource) => {
+  const caches_2d = HS.gl_state.caches_2d;
+  const caches_gl = HS.gl_state.caches_gl;
+  const to_image_waiter = (key, path) => {
+    const { callbacks } = HS.gl_state.make_image_waiter(key);
+    if (!callbacks.has(path)) {
+      return null; 
+    };
+    return callbacks.get(path);
+  }
+  return {
+    ...tileSource,
+    ...customTileCache(HS),
+    downloadTileStart: function(imageJob) {
+      const { full_url, key, tile } = parseImageJob(imageJob);
+      const subpath = split_url(full_url);
+      set_cache_gl(HS.gl_state, tile);
+      const resolver = (success) => {
+        const waiter = to_image_waiter(key, subpath);
+        if (waiter !== null) waiter.resolve(success);
+        imageJob.finish({ tile, key, subpath });
+      }
+      if (HS.gl_state.forsaken.has(full_url)) {
+        return resolver(false);
+      }
+      const controller = new AbortController();
+      const abort = () => controller.abort();
+      const on_failure = (e) => {
+        HS.gl_state.forsaken.add(full_url);
+        resolver(false);
+      }
+      imageJob.userData.promise = fetch(full_url, {
+        method: "GET", signal: controller.signal
+      }).then(result => {
+        if (!result.ok) {
+          throw new Error(`Status ${result.status}`);
+        }
+        return result.blob();
+      }).then(blob => {
+        return createImageBitmap(blob);
+      }).then(data => {
+        HS.gl_state.trackImageData(key, subpath, data);
+        resolver(true);
+      }).catch(on_failure);
+      imageJob.userData.promise.controller = {
+        abort: () => {
+          controller.abort();
+          waiter.reject();
+        }
+      }
+    },
+    downloadTileAbort: function(imageJob) {
+      imageJob.userData.promise.controller.abort();
+    },
+    getTileCacheDataAsContext2D: function(cache) {
+      // This should never occur, never actually drawn
+      const canvas = document.createElement("canvas");
+      return canvas.getContext('2d');
     }
   }
 }
@@ -525,6 +534,12 @@ class GLState {
     this.image_waiters = new Map();
     this.settings = {};
     this.HS = HS;
+  }
+
+  make_image_waiter(key) {
+    return this.image_waiters.get(key) || {
+      promises: [], callbacks: new Map
+    };
   }
 
   loaded_sources(key) {
@@ -577,4 +592,4 @@ class GLState {
   }
 }
 
-export { customizeTileSource, GLState }
+export { toTileTarget, toTileSource, GLState }

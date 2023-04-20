@@ -3411,7 +3411,7 @@ const build_page_with_exhibit = function(exhibit, options) {
     navigatorPosition: 'BOTTOM_RIGHT',
     zoomOutButton: options.id + '-zoom-out',
     zoomInButton: options.id + '-zoom-in',
-    immediateRender: true,
+    immediateRender: false,
     maxZoomPixelRatio: 10,
     visibilityRatio: .9,
     degrees: exhibit.Rotation || 0

@@ -2,7 +2,7 @@ import { encode } from './render'
 import { decode } from './render'
 import { unpackGrid } from './render'
 import { remove_undefined } from './render'
-import { GLState } from './channel'
+import { GLState, toDistance } from './channel'
 
 import LZString from "lz-string"
 const yaml = require('js-yaml');
@@ -270,7 +270,13 @@ export const HashState = function(exhibit, options) {
       waypoint: undefined
     },
     lensUI: null,
+    lensRad: 100,
     eventPoint: [0, 0],
+    lensResizeBasis: null,
+    lensResizeMin: 80,
+    lensResizeMax: 600,
+    lensResizeSpeed: 1,
+    lensResizeThickness: 60,
     colorListeners: new Map(),
     activeChannel: -1,
     drawType: "lasso",
@@ -315,32 +321,64 @@ const to_container = (nav_gap) => {
     align-content: center;
     display: grid;
   `);
+  const handle = document.createElement('div');
+  handle.setAttribute('class', `bg-trans`);
+  handle.setAttribute('style', `
+    grid-column: 3; grid-row: 3;
+    color: rgba(0, 123, 255, 1);
+    border-radius: ${nav_gap/2}px;
+    font-size: ${nav_gap}px;
+    border: 2px solid white;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: 1fr auto 1fr;
+    justify-content: center;
+    align-content: center;
+    display: grid;
+  `);
+  const handle_label = document.createElement('span');
+  handle_label.setAttribute('style', `
+    padding-top: 5px;
+    grid-column: 2;
+    grid-row: 2;
+  `);
+  handle_label.innerText = "⤡";
+  handle.append(handle_label);
   container.append(padding);
+  container.append(handle);
   return { container, padding };
 }
 
 const to_pad = (rad, nav_gap) => {
-  return Math.ceil(2*rad - 2*nav_gap);
-}
-
-const to_chord = (rad, pad) => {
-  const solution = 2*rad - Math.sqrt(4*rad**2 - pad**2);
-  return Math.ceil(pad - solution / 2);
+  return Math.ceil(2*rad / Math.sqrt(2)) - 20;
 }
 
 const update_container = ({ container, padding, nav_gap, rad, x, y, no_lens }) => {
   const pad = to_pad(rad, nav_gap);
-  const chord = to_chord(rad, pad);
   const css_x = Math.round(x - rad) + 'px';
   const css_y = Math.round(y - rad) + 'px';
   container.style.display = ['grid', 'none'][+no_lens];
-  padding.style.border = "3px solid red";
   container.style.height = 2*rad + 'px';
   container.style.width = 2*rad + 'px';
-  padding.style.height = chord + 'px';
+  padding.style.height = pad + 'px';
   padding.style.width = pad + 'px';
   container.style.left = css_x;
   container.style.top = css_y;
+}
+
+const toReferenceVector = (origin, point) => {
+  return [0,1].map(i => point[i] - origin[i]);
+}
+
+const changeDirection = (ref, vec) => {
+  const dot = (a,b) => a[0]*b[0] + a[1]*b[1];
+  return -1 * Math.sign(dot(ref, vec));
+}
+
+const changeMagnitude = (ref, vec) => {
+  const dot = (a,b) => a[0]*b[0] + a[1]*b[1];
+  const scalar = dot(ref,vec) / dot(ref,ref);
+  const projection = ref.map(x => scalar * x);
+  return toDistance([0, 0], projection);
 }
 
 HashState.prototype = {
@@ -353,18 +391,42 @@ HashState.prototype = {
     const first_center = [first_point.x, first_point.y];
     this.createLensUI(viewer);
     this.updateLensUI(first_center);
+    viewer.addHandler('canvas-drag-end', (e) => {
+      this.state.lensResizeBasis = null;
+    });
     viewer.addHandler('canvas-drag', (e) => {
       const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
-      if (this.isWithinLens([x, y])) {
+      const { lensResizeBasis } = this.state;
+      if (this.isWithinLens([x, y]) && lensResizeBasis === null) {
         e.preventDefaultAction = true;
         this.updateLensUI([x, y]);
+        viewer.forceRedraw();
+      }
+      else if (this.isWithinResizeRing([x, y])) {
+        e.preventDefaultAction = true;
+        if (lensResizeBasis === null) {
+          const ref = toReferenceVector([x, y], this.lensCenter);
+          this.state.lensResizeBasis = ref;
+        }
+        const ref = this.state.lensResizeBasis;
+        const dir = changeDirection(ref, [e.delta.x, e.delta.y]);
+        const mag = changeMagnitude(ref, [e.delta.x, e.delta.y]);
+        const speed = this.state.lensResizeSpeed;
+        const new_rad = ((rad, scale) => {
+          const min = this.state.lensResizeMin;
+          const max = this.state.lensResizeMax;
+          if (isNaN(scale)) return rad;
+          return Math.min(Math.max(rad + scale, min), max);
+        })(this.lensRad, speed * dir * mag);
+        this.updateLensRadius(new_rad);
+        this.updateLensUI(this.lensCenter);
         viewer.forceRedraw();
       }
     });
   },
 
   createLensUI (viewer) {
-    const nav_gap = 40;
+    const nav_gap =  this.state.lensResizeThickness;
     const { container, padding } = to_container(nav_gap);
     this.state.lensUI = {
       container, padding, nav_gap
@@ -385,8 +447,12 @@ HashState.prototype = {
     update_container({ container, padding, nav_gap, rad, x, y, no_lens });
   },
 
+  updateLensRadius (newRad) {
+    this.state.lensRad = newRad;
+  },
+
   get lensRad () {
-    return this.lensing?.Rad || 100;
+    return this.state.lensRad;
   },
 
   get lensCenter () {
@@ -398,11 +464,25 @@ HashState.prototype = {
   },
 
   isWithinLens (xy) {
+    const lens_border = 8;
+    if (this.lensing === null) {
+      return false;
+    }
+    const center = this.lensCenter;
+    const dist = toDistance(center, xy);
+    const rad = this.lensRad - lens_border;
+    return (dist < rad);
+  },
+
+  isWithinResizeRing (xy) {
+    if (this.lensing === null) {
+      return false;
+    }
     const rad = this.lensRad;
     const center = this.lensCenter;
-    const d = [0, 1].map(i => center[i]-xy[i]);
-    const dist = Math.sqrt(d[0]**2 + d[1]**2);
-    return (dist < rad);
+    const ring =  rad + this.state.lensResizeThickness;
+    const dist = toDistance(center, xy);
+    return dist < ring;
   },
 
   /*
@@ -699,6 +779,9 @@ HashState.prototype = {
 
     // Set group, viewport from waypoint
     const waypoint = this.waypoint;
+    if (waypoint.Lensing?.Rad) {
+      this.updateLensRadius(waypoint.Lensing.Rad);
+    }
 
     // this.slower();
     this.m = mFromWaypoint(waypoint, this.masks);

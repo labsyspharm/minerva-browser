@@ -144,12 +144,20 @@ const shaders = {
     return (u_origin + tile_flip) * scale;
   }
 
-  // Within lens radius
-  bool not_in_lens(vec2 lens, vec2 v) {
+  // Compare to lens radius
+  int lens_status(vec2 lens, vec2 v) {
     vec2 global_v = tile_to_global(v);
     float d = distance(lens, global_v);
     float rad = u_lens_rad / u_lens_scale;
-    return abs(d) > rad;
+    // Lens exceeds border
+    float border = 3. / u_lens_scale;
+    if (abs(d) > rad) {
+      return 0;
+    };
+    if (abs(d) > rad - border) {
+      return 1;
+    };
+    return 2;
   }
 
   // Sample texture at given texel offset
@@ -166,8 +174,12 @@ const shaders = {
     // Render empty lens background
     if (mode[0] == uint(1)) {
       vec2 global_v = tile_to_global(uv);
-      if (not_in_lens(u_lens, uv)) {
+      int lens = lens_status(u_lens, uv);
+      if (lens == 0) {
         return vec4(0.0);
+      }
+      if (lens == 1) {
+        return vec4(1.0);
       }
     }
 
@@ -366,11 +378,15 @@ const set_cache_gl = (gl_state, tile, shape_opts, flip_y) => {
   return cache_gl;
 }
 
+const to_tile_key = ({level, x, y}) => {
+  return `${level}-${x}-${y}`;
+}
+
 const parseImageJob = (imageJob) => {
   const full_url = imageJob.src;
   const parts = full_url.split('/');
   const { tile } = imageJob;
-  const key = parts.pop();
+  const key = to_tile_key(tile);
   return { full_url, key, tile };
 }
 
@@ -455,7 +471,10 @@ const tile_to_global = (to_scale, shape_opts, tile) => {
 
 const to_tile_corners = (tile) => {
   const { width: w, height: h } = tile.sourceBounds;
-  return [ [0, 0], [w, 0], [0, h], [w, h] ];
+  return [ 
+    [0, 0], [w, 0], [0, h], [w, h],
+    [w/2, 0], [0, h/2], [w/2, h], [w, h/2]
+  ];
 }
 
 const to_tile_box = (to_scale, to_global, tile) => {
@@ -477,7 +496,7 @@ const to_lens_box = (rad, lens_center) => {
   }
 }
 
-const to_distance = (a, b) => {
+const toDistance = (a, b) => {
   const d = [0, 1].map(i => a[i] - b[i]);
   return Math.sqrt(d[0]**2 + d[1]**2);
 }
@@ -497,12 +516,12 @@ const is_within_lens = (HS, lens_scale, lens_center, cache_gl, tile) => {
   if (non_overlap_cases.some(x => x)) return false;
   // The lens is close enough that it must overlap
   const near_range = Math.max(rad, tbox.rad);
-  if (to_distance(tbox.center, lens_center) < near_range) {
+  if (toDistance(tbox.center, lens_center) < near_range) {
     return true;
   }
   // Check all corners for overlap
   return to_tile_corners(tile).map(to_global).some(xy => {
-    return to_distance(lens_center, xy) < rad;
+    return toDistance(lens_center, xy) < rad;
   });
 }
 
@@ -611,6 +630,34 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
   }
 }
 
+const getParentTile = (imageJob, tile) => {
+  const { source } = imageJob;
+  const mid = tile.bounds.getCenter();
+  if (tile.leven === 0) return null;
+  const up = Math.max(0, tile.level - 1);
+  const above = source.getTileAtPoint(up, mid);
+  const key = to_tile_key({...above, level: up});
+  const offset = [
+    +(2 * above.x !== tile.x),
+    +(2 * above.y !== tile.y)
+  ]
+  return { key, offset };
+}
+
+const cropParentTile = (shape_opts, p_data, p_tile, tile) => {
+  const { width: w, height: h } = tile.sourceBounds;
+  const [ ix, iy ] = [0, 1].map(i => {
+    return p_tile.offset[i] * shape_opts.tile_square[i];
+  });
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext('2d');
+  canvas.height = h;
+  canvas.width = w;
+  console.log(ix/2, iy/2, w/2, h/2, 0, 0, w, h);
+  ctx.drawImage(p_data, ix/2, iy/2, w/2, h/2, 0, 0, w, h);
+  return createImageBitmap(canvas);
+}
+
 const toTileSource = (HS, tileSource) => {
   const shape_opts = to_shape_opts(tileSource);
   const to_image_callbacks = (key, path) => {
@@ -627,18 +674,44 @@ const toTileSource = (HS, tileSource) => {
       const { full_url, key, tile } = parseImageJob(imageJob);
       const subpath = split_url(full_url);
       set_cache_gl(HS.gl_state, tile, shape_opts, 1);
-      const resolver = (success) => {
-        const waiter = to_image_callbacks(key, subpath);
-        if (waiter !== null) waiter.resolve(success);
-        imageJob.finish({ tile, key, subpath });
-      }
-      if (HS.gl_state.forsaken.has(full_url)) {
-        return resolver(false);
+      const resolver = (ok) => {
+        const finish = (success) => {
+          const waiter = to_image_callbacks(key, subpath);
+          if (waiter !== null) waiter.resolve(success);
+          imageJob.finish({ tile, key, subpath });
+        }
+        // Try to access parent tile
+        if (ok === true) return finish(true);
+        const p_tile = getParentTile(imageJob, tile);
+        const use_parent = (p_data) => {
+          // Crop the parent tile
+          cropParentTile(shape_opts, p_data, p_tile, tile).then(data => {
+            HS.gl_state.trackImageData(key, subpath, data);
+            finish(true);
+          });
+        }
+        if (p_tile.key === null) return finish(false);
+        const image_data = HS.gl_state.getImageData(p_tile.key);
+        const p_waiter = to_image_callbacks(p_tile.key, subpath);
+        const p_data = image_data.get(subpath) || null;
+        // Depend on the parent tile
+        if (p_data) return use_parent(p_data);
+        if (p_waiter) {
+          p_waiter.resolve = (success) => {
+            p_waiter.resolve(success);
+            finish(true);
+          }
+          p_waiter.reject = () => {
+            p_waiter.reject();
+            finish(false);
+          }
+        }
+        // TODO: Load the parent tile?
+        finish(false);
       }
       const controller = new AbortController();
       const abort = () => controller.abort();
       const on_failure = (e) => {
-        HS.gl_state.forsaken.add(full_url);
         resolver(false);
       }
       imageJob.userData.promise = fetch(full_url, {
@@ -722,7 +795,6 @@ const to_cache_gl = (gl_state, shape_opts, flip_y, tile, cleanup) => {
 class GLState {
 
   constructor(HS) {
-    this.forsaken = new Set();
     this.caches_2d = new Map();
     this.caches_gl = new Map();
     this.image_data = new Map();
@@ -892,4 +964,4 @@ class GLState {
   }
 }
 
-export { toTileTarget, toTileSource, GLState }
+export { toTileTarget, toTileSource, GLState, toDistance }

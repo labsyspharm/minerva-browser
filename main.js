@@ -2151,6 +2151,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 
 .minerva-root > .minerva-full {
   position: relative;
+  overflow: hidden;
   height: 100%;
   width: 100%;
 }

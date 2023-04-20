@@ -269,6 +269,7 @@ export const HashState = function(exhibit, options) {
     buffer: {
       waypoint: undefined
     },
+    lensUI: null,
     eventPoint: [0, 0],
     colorListeners: new Map(),
     activeChannel: -1,
@@ -297,10 +298,11 @@ export const HashState = function(exhibit, options) {
  
 const to_container = (nav_gap) => {
    const container = document.createElement('div');
-   container.setAttribute('class', `overlay_container`);
+   container.setAttribute('class', `minerva-lens-ui-wrapper`);
    container.setAttribute('style', `
      display: grid;
      position: absolute;
+     pointer-events: none;
      grid-template-columns: ${nav_gap}px auto ${nav_gap}px;
      grid-template-rows: ${nav_gap}px auto ${nav_gap}px;
      justify-content: center;
@@ -326,11 +328,12 @@ const to_chord = (rad, pad) => {
   return Math.ceil(pad - solution / 2);
 }
 
-const update_container = ({ container, padding, nav_gap, rad, x, y }) => {
+const update_container = ({ container, padding, nav_gap, rad, x, y, no_lens }) => {
   const pad = to_pad(rad, nav_gap);
   const chord = to_chord(rad, pad);
   const css_x = Math.round(x - rad) + 'px';
   const css_y = Math.round(y - rad) + 'px';
+  container.style.display = ['grid', 'none'][+no_lens];
   padding.style.border = "3px solid red";
   container.style.height = 2*rad + 'px';
   container.style.width = 2*rad + 'px';
@@ -343,30 +346,47 @@ const update_container = ({ container, padding, nav_gap, rad, x, y }) => {
 HashState.prototype = {
 
   createLens (viewer) {
-    const nav_gap = 40;
-    const rad = this.lensing?.Rad || 100;
-    const { 
-      container, padding
-    }= to_container(nav_gap);
     const vp = viewer.viewport;
     const first_point = vp.viewportToViewerElementCoordinates(
       vp.getCenter(true)
     );
     const first_center = [first_point.x, first_point.y];
-    console.log(first_center);
-    this.lensCenter = first_center;
-    const [x, y] = first_center;
-    update_container({ container, padding, nav_gap, rad, x, y});
-    container.addEventListener('mousemove', (e) => {
-      if (e.buttons !== 0) {
-        const [x, y] = [Math.round(e.x), Math.round(e.y)];
-        update_container({ container, padding, nav_gap, rad, x, y});
-        this.lensCenter = [x, y];
+    this.createLensUI(viewer);
+    this.updateLensUI(first_center);
+    viewer.addHandler('canvas-drag', (e) => {
+      const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
+      if (this.isWithinLens([x, y])) {
+        e.preventDefaultAction = true;
+        this.updateLensUI([x, y]);
         viewer.forceRedraw();
       }
     });
+  },
+
+  createLensUI (viewer) {
+    const nav_gap = 40;
+    const { container, padding } = to_container(nav_gap);
+    this.state.lensUI = {
+      container, padding, nav_gap
+    };
     const { parentElement } = viewer.element;
     parentElement.append(container);
+  },
+
+  updateLensUI (newLensCenter) {
+    const rad = this.lensRad;
+    if (!this.state.lensUI) return;
+    if (newLensCenter) {
+      this.lensCenter = newLensCenter;
+    }
+    const [x, y] = this.lensCenter;
+    const no_lens = this.lensing === null;
+    const { container, padding, nav_gap } = this.state.lensUI;
+    update_container({ container, padding, nav_gap, rad, x, y, no_lens });
+  },
+
+  get lensRad () {
+    return this.lensing?.Rad || 100;
   },
 
   get lensCenter () {
@@ -375,6 +395,14 @@ HashState.prototype = {
 
   set lensCenter (xy) {
     this.state.eventPoint = xy;
+  },
+
+  isWithinLens (xy) {
+    const rad = this.lensRad;
+    const center = this.lensCenter;
+    const d = [0, 1].map(i => center[i]-xy[i]);
+    const dist = Math.sqrt(d[0]**2 + d[1]**2);
+    return (dist < rad);
   },
 
   /*
@@ -1125,7 +1153,11 @@ HashState.prototype = {
   get lensing() {
     const wp = this.waypoint;
     const { Lensing } = this.exhibit;
-    return !!wp ? wp.Lensing : Lensing;
+    const lensing = !!wp ? wp.Lensing : Lensing;
+    if (lensing?.Group !== this.group.Name) {
+      return lensing || null;
+    }
+    return null;
   },
 
   // Get the viewport object from the current viewport coordinates

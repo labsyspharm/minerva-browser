@@ -8,6 +8,7 @@ const render_tile = (props, uniforms, tile, via) => {
   const { data } = props;
   const {
     u_lens, u_shape,
+    u_blend_mode, u_blend_alpha,
     u_lens_rad, u_lens_scale,
     u_level, u_origin, u_full_height,
     u_t0_color, u_t1_color,
@@ -37,6 +38,8 @@ const render_tile = (props, uniforms, tile, via) => {
   gl.uniform2fv(u_shape, tile_shape_2fv);
   gl.uniform2fv(u_origin, tile_origin_2fv);
   gl.uniform1f(u_full_height, full_height);
+  gl.uniform1ui(u_blend_mode, data.blend_mode);
+  gl.uniform1f(u_blend_alpha, data.blend_alpha);
   gl.uniform3fv(u_t0_color, data.colors[0] || black);
   gl.uniform3fv(u_t1_color, data.colors[1] || black);
   gl.uniform3fv(u_t2_color, data.colors[2] || black);
@@ -74,6 +77,8 @@ const to_tile_props = (shown, HS, lens_scale, lens_center, cache_gl) => {
   if (shown.colors.length < 1) return null;
   if (shown.modes.length < 1) return null;
   const data = {
+    blend_mode: 1,
+    blend_alpha: -1,
     max_level,
     lens_scale,
     full_height,
@@ -102,6 +107,8 @@ const shaders = {
   uniform float u_lens_rad;
   uniform float u_lens_scale;
   uniform float u_full_height;
+  uniform float u_blend_alpha;
+  uniform uint u_blend_mode;
   uniform uvec2 u_t0_mode;
   uniform uvec2 u_t1_mode;
   uniform uvec2 u_t2_mode;
@@ -174,7 +181,14 @@ const shaders = {
     return vec4(rgb * float(tex.r) / 255., 1.0);
   }
 
-  void main() {
+  vec4 alpha_blend() {
+    vec4 v0 = color_channel(u_t0, u_t0_color, u_t0_mode);
+    vec4 v1 = color_channel(u_t1, u_t1_color, u_t1_mode);
+    float a = u_blend_alpha * v1.a;
+    return (1. - a) * v0 + a * v1;
+  }
+
+  vec4 linear_blend() {
     vec4 v0 = color_channel(u_t0, u_t0_color, u_t0_mode);
     vec4 v1 = color_channel(u_t1, u_t1_color, u_t1_mode);
     vec4 v2 = color_channel(u_t2, u_t2_color, u_t2_mode);
@@ -183,8 +197,16 @@ const shaders = {
     vec4 v5 = color_channel(u_t5, u_t5_color, u_t5_mode);
     vec4 v6 = color_channel(u_t6, u_t6_color, u_t6_mode);
     vec4 v7 = color_channel(u_t7, u_t7_color, u_t7_mode);
-    vec4 sum = v0+v1+v2+v3+v4+v5+v6+v7;
-    color = vec4(sum);
+    return v0+v1+v2+v3+v4+v5+v6+v7;
+  }
+
+  void main() {
+    if (u_blend_mode == uint(0)) {
+      color = alpha_blend();
+    }
+    else {
+      color = linear_blend();
+    }
   }`,
   VERTEX_SHADER: `#version 300 es
   in vec2 a_uv;
@@ -386,11 +408,13 @@ const to_shape_opts = (tileSource) => {
 }
 
 const render_from_cache = (HS, lens_scale, lens_center, channels, tile, cache_gl) => {
-  const lens_rad = HS.lensing?.Rad || 100;
+  const lens_rad = HS.lensRad;
   const { 
     tile_square, max_level, full_height
   } = cache_gl.shape_opts;
   const data = {
+    blend_mode: 0,
+    blend_alpha: 1,
     channels,
     max_level,
     lens_scale,
@@ -412,12 +436,91 @@ const render_to_cache = (HS, lens_scale, lens_center, key, tile, target, cache_g
   return render_tile(props, cache_gl.uniforms, tile, cache_gl.via);
 }
 
+const scale_to_global = (max_level, tile) => {
+  const level = Math.max(0, max_level - tile.level);
+  return v => v * 2 ** level;
+}
+
+const tile_to_global = (to_scale, shape_opts, tile) => {
+  const { tile_square } = shape_opts;
+  const origin = [
+    tile.x * tile_square[0], tile.y * tile_square[1]
+  ];
+  return xy => {
+    return [0, 1].map(i => {
+      return to_scale(origin[i] + xy[i]);
+    });
+  }
+}
+
+const to_tile_corners = (tile) => {
+  const { width: w, height: h } = tile.sourceBounds;
+  return [ [0, 0], [w, 0], [0, h], [w, h] ];
+}
+
+const to_tile_box = (to_scale, to_global, tile) => {
+  const { width: w, height: h } = tile.sourceBounds;
+  const [west, north] = to_global([0, 0]);
+  const [east, south] = to_global([w, h]);
+  const center = to_global([w/2, h/2]);
+  return {
+    rad: to_scale(Math.max(w, h)), center,
+    east, west, north, south
+  };
+}
+
+const to_lens_box = (rad, lens_center) => {
+  return {
+    rad, center: lens_center,
+    west: lens_center[0] - rad, east: lens_center[0] + rad,
+    north: lens_center[1] - rad, south: lens_center[1] + rad
+  }
+}
+
+const to_distance = (a, b) => {
+  const d = [0, 1].map(i => a[i] - b[i]);
+  return Math.sqrt(d[0]**2 + d[1]**2);
+}
+
+const is_within_lens = (HS, lens_scale, lens_center, cache_gl, tile) => {
+  const { shape_opts } = cache_gl;
+  const to_scale = scale_to_global(shape_opts.max_level, tile);
+  const to_global = tile_to_global(to_scale, shape_opts, tile);
+  const tbox = to_tile_box(to_scale, to_global, tile);
+  const rad = HS.lensRad / lens_scale;
+  const lbox = to_lens_box(rad, lens_center);
+  const non_overlap_cases = [
+    tbox.west > lbox.east, tbox.east < lbox.west,
+    tbox.north > lbox.south, tbox.south < lbox.north
+  ];
+  // Bounding boxes don't overlap
+  if (non_overlap_cases.some(x => x)) return false;
+  // The lens is close enough that it must overlap
+  const near_range = Math.max(rad, tbox.rad);
+  if (to_distance(tbox.center, lens_center) < near_range) {
+    return true;
+  }
+  // Check all corners for overlap
+  return to_tile_corners(tile).map(to_global).some(xy => {
+    return to_distance(lens_center, xy) < rad;
+  });
+}
+
+const need_top_layer = (HS, lens_scale, lens_center, cache_gl, tile) => {
+  if (!HS.gl_state.showVisibleLens) return false;
+  return is_within_lens(HS, lens_scale, lens_center, cache_gl, tile);
+}
+
 const render_output = (HS, lens_scale, lens_center, cache_2d, cache_gl, out) => {
 
-  // Render the top layer
   const { key, tile } = out;
   const { top_layer, bottom_layer, w, h } = cache_2d;
   const channels = [bottom_layer, top_layer];
+
+  const need_top = need_top_layer(HS, lens_scale, lens_center, cache_gl, tile);
+  if (need_top === false) {
+    return bottom_layer.getContext('2d');
+  }
   
   // Render both layers from cache
   const rendered_layer = document.createElement("canvas");
@@ -443,7 +546,6 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
     ...customTileCache(HS, 'all'),
     downloadTileStart: function(imageJob) {
       const { full_url, key, tile } = parseImageJob(imageJob);
-      set_cache_gl(HS.gl_state, tile, shape_opts);
       const promises = set_image_callbacks(key);
       // Wait for all source images to resolve 
       const promise = Promise.all(promises).then((results) => {
@@ -579,6 +681,8 @@ const to_uniforms = (via) => {
   const u_lens_rad = gl.getUniformLocation(program, "u_lens_rad");
   const u_lens_scale = gl.getUniformLocation(program, "u_lens_scale");
   const u_full_height = gl.getUniformLocation(program, "u_full_height");
+  const u_blend_alpha = gl.getUniformLocation(program, "u_blend_alpha");
+  const u_blend_mode = gl.getUniformLocation(program, "u_blend_mode");
   const u_t0_mode = gl.getUniformLocation(program, "u_t0_mode");
   const u_t1_mode = gl.getUniformLocation(program, "u_t1_mode");
   const u_t2_mode = gl.getUniformLocation(program, "u_t2_mode");
@@ -597,6 +701,7 @@ const to_uniforms = (via) => {
   const u_t7_color = gl.getUniformLocation(program, "u_t7_color");
   return {
     u_lens, u_shape,
+    u_blend_mode, u_blend_alpha,
     u_lens_rad, u_lens_scale,
     u_level, u_origin, u_full_height,
     u_t0_color, u_t1_color,
@@ -630,6 +735,10 @@ class GLState {
   setTargetImage(item) {
     this.target_image = item;
   }
+
+  get showVisibleLens() {
+    return this.active_sources('lens').length;
+  } 
 
   toLensCenter(viewer) {
     const [x, y] = this.HS.lensCenter;

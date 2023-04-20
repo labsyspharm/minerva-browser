@@ -62,6 +62,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
             loadTilesWithAjax: useAjax,
             compositeOperation: layer.Blend,
             crossOriginPolicy: 'anonymous',
+            immediateRender: true,
             ajaxHeaders: ajaxHeaders,
             tileSource: toTileSource(hashstate, {
               height: image.Height,
@@ -3362,6 +3363,7 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
   const tileWidth = image.TileSize.slice(0,1).pop();
   const tileHeight = image.TileSize.slice(0,2).pop();
   return {
+    immediateRender: false,
     loadTilesWithAjax: false,
     compositeOperation: 'lighter',
     tileSource: toTileTarget(hashstate, viewer, 'lens', {
@@ -3411,7 +3413,6 @@ const build_page_with_exhibit = function(exhibit, options) {
     navigatorPosition: 'BOTTOM_RIGHT',
     zoomOutButton: options.id + '-zoom-out',
     zoomInButton: options.id + '-zoom-in',
-    immediateRender: false,
     maxZoomPixelRatio: 10,
     visibilityRatio: .9,
     degrees: exhibit.Rotation || 0

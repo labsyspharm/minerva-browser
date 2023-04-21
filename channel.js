@@ -80,8 +80,10 @@ const render_tile = (props, uniforms, tile, via) => {
   [0,1,2,3,4,5,6,7].forEach((i) => {
     const from = data.channels[i];
     if (from === undefined) return;
-    gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
     // Allow caching of one alpha channel
+    gl.activeTexture(gl['TEXTURE'+i]);
+    gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.flip_y);
     if (alpha_cached && i === alpha_index) return;
     // Actually re-bind the tile texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
@@ -405,7 +407,7 @@ const initialize_gl = (flip_y, tile, cleanup) => {
   const texture_uniforms = toBuffers(flip_y, program, {
     gl, ...to_vertices(), buffer: gl.createBuffer(), textures
   });
-  const via = { gl, texture_uniforms, textures, program };
+  const via = { gl, flip_y, texture_uniforms, textures, program };
   return { via };
 }
 
@@ -802,9 +804,10 @@ const toTileSource = (HS, tileSource) => {
             return finish(key, null, null);
           }
           // Crop the parent tile
-          const p_data = p_source.ImageData; 
-          const p_crop = cropParentTile(shape_opts, p_data, p_tile, tile);
-          finish(key, p_data, p_crop);
+          createImageBitmap(p_source.ImageData).then(data => {
+            const p_crop = cropParentTile(shape_opts, data, p_tile, tile);
+            finish(key, data, p_crop);
+          }); 
           return true;
         }
         const deferred_parent = (p_tile) => {
@@ -812,7 +815,7 @@ const toTileSource = (HS, tileSource) => {
           const p_waiter = to_image_callbacks(p_key, subpath) || null;
           if (p_waiter === null) return false;
           p_waiter.promise.then((p_data, p_crop) => {
-            finish(key, p_data, p_crop);
+            used_parent(p_tile);
           }).catch( () => {
             finish(key, null, null);
           });

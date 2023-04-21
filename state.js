@@ -470,7 +470,7 @@ HashState.prototype = {
   },
 
   isWithinLens (xy) {
-    const lens_border = 20;
+    const lens_border = 8;
     if (this.lensing === null) {
       return false;
     }

@@ -1,8 +1,6 @@
 import * as d3 from "d3"
 import { round4 } from "./render"
 import { greenOrWhite } from "./render"
-import { linkShaders } from "./channel"
-import { OsdLensingContext } from "./osdLensingContext"
 
 var lasso_draw_counter = 0;
 // Draw a point of a lasso-style polygon
@@ -36,21 +34,13 @@ const changeSprings = function(viewer, seconds, stiffness) {
 };
 
 // Set the opacity of active channel groups or segmentation masks
-export const newMarkers = function(tileSources, isActivePath) {
-
-  Object.keys(tileSources)
-    .forEach(chan => {
-      const { active, mask_index } = isActivePath(chan);
-      tileSources[chan].forEach(tiledImage => {
-        tiledImage.setOpacity([0, 1][+active]);
-        const {world} = tiledImage.viewer || {};
-        if (world && mask_index >= 0) {
-          // Reorder tiled images based on current active mask order
-          const itemIndex = world.getItemCount() - 1 - mask_index;
-          world.setItemIndex(tiledImage, Math.max(itemIndex, 0));
-        }
-      });
+export const newMarkers = function(tileSources, isVisibleLayer) {
+  Object.keys(tileSources).forEach(chan => {
+    const active = isVisibleLayer(chan);
+    tileSources[chan].forEach(tiledImage => {
+      tiledImage.setPreload(active);
     });
+  });
 };
 
 // Render openseadragon from given hash state
@@ -63,21 +53,6 @@ export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) 
   this.mouseEvent = {};
   this.trackers = [];
   this.eventHandler = eventHandler;
-
-  const config = {
-    id: viewer.id,
-    prefixUrl: viewer.prefixUrl,
-    zoomInButton: viewer.zoomInButton.element.id,
-    zoomOutButton: viewer.zoomOutButton.element.id,
-    navigatorPosition: viewer.navigatorPosition,
-    maxZoomPixelRatio: viewer.maxZoomPixelRatio,
-    visibilityRatio: viewer.visibilityRatio,
-    degrees: viewer.degrees,
-  };
-  const lensOptions = {
-    config, hashstate 
-  };
-  this.lensing = new OsdLensingContext(viewer, lensOptions);
 }
 
 RenderOSD.prototype = {
@@ -102,14 +77,6 @@ RenderOSD.prototype = {
     const isRendered = (n) => {
       return HS.isRendered(n);
     }
-    // Initialize Openseadragon
-    const { updater } = linkShaders({
-      viewer, subgroups: HS.active_subgroups,
-      tileSources: this.tileSources,
-      isRendered: isRendered
-    });
-    // Add state updater
-    HS.addColorListener('main', updater);
 
     // Track mouse drag for lasso polygon drawing
     var mouse_drag = new OpenSeadragon.MouseTracker({
@@ -364,8 +331,7 @@ RenderOSD.prototype = {
     if(redraw) {
       // Update OpenSeadragon
       this.activateViewport();
-      this.lensing.newViewRedraw();
-      newMarkers(this.tileSources, HS.isActivePath.bind(HS));
+      newMarkers(this.tileSources, HS.isVisibleLayer.bind(HS));
     }
     this.viewer.forceRedraw();
   },

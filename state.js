@@ -2,6 +2,7 @@ import { encode } from './render'
 import { decode } from './render'
 import { unpackGrid } from './render'
 import { remove_undefined } from './render'
+import { GLState, toDistance } from './channel'
 
 import LZString from "lz-string"
 const yaml = require('js-yaml');
@@ -171,7 +172,8 @@ const anon_authenticate = function(username, pass) {
   })
 }
 
-const to_subgroups = (subpath_map, group, all) => {
+const to_subgroups = (subpath_map, rendered_map, group, all) => {
+  const used = new Set();
   const shown = group.Shown;
   const n_color = group.Colors.length;
   const channels = group.Channels.slice(0, n_color);
@@ -188,15 +190,25 @@ const to_subgroups = (subpath_map, group, all) => {
       if (!all && !shown[i]) return false;
       if (!subpath_map.has(n)) return false;
       return true;
-    }).map((Name) => {
+    }).reduce((out, Name) => {
+      // Disallow duplicate subpaths
       const Path = subpath_map.get(Name);
+      if (used.has(Path)) return out; 
+      used.add(Path);
+      const Colorize = !rendered_map.get(Name);
       const { Colors, Description } = zipped.get(Name);
-      return { Name, Path, Colors, Description };
-    });
+      return [...out, {
+        Name, Path, Colors,
+        Colorize, Description
+      }];
+    }, []);
   }
   // Return group subpath
   const { Name, Path, Colors } = group;
-  return [{ Name, Path, Colors, Description: '' }];
+  return [{
+    Name, Path, Colors,
+    Colorize: false, Description: ''
+  }];
 }
 
 const is_active = ({ masks, subgroups, key, match }) => {
@@ -222,7 +234,7 @@ const can_mutate_group = (old, group) => {
 }
 
 const add_visibility = (cgs) => {
-  return cgs.map(group => {
+  return cgs.map((group, idx) => {
     group.Shown = group.Channels.map(() => true);
     return group;
   });
@@ -252,10 +264,20 @@ export const HashState = function(exhibit, options) {
   this.hideWelcome = options.hideWelcome || false;
   this.noHome = options.noHome || false;
 
+  this._gl_state = null;
   this.state = {
     buffer: {
       waypoint: undefined
     },
+    lensUI: null,
+    lensRad: 100,
+    eventPoint: [0, 0],
+    lensResizeBasis: null,
+    lensHeld: true,
+    lensResizeMin: 80,
+    lensResizeMax: 600,
+    lensResizeSpeed: 1,
+    lensResizeThickness: 60,
     colorListeners: new Map(),
     activeChannel: -1,
     drawType: "lasso",
@@ -278,10 +300,196 @@ export const HashState = function(exhibit, options) {
   };
 
   this.newExhibit();
-
+  this._gl_state = new GLState(this)
 };
+ 
+const to_container = (nav_gap) => {
+   const container = document.createElement('div');
+   container.setAttribute('class', `minerva-lens-ui-wrapper`);
+   container.setAttribute('style', `
+     display: grid;
+     position: absolute;
+     pointer-events: none;
+     grid-template-columns: ${nav_gap}px auto ${nav_gap}px;
+     grid-template-rows: ${nav_gap}px auto ${nav_gap}px;
+     justify-content: center;
+     align-content: center;
+   `);
+  const padding = document.createElement('div');
+  padding.setAttribute('style', `
+    grid-column: 2; grid-row: 2;
+    justify-content: center;
+    align-content: center;
+    display: grid;
+  `);
+  const handle = document.createElement('div');
+  handle.setAttribute('class', `bg-trans`);
+  handle.setAttribute('style', `
+    grid-column: 3; grid-row: 3;
+    color: rgba(0, 123, 255, 1);
+    border-radius: ${nav_gap/2}px;
+    font-size: ${nav_gap}px;
+    border: 2px solid white;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: 1fr auto 1fr;
+    justify-content: center;
+    align-content: center;
+    display: grid;
+  `);
+  const handle_label = document.createElement('span');
+  handle_label.setAttribute('style', `
+    padding-top: 5px;
+    grid-column: 2;
+    grid-row: 2;
+  `);
+  handle_label.innerText = "⤡";
+  handle.append(handle_label);
+  container.append(padding);
+  container.append(handle);
+  return { container, padding };
+}
+
+const to_pad = (rad, nav_gap) => {
+  return Math.ceil(2*rad / Math.sqrt(2)) - 20;
+}
+
+const update_container = ({ container, padding, nav_gap, rad, x, y, no_lens }) => {
+  const pad = to_pad(rad, nav_gap);
+  const css_x = Math.round(x - rad) + 'px';
+  const css_y = Math.round(y - rad) + 'px';
+  container.style.display = ['grid', 'none'][+no_lens];
+  container.style.height = 2*rad + 'px';
+  container.style.width = 2*rad + 'px';
+  padding.style.height = pad + 'px';
+  padding.style.width = pad + 'px';
+  container.style.left = css_x;
+  container.style.top = css_y;
+}
+
+const toReferenceVector = (origin, point) => {
+  return [0,1].map(i => point[i] - origin[i]);
+}
+
+const changeDirection = (ref, vec) => {
+  const dot = (a,b) => a[0]*b[0] + a[1]*b[1];
+  return -1 * Math.sign(dot(ref, vec));
+}
+
+const changeMagnitude = (ref, vec) => {
+  const dot = (a,b) => a[0]*b[0] + a[1]*b[1];
+  const scalar = dot(ref,vec) / dot(ref,ref);
+  const projection = ref.map(x => scalar * x);
+  return toDistance([0, 0], projection);
+}
 
 HashState.prototype = {
+
+  createLens (viewer) {
+    const vp = viewer.viewport;
+    const first_point = vp.viewportToViewerElementCoordinates(
+      vp.getCenter(true)
+    );
+    const first_center = [first_point.x, first_point.y];
+    this.createLensUI(viewer);
+    this.updateLensUI(first_center);
+    viewer.addHandler('canvas-release', (e) => {
+      this.state.lensHeld = false;
+      this.state.lensResizeBasis = null;
+    });
+    viewer.addHandler('canvas-press', (e) => {
+      const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
+    });
+    viewer.addHandler('canvas-drag', (e) => {
+      const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
+      this.state.lensHeld = this.isWithinLens([x, y]);
+      if (this.state.lensHeld) {
+        e.preventDefaultAction = true;
+        this.updateLensUI([x, y]);
+        viewer.forceRedraw();
+      }
+      else if (this.isWithinResizeRing([x, y])) {
+        e.preventDefaultAction = true;
+        const { lensResizeBasis } = this.state;
+        if (lensResizeBasis === null) {
+          const ref = toReferenceVector([x, y], this.lensCenter);
+          this.state.lensResizeBasis = ref;
+        }
+        const ref = this.state.lensResizeBasis;
+        const dir = changeDirection(ref, [e.delta.x, e.delta.y]);
+        const mag = changeMagnitude(ref, [e.delta.x, e.delta.y]);
+        const speed = this.state.lensResizeSpeed;
+        const new_rad = ((rad, scale) => {
+          const min = this.state.lensResizeMin;
+          const max = this.state.lensResizeMax;
+          if (isNaN(scale)) return rad;
+          return Math.min(Math.max(rad + scale, min), max);
+        })(this.lensRad, speed * dir * mag);
+        this.updateLensRadius(new_rad);
+        this.updateLensUI(this.lensCenter);
+        viewer.forceRedraw();
+      }
+    });
+  },
+
+  createLensUI (viewer) {
+    const nav_gap =  this.state.lensResizeThickness * .75;
+    const { container, padding } = to_container(nav_gap);
+    this.state.lensUI = {
+      container, padding, nav_gap
+    };
+    const { parentElement } = viewer.element;
+    parentElement.append(container);
+  },
+
+  updateLensUI (newLensCenter) {
+    const rad = this.lensRad;
+    if (!this.state.lensUI) return;
+    if (newLensCenter) {
+      this.lensCenter = newLensCenter;
+    }
+    const [x, y] = this.lensCenter;
+    const no_lens = this.lensing === null;
+    const { container, padding, nav_gap } = this.state.lensUI;
+    update_container({ container, padding, nav_gap, rad, x, y, no_lens });
+  },
+
+  updateLensRadius (newRad) {
+    this.state.lensRad = newRad;
+  },
+
+  get lensRad () {
+    return this.state.lensRad;
+  },
+
+  get lensCenter () {
+    return this.state.eventPoint;
+  },
+
+  set lensCenter (xy) {
+    this.state.eventPoint = xy;
+  },
+
+  isWithinLens (xy) {
+    const lens_border = 8;
+    if (this.lensing === null) {
+      return false;
+    }
+    const center = this.lensCenter;
+    const dist = toDistance(center, xy);
+    const rad = this.lensRad - lens_border;
+    return (dist < rad);
+  },
+
+  isWithinResizeRing (xy) {
+    if (this.lensing === null) {
+      return false;
+    }
+    const rad = this.lensRad;
+    const center = this.lensCenter;
+    const ring =  rad + this.state.lensResizeThickness;
+    const dist = toDistance(center, xy);
+    return dist < ring;
+  },
 
   /*
    * Editor buffers
@@ -380,6 +588,10 @@ HashState.prototype = {
 
   get edit() {
     return !!this.state.edit;
+  },
+
+  get gl_state() {
+    return this._gl_state;
   },
 
   /*
@@ -573,6 +785,9 @@ HashState.prototype = {
 
     // Set group, viewport from waypoint
     const waypoint = this.waypoint;
+    if (waypoint.Lensing?.Rad) {
+      this.updateLensRadius(waypoint.Lensing.Rad);
+    }
 
     // this.slower();
     this.m = mFromWaypoint(waypoint, this.masks);
@@ -868,19 +1083,12 @@ HashState.prototype = {
 
   // Get openseadragon subgroup layers
   get subgroup_layers () {
-    const used = new Set();
     const { all_subgroups, subpath_map } = this;
     const colorize = this.allowSingleChannels;
-    return all_subgroups.reduce((out, subgroup, i) => {
-      // Disallow duplicate subpaths
-      const path = subpath_map.get(subgroup.Name);
-      if (used.has(path)) return out; 
-      used.add(path);
+    return all_subgroups.map((subgroup, i) => {
       const g = { ...subgroup };
       g['Format'] = g['Format'] || 'jpg';
-      g['Colorize'] = colorize;
-      g['Blend'] = 'lighter';
-      return [...out, g];
+      return g;
     }, []);
   },
 
@@ -890,7 +1098,6 @@ HashState.prototype = {
     const mask_layers = this.masks.map(mask => {
       const m = { ...mask };
       m['Format'] = m['Format'] || 'png';
-      m['Blend'] = 'source-over';
       m['Colorize'] = false;
       return m;
     });
@@ -899,7 +1106,7 @@ HashState.prototype = {
 
   // Get the subgroups of all possible layers
   get all_subgroups() {
-    const { subpath_map } = this;
+    const { subpath_map, rendered_map } = this;
     const inactive = this.cgs.filter(({Name}) => {
       return Name !== this.group.Name;
     });
@@ -907,7 +1114,7 @@ HashState.prototype = {
     const groups = [this.group, ...inactive];
     // Find all unqiue subgroups among groups
     return [...groups.reduce((o, group) => {
-      const subgroups = to_subgroups(subpath_map, group, true);
+      const subgroups = to_subgroups(subpath_map, rendered_map, group, true);
       return subgroups.reduce((o, subgroup) => {
         if (o.has(subgroup.Name)) return o;
         o.set(subgroup.Name, subgroup);
@@ -918,19 +1125,23 @@ HashState.prototype = {
 
   // Get the subgroups of the current layer
   get active_subgroups() {
-    return to_subgroups(this.subpath_map, this.group, false);
+    const { subpath_map, rendered_map, group } = this;
+    const out = to_subgroups(subpath_map, rendered_map, group, false);
+    return out.map(sub => ({ ...sub, Lens: false }));
   },
   
   // Get the subgroups of current lens
   get lens_subgroups() {
+    const { subpath_map, rendered_map, lens_group } = this;
     const group = this.lens_group;
     if (group === null) return [];
-    return to_subgroups(this.subpath_map, group, false);
+    const out = to_subgroups(subpath_map, rendered_map, lens_group, false);
+    return out.map(sub => ({ ...sub, Lens: true }));
   },
 
   // Get the colors of the current lens's channels
   get lens_colors() {
-    return this.lens_group.Colors;
+    return this.lens_group?.Colors || [];
   },
 
   // Get the colors of the current group's channels
@@ -943,12 +1154,12 @@ HashState.prototype = {
 
   // Get the names of the current lens's channels
   get lens_channel_names() {
-    return this.lens_group.Channels;
+    return this.lens_group?.Channels || [];
   },
 
   // Get the descriptions of the current lens's channels
   get lens_channel_descriptions() {
-    return this.lens_group.Descriptions;
+    return this.lens_group?.Descriptions || [];
   },
 
   // Get the names of the current group's channels
@@ -1031,7 +1242,11 @@ HashState.prototype = {
   get lensing() {
     const wp = this.waypoint;
     const { Lensing } = this.exhibit;
-    return !!wp ? wp.Lensing : Lensing;
+    const lensing = !!wp ? wp.Lensing : Lensing;
+    if (lensing?.Group !== this.group.Name) {
+      return lensing || null;
+    }
+    return null;
   },
 
   // Get the viewport object from the current viewport coordinates
@@ -1054,9 +1269,13 @@ HashState.prototype = {
     };
   },
 
+  get rendered_map() {
+    return this.design.is_rendered_map;
+  },
+
   isRendered(name) {
-    if (this.design.is_rendered_map.has(name)) {
-      return this.design.is_rendered_map.get(name);
+    if (this.rendered_map.has(name)) {
+      return this.rendered_map.get(name);
     }
     return false;
   },
@@ -1403,13 +1622,6 @@ HashState.prototype = {
     return wid_yaml.replace('- - - ', '    - ');
   },
 
-  isActivePath(match) {
-    const key = 'Path';
-    const masks = this.active_masks;
-    const subgroups = this.active_subgroups;
-    return is_active({ masks, subgroups, key, match });
-  },
-
   isActiveGroupName(match) {
     const key = 'Name';
     const masks = this.active_masks;
@@ -1436,9 +1648,21 @@ HashState.prototype = {
   },
 
   dispatchColorEvent() {
-    const { active_subgroups } = this;
-    const fns = this.state.colorListeners.values();
-    [...fns].forEach(fn => fn(active_subgroups));
+    const fns = this.state.colorListeners.entries();
+    [...fns].forEach(([key, fn]) => {
+      if (key === 'lens') fn();
+      else fn();
+    });
+  },
+
+  isVisibleLayer(match) {
+    const key = 'Path';
+    const masks = this.active_masks;
+    const subgroups = [
+      ...this.active_subgroups, ...this.lens_subgroups
+    ];
+    const result = is_active({ masks, subgroups, key, match });
+    return result.active;
   }
 };
 
@@ -1471,79 +1695,16 @@ export const getAjaxHeaders = function(state, image){
   return Promise.resolve({});
 };
 
+
 // Return a function for Openseadragon's getTileUrl API
-export const getGetTileUrl = function(image, layer) {
-
-  const renderList = layer.Render || [];
-
+export const getGetTileUrl = function(ipath, lpath, max, format) {
   // This default function simply requests for rendered jpegs
-  const getJpegTile = function(level, x, y) {
-    const fileExt = '.' + layer.Format;
-    return image.Path + '/' + layer.Path + '/' + (image.MaxLevel - level) + '_' + x + '_' + y + fileExt;
+  return function(level, x, y) {
+    const fileExt = '.' + format;
+    const fname = (max - level) + '_' + x + '_' + y + fileExt;
+    return ipath + '/' + lpath + '/' + fname;
   };
 
-  // Handle Optional AWS lambda functionality rendering images
-  if (image.Provider == 'minerva' || image.Provider == 'minerva-public') {
-    const channelList = renderList.reduce(function(list, settings, i) {
-
-      const allowed = settings.Images;
-      if (allowed.indexOf(image.Name) >= 0) {
-        const index = settings.Index;
-        const color = settings.Color;
-        const min = settings.Range[0];
-        const max = settings.Range[1];
-        const specs = [index, color, min, max];
-        list.push(specs.join(','));
-      }
-      return list;
-    }, []);
-
-    let api = image.Path;
-    let channelPath = channelList.join('/');
-    if (image.Path.includes('/prerendered-tile/')) {
-      channelPath = layer.Path;
-    }
-
-    const getMinervaTile = function(level, x, y) {
-      const lod = (image.MaxLevel - level) + '/';
-      const pos = x + '/' + y + '/0/0/';
-      const url = api + pos + lod + channelPath;
-      return url; 
-    };
-
-    return getMinervaTile;
-  }
-  // Handle optional Omero functionality for rendering images
-  else if (image.Provider == 'omero') {
-    const channelList = renderList.reduce(function(list, settings, i) {
-
-      const allowed = settings.Images;
-      if (allowed.indexOf(image.Name) >= 0) {
-        const index = settings.Index;
-        const color = settings.Color;
-        const min = Math.round(settings.Range[0] * 65535);
-        const max = Math.round(settings.Range[1] * 65535);
-        list.push(index + '|' + min + ':' + max + '$' + color);
-      }
-      return list;
-    }, []);
-    const channelPath = channelList.join(',');
-
-    const getOmeroTile = function(level, x, y) {
-      const api = image.Path + '?c=' + channelPath;
-      const lod = (image.MaxLevel - level);
-      const pos = lod + ',' + x + ',' + y + ',';
-      const trash = '&m=c&z=1&t=1&format=jpeg&tile=';
-      const url = api + trash + pos + image.TileSize.join(','); 
-      return url; 
-    };
-
-    return getOmeroTile; 
-  }
-  // Default function is returned
-  else {
-    return getJpegTile; 
-  }
 };
 
 // Get index of name in a list of names

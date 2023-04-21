@@ -8,17 +8,15 @@
     "d3-svg-legend": "^2.25.6",
     "jquery": "3.5.1",
     "js-yaml": "^3.14.0",
-    "lensing": "github:thejohnhoffer/lensing#64dfc0961f084de55d12b2620950cde1b7311e5c",
     "lz-string": "^1.4.4",
-    "openseadragon": "^2.4.2",
+    "openseadragon": "^4.0.0",
     "popper.js": "1.16.0",
     "process": "^0.11.10",
     "sha1": "^1.1.1",
     "showdown": "^1.9.1",
     "vega": "^5.20.2",
     "vega-embed": "^6.20.3",
-    "vega-lite": "^5.1.0",
-    "viawebgl": "github:thejohnhoffer/viaWebGL#89f77f43134f2d7deb88199570df925ea08cef72"
+    "vega-lite": "^5.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",

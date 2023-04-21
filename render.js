@@ -492,6 +492,10 @@ Render.prototype = {
     this.osd.newView(redraw);
     // Redraw design
     if(redraw) {
+
+      // redrawLensUI
+      HS.updateLensUI(null);
+
       // Redraw HTML Menus
       this.addChannelLegends();
 

@@ -1,5 +1,6 @@
 import SimpleEventHandler from "./simpleEventHandler.js"
 import { get_links_alias } from "./links_alias.js"
+import { toTileTarget, toTileSource } from "./channel"
 import { getAjaxHeaders } from "./state"
 import { getGetTileUrl } from "./state"
 import { HashState } from "./state"
@@ -21,6 +22,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
   const layers = hashstate.layers;
 
   const grid = hashstate.grid;
+  const grid_shape = to_grid_shape(grid);
 
   const images = hashstate.images;
 
@@ -31,22 +33,13 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
     : hashstate.exhibit.Name
 
   // Read the grid arangement from the configuration file
-  const numRows = grid.length;
-  const numColumns = grid[0].length;
+  const { maxImageHeight, spacingFraction } = grid_shape;
+  const { numRows, numColumns } = grid_shape;
+  const { cellWidth, cellHeight } = grid_shape;
 
   const nTotal = numRows * numColumns * layers.length;
   var nLoaded = 0;
 
-  const spacingFraction = 0.05;
-  const maxImageWidth = flatten(grid).reduce(function(max, img) {
-    return Math.max(max, img.Width);
-  }, 0);
-  const maxImageHeight = flatten(grid).reduce(function(max, img) {
-    return Math.max(max, img.Height);
-  }, 0);
-
-  const cellHeight = (1 + spacingFraction) / numRows - spacingFraction;
-  const cellWidth = cellHeight * maxImageWidth / maxImageHeight;
   const aspect_ratio = (cellWidth * numColumns) / (cellHeight * numRows);
 
   // Iterate through the rows
@@ -55,56 +48,43 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
     // Iterate through the columns
     for (var xi = 0; xi < numColumns; xi++) {
       const image = grid[yi][xi];
-      const displayHeight = (1 - (numRows-1) * spacingFraction) / numRows * image.Height / maxImageHeight;
-      const displayWidth = displayHeight * image.Width / image.Height;
+      const { displayHeight, displayWidth } = to_image_shape(image, grid_shape)
       const x = xi * (cellWidth + spacingFraction) + (cellWidth - displayWidth) / 2;
       // Iterate through the layers
       for (var j=0; j < layers.length; j++) {
         const layer = layers[j];
         getAjaxHeaders(hashstate, image).then(function(ajaxHeaders){
           const useAjax = (image.Provider == 'minerva' || image.Provider == 'minerva-public');
+          const tileWidth = image.TileSize.slice(0,1).pop();
+          const tileHeight = image.TileSize.slice(0,2).pop();
           // Add an openseadragon tiled image
           viewer.addTiledImage({
             loadTilesWithAjax: useAjax,
             compositeOperation: layer.Blend,
             crossOriginPolicy: 'anonymous',
             ajaxHeaders: ajaxHeaders,
-            tileSource: {
-              colorize: layer.Colorize,
+            tileSource: toTileSource(hashstate, {
               height: image.Height,
               width:  image.Width,
               name: layer.Name,
               maxLevel: image.MaxLevel,
-              tileWidth: image.TileSize.slice(0,1).pop(),
-              tileHeight: image.TileSize.slice(0,2).pop(),
-              getTileUrl: getGetTileUrl(image, layer)
-            },
+              tileWidth: tileWidth,
+              tileHeight: tileHeight,
+              getTileUrl: getGetTileUrl(
+                image.Path, layer.Path, image.MaxLevel, layer.Format
+              )
+            }),
             x: x,
             y: y,
             opacity: 0,
+            preload: true,
             width: displayWidth,
-            //preload: true,
             success: function(data) {
               const item = data.item;
               if (!tileSources.hasOwnProperty(layer.Path)) {
                 tileSources[layer.Path] = [];
               }
               tileSources[layer.Path].push(item);
-
-              // Set preload flags of neighboring layers if in 3D mode
-              if (hashstate.design.is3d) {
-                const item_idx = viewer.world.getIndexOfItem(item);
-                item.addHandler('fully-loaded-change', function(e){
-                  const next_item = viewer.world.getItemAt(item_idx + 1);
-                  const last_item = viewer.world.getItemAt(item_idx - 1);
-                  if (next_item) {
-                    next_item.setPreload(e.fullyLoaded);
-                  }
-                  if (last_item) {
-                    last_item.setPreload(e.fullyLoaded);
-                  }
-                })
-              }
               // Initialize hash state
               nLoaded += 1;
               if (nLoaded == nTotal) {
@@ -2171,6 +2151,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 
 .minerva-root > .minerva-full {
   position: relative;
+  overflow: hidden;
   height: 100%;
   width: 100%;
 }
@@ -3339,19 +3320,105 @@ const makeTwinViewer = function(e) {
     });
 }
 
+const to_image_shape = (image, grid_shape) => {
+  const {
+    numRows, maxImageHeight, spacingFraction
+  } = grid_shape;
+
+  const displayHeight = (1 - (numRows-1) * spacingFraction) / numRows * image.Height / maxImageHeight;
+  const displayWidth = displayHeight * image.Width / image.Height;
+  return { displayWidth, displayHeight }
+}
+
+const to_grid_shape = (grid) => {
+
+  const numRows = grid.length;
+  const numColumns = grid[0].length;
+  const spacingFraction = 0.05;
+
+  const maxImageWidth = flatten(grid).reduce(function(max, img) {
+    return Math.max(max, img.Width);
+  }, 0);
+  const maxImageHeight = flatten(grid).reduce(function(max, img) {
+    return Math.max(max, img.Height);
+  }, 0);
+
+  const cellHeight = (1 + spacingFraction) / numRows - spacingFraction;
+  const cellWidth = cellHeight * maxImageWidth / maxImageHeight;
+  return {
+    numRows, numColumns, cellWidth, cellHeight, maxImageHeight, spacingFraction
+  };
+} 
+
+const getEmptyTileUrl = (max, format) => {
+  const getTileUrl = getGetTileUrl('foo', 'bar', max, format);
+  return (level, x, y) => {
+    return getTileUrl(level, x, y).split('/').pop();
+  }
+}
+
+const to_tile_target = (image, grid_shape, hashstate, viewer) => {
+  const { displayWidth } = to_image_shape(image, grid_shape)
+  const tileWidth = image.TileSize.slice(0,1).pop();
+  const tileHeight = image.TileSize.slice(0,2).pop();
+  return {
+    loadTilesWithAjax: false,
+    compositeOperation: 'lighter',
+    tileSource: toTileTarget(hashstate, viewer, 'lens', {
+      colorize: true,
+      tileHeight: tileHeight,
+      tileWidth: tileWidth,
+      height: image.Height,
+      width:  image.Width,
+      name: "rendering-layer",
+      maxLevel: image.MaxLevel,
+      getTileUrl: getEmptyTileUrl(image.MaxLevel, 'jpg')
+    }),
+    x: 0,
+    y: 0,
+    opacity: 1,
+    width: displayWidth,
+    success: ({ item }) => {
+      hashstate.gl_state.setTargetImage(item);
+    }
+  }
+}
+
 const build_page_with_exhibit = function(exhibit, options) {
+  // Initialize state
+  const hashstate = new HashState(exhibit, options);
+  const grid = hashstate.grid;
+  const grid_shape = to_grid_shape(grid);
+
+  const layers = hashstate.layers;
+  const max_max_cache_count = (([w=0, h=0]) => {
+    const rgba = 4;
+    const gb = 1024**3;
+    const max_memory_gb = 4; // GiB;
+    const t = Math.max(w*h, 256**2) * rgba;
+    return (max_memory_gb * 4*gb) / t;
+  })(grid[0][0].TileSize);
+  const ideal_cache_count = 50 * layers.length;
+  const maxImageCacheCount = Math.min(
+    max_max_cache_count, ideal_cache_count 
+  );
+
   // Initialize openseadragon
   const viewer = OpenSeadragon({
+    maxImageCacheCount,
     id: options.id + '-openseadragon',
     prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.3.1/images/',
     navigatorPosition: 'BOTTOM_RIGHT',
     zoomOutButton: options.id + '-zoom-out',
     zoomInButton: options.id + '-zoom-in',
-    immediateRender: true,
     maxZoomPixelRatio: 10,
     visibilityRatio: .9,
-    degrees: exhibit.Rotation || 0,
+    immediateRender: true,
+    degrees: exhibit.Rotation || 0
   });
+  const tile_target = to_tile_target(grid[0][0], grid_shape, hashstate, viewer);
+  viewer.addTiledImage(tile_target);
+  hashstate.createLens(viewer);
 
   // Constantly reset each arrow transform property
 	function updateOverlays() {
@@ -3369,22 +3436,6 @@ const build_page_with_exhibit = function(exhibit, options) {
 
 	viewer.addHandler("animation", updateOverlays);
 
-  viewer.world.addHandler('add-item', function(addItemEvent) {
-      const tiledImage = addItemEvent.item;
-      tiledImage.addHandler('fully-loaded-change', function(fullyLoadedChangeEvent) {
-          const fullyLoaded = fullyLoadedChangeEvent.fullyLoaded;
-          if (fullyLoaded) {
-            tiledImage.immediateRender = false;
-          }
-      });
-      tiledImage.addHandler('opacity-change', function(opacityChangeEvent) {
-          const opacity = opacityChangeEvent.opacity;
-          if (opacity == 0) {
-            tiledImage.immediateRender = true;
-          }
-      });
-  });
-
   // Add size scalebar
   viewer.scalebar({
     location: 3,
@@ -3400,7 +3451,6 @@ const build_page_with_exhibit = function(exhibit, options) {
   //set up event handler
   const eventHandler = new SimpleEventHandler(d3.select('body').node());
 
-  const hashstate = new HashState(exhibit, options);
   const tileSources = {};
   const osd = new RenderOSD(hashstate, viewer, tileSources, eventHandler);
   const render = new Render(hashstate, osd);

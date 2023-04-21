@@ -6,17 +6,20 @@ const render_tile = (props, uniforms, tile, via) => {
     return via.gl.canvas;
   }
   const { data } = props;
+  const { alpha_index, alpha_cached } = data;
   const {
-    u_lens, u_shape,
-    u_blend_mode, u_blend_alpha,
+    u_lens, u_shape, u_alpha_index, u_blend_alpha,
     u_lens_rad, u_lens_scale,
     u_level, u_origin, u_full_height,
+    u_t0_crop, u_t1_crop,
+    u_t2_crop, u_t3_crop, u_t4_crop,
+    u_t5_crop, u_t6_crop, u_t7_crop,
     u_t0_color, u_t1_color,
     u_t2_color, u_t3_color, u_t4_color,
     u_t5_color, u_t6_color, u_t7_color,
     u_t0_mode, u_t1_mode,
     u_t2_mode, u_t3_mode, u_t4_mode,
-    u_t5_mode, u_t6_mode, u_t7_mode
+    u_t5_mode, u_t6_mode, u_t7_mode,
   } = uniforms;
   const w = data.width;
   const h = data.height;
@@ -30,6 +33,7 @@ const render_tile = (props, uniforms, tile, via) => {
   const tile_level = Math.max(0, max - tile.level);
   const tile_origin_2fv = new Float32Array([x, y]);
   const tile_shape_2fv = new Float32Array([w, h]);
+  const full = [0, 0, 0, 0];
   const black = hex2gl("000000");
   gl.uniform1f(u_level, tile_level);
   gl.uniform2fv(u_lens, tile_lens_2fv);
@@ -38,7 +42,7 @@ const render_tile = (props, uniforms, tile, via) => {
   gl.uniform2fv(u_shape, tile_shape_2fv);
   gl.uniform2fv(u_origin, tile_origin_2fv);
   gl.uniform1f(u_full_height, full_height);
-  gl.uniform1ui(u_blend_mode, data.blend_mode);
+  gl.uniform1i(u_alpha_index, alpha_index);
   gl.uniform1f(u_blend_alpha, data.blend_alpha);
   gl.uniform3fv(u_t0_color, data.colors[0] || black);
   gl.uniform3fv(u_t1_color, data.colors[1] || black);
@@ -48,6 +52,14 @@ const render_tile = (props, uniforms, tile, via) => {
   gl.uniform3fv(u_t5_color, data.colors[5] || black);
   gl.uniform3fv(u_t6_color, data.colors[6] || black);
   gl.uniform3fv(u_t7_color, data.colors[7] || black);
+  gl.uniform4fv(u_t0_crop, data.crops[0] || full);
+  gl.uniform4fv(u_t1_crop, data.crops[1] || full);
+  gl.uniform4fv(u_t2_crop, data.crops[2] || full);
+  gl.uniform4fv(u_t3_crop, data.crops[3] || full);
+  gl.uniform4fv(u_t4_crop, data.crops[4] || full);
+  gl.uniform4fv(u_t5_crop, data.crops[5] || full);
+  gl.uniform4fv(u_t6_crop, data.crops[6] || full);
+  gl.uniform4fv(u_t7_crop, data.crops[7] || full);
   gl.uniform2ui(u_t0_mode, ...(data.modes[0] || [0, 0]));
   gl.uniform2ui(u_t1_mode, ...(data.modes[1] || [0, 0]));
   gl.uniform2ui(u_t2_mode, ...(data.modes[2] || [0, 0]));
@@ -57,15 +69,26 @@ const render_tile = (props, uniforms, tile, via) => {
   gl.uniform2ui(u_t6_mode, ...(data.modes[6] || [0, 0]));
   gl.uniform2ui(u_t7_mode, ...(data.modes[7] || [0, 0]));
 
-  // Send the tile channels to the texture
+  // Point to the alpha channel
+  if (alpha_index >= 2 && alpha_index < 8) {
+    gl.uniform1i(via.texture_uniforms.u_t1, alpha_index);
+    gl.uniform2ui(u_t1_mode, ...(data.modes[alpha_index] || [0, 0]));
+    gl.uniform3fv(u_t1_color, data.colors[alpha_index] || black);
+    gl.uniform4fv(u_t1_crop, data.crops[alpha_index] || full);
+  }
+  // Bind all needed textures
   [0,1,2,3,4,5,6,7].forEach((i) => {
     const from = data.channels[i];
     if (from === undefined) return;
-    gl.activeTexture(gl['TEXTURE'+i]);
+    gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
+    // Allow caching of one alpha channel
+    if (alpha_cached && i === alpha_index) return;
+    // Actually re-bind the tile texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
               gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   });
+  // Actually draw the arrays
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   return gl.canvas;
 }
 
@@ -76,9 +99,11 @@ const to_tile_props = (shown, HS, lens_scale, lens_center, cache_gl) => {
   if (shown.channels.length < 1) return null;
   if (shown.colors.length < 1) return null;
   if (shown.modes.length < 1) return null;
+  if (shown.crops.length < 1) return null;
   const data = {
     blend_mode: 1,
     blend_alpha: -1,
+    alpha_index: -1,
     max_level,
     lens_scale,
     full_height,
@@ -88,6 +113,7 @@ const to_tile_props = (shown, HS, lens_scale, lens_center, cache_gl) => {
     modes: shown.modes,
     colors: shown.colors,
     channels: shown.channels,
+    crops: shown.crops,
     width: shown.channels[0].width,
     height: shown.channels[0].height
   }
@@ -108,7 +134,15 @@ const shaders = {
   uniform float u_lens_scale;
   uniform float u_full_height;
   uniform float u_blend_alpha;
-  uniform uint u_blend_mode;
+  uniform int u_alpha_index;
+  uniform vec4 u_t0_crop;
+  uniform vec4 u_t1_crop;
+  uniform vec4 u_t2_crop;
+  uniform vec4 u_t3_crop;
+  uniform vec4 u_t4_crop;
+  uniform vec4 u_t5_crop;
+  uniform vec4 u_t6_crop;
+  uniform vec4 u_t7_crop;
   uniform uvec2 u_t0_mode;
   uniform uvec2 u_t1_mode;
   uniform uvec2 u_t2_mode;
@@ -161,15 +195,22 @@ const shaders = {
   }
 
   // Sample texture at given texel offset
-  uvec4 texel(usampler2D sam, vec2 size, vec2 pos, vec2 off) {
-    float y = 1. - (pos.y + off.y / size.y);
-    float x = pos.x + off.x / size.x;
+  uvec4 texel(usampler2D sam, vec2 size, vec2 pos, vec4 crop) {
+    vec2 s = vec2(pow(2.0, crop[0]), pow(2.0, crop[1]));
+    vec2 p = vec2(pos.x / s.x, pos.y / s.y);
+    vec2 off = vec2(crop[2], crop[3]);
+    float x = p.x + off.x / size.x;
+    if (s.x != 1. || s.y != 1.) {
+      float y = 1. - p.y - off.y / size.y;
+      return texture(sam, vec2(x, y));
+    }
+    float y = 1. - p.y;
     return texture(sam, vec2(x, y));
   }
 
   // Colorize continuous u8 signal
-  vec4 color_channel(usampler2D sam, vec3 rgb, uvec2 mode) {
-    uvec4 tex = texel(sam, u_shape, uv, vec2(0, 0));
+  vec4 color_channel(usampler2D sam, vec3 rgb, vec4 crop, uvec2 mode) {
+    uvec4 tex = texel(sam, u_shape, uv, crop);
 
     // Render empty lens background
     if (mode[0] == uint(1)) {
@@ -182,10 +223,11 @@ const shaders = {
         return vec4(1.0);
       }
     }
-
+    // Render empty unconditionally
     if (mode[1] == uint(0)) {
       return vec4(0.0);
     }
+    // Render exact rgba texture
     if (mode[1] == uint(1)) {
       return vec4(tex) / 255.;
     }
@@ -193,31 +235,42 @@ const shaders = {
     return vec4(rgb * float(tex.r) / 255., 1.0);
   }
 
-  vec4 alpha_blend() {
-    vec4 v0 = color_channel(u_t0, u_t0_color, u_t0_mode);
-    vec4 v1 = color_channel(u_t1, u_t1_color, u_t1_mode);
+  vec4 alpha_blend(vec4 v0, usampler2D t, vec3 rgb, vec4 crop, uvec2 mode) {
+    vec4 v1 = color_channel(t, rgb, crop, mode);
     float a = u_blend_alpha * v1.a;
     return (1. - a) * v0 + a * v1;
   }
 
   vec4 linear_blend() {
-    vec4 v0 = color_channel(u_t0, u_t0_color, u_t0_mode);
-    vec4 v1 = color_channel(u_t1, u_t1_color, u_t1_mode);
-    vec4 v2 = color_channel(u_t2, u_t2_color, u_t2_mode);
-    vec4 v3 = color_channel(u_t3, u_t3_color, u_t3_mode);
-    vec4 v4 = color_channel(u_t4, u_t4_color, u_t4_mode);
-    vec4 v5 = color_channel(u_t5, u_t5_color, u_t5_mode);
-    vec4 v6 = color_channel(u_t6, u_t6_color, u_t6_mode);
-    vec4 v7 = color_channel(u_t7, u_t7_color, u_t7_mode);
-    return v0+v1+v2+v3+v4+v5+v6+v7;
+    vec4 v0 = color_channel(u_t0, u_t0_color, u_t0_crop, u_t0_mode);
+    if (u_alpha_index < 2) {
+      v0 = v0 + color_channel(u_t1, u_t1_color, u_t1_crop, u_t1_mode);
+    }
+    if (u_alpha_index != 2) {
+      v0 = v0 + color_channel(u_t2, u_t2_color, u_t2_crop, u_t2_mode);
+    }
+    if (u_alpha_index != 3) {
+      v0 = v0 + color_channel(u_t3, u_t3_color, u_t3_crop, u_t3_mode);
+    }
+    if (u_alpha_index != 4) {
+      v0 = v0 + color_channel(u_t4, u_t4_color, u_t4_crop, u_t4_mode);
+    }
+    if (u_alpha_index != 5) {
+      v0 = v0 + color_channel(u_t5, u_t5_color, u_t5_crop, u_t5_mode);
+    }
+    if (u_alpha_index != 6) {
+      v0 = v0 + color_channel(u_t6, u_t6_color, u_t6_crop, u_t6_mode);
+    }
+    if (u_alpha_index != 7) {
+      v0 = v0 + color_channel(u_t7, u_t7_color, u_t7_crop, u_t7_mode);
+    }
+    return v0;
   }
 
   void main() {
-    if (u_blend_mode == uint(0)) {
-      color = alpha_blend();
-    }
-    else {
-      color = linear_blend();
+    color = linear_blend();
+    if (u_blend_alpha > 0. && u_alpha_index >= 2) {
+      color = alpha_blend(color, u_t1, u_t1_color, u_t1_crop, u_t1_mode);
     }
   }`,
   VERTEX_SHADER: `#version 300 es
@@ -314,6 +367,10 @@ const toBuffers = (flip_y, program, via) => {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   })
+
+  return {
+    u_t0, u_t1, u_t2, u_t3, u_t4, u_t5, u_t6, u_t7
+  }
 }
 
 const to_gl_tile_key = (flip_y, tile) => {
@@ -344,11 +401,11 @@ const initialize_gl = (flip_y, tile, cleanup) => {
   const program = toProgram(gl, shaders);
   update_shape(gl, tile);
   gl.useProgram(program);
-  toBuffers(flip_y, program, {
-    gl, ...to_vertices(), buffer: gl.createBuffer(),
-    textures: [0,1,2,3,4,5,6,7].map(() => gl.createTexture())
+  const textures = [0,1,2,3,4,5,6,7].map(() => gl.createTexture());
+  const texture_uniforms = toBuffers(flip_y, program, {
+    gl, ...to_vertices(), buffer: gl.createBuffer(), textures
   });
-  const via = { gl, program };
+  const via = { gl, texture_uniforms, textures, program };
   return { via };
 }
 
@@ -423,25 +480,38 @@ const to_shape_opts = (tileSource) => {
   };
 }
 
-const render_from_cache = (HS, lens_scale, lens_center, channels, tile, cache_gl) => {
+const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out) => {
+  const { tile, key } = out;
   const lens_rad = HS.lensRad;
   const { 
     tile_square, max_level, full_height
   } = cache_gl.shape_opts;
+  const { index, cached } = HS.gl_state.nextAlpha(key);
+  // Allow blending of two alpha layers
+  const [ bottom_layer, top_layer ] = layers;
+  const alpha_layers = [0,1,2,3,4,5,6,7].map(i => {
+    return [undefined, top_layer][+(i === index)];
+  }).slice(1);
+  const alpha_modes = alpha_layers.map(layer => {
+    return layer ? [1, 1] : [0, 0];
+  });
   const data = {
     blend_mode: 0,
     blend_alpha: 1,
-    channels,
+    alpha_index: index,
+    alpha_cached: cached,
     max_level,
     lens_scale,
     full_height,
     lens_center,
     tile_square,
     lens_rad,
+    crops: [],
     colors: [],
-    modes: [[0, 1], [1, 1]],
-    width: channels[0].width,
-    height: channels[0].height
+    modes: [[0, 1], ...alpha_modes],
+    channels: [bottom_layer, ...alpha_layers],
+    width: bottom_layer.width,
+    height: bottom_layer.height,
   };
   return render_tile({ data }, cache_gl.uniforms, tile, cache_gl.via);
 }
@@ -534,7 +604,7 @@ const render_output = (HS, lens_scale, lens_center, cache_2d, cache_gl, out) => 
 
   const { key, tile } = out;
   const { top_layer, bottom_layer, w, h } = cache_2d;
-  const channels = [bottom_layer, top_layer];
+  const layers = [bottom_layer, top_layer];
 
   const need_top = need_top_layer(HS, lens_scale, lens_center, cache_gl, tile);
   if (need_top === false) {
@@ -544,7 +614,7 @@ const render_output = (HS, lens_scale, lens_center, cache_2d, cache_gl, out) => 
   // Render both layers from cache
   const rendered_layer = document.createElement("canvas");
   const rendered_ctx = rendered_layer.getContext('2d');
-  const done = render_from_cache(HS, lens_scale, lens_center, channels, tile, cache_gl);
+  const done = render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out);
 
   // Copy both layers to resulting context
   rendered_layer.height = done.height;
@@ -553,21 +623,28 @@ const render_output = (HS, lens_scale, lens_center, cache_2d, cache_gl, out) => 
   return rendered_ctx;
 }
 
+const set_parent_callback = (HS, key, path) => {
+  const callbacks = HS.gl_state.get_image_callbacks(key);
+  HS.gl_state.update_parent_callback(callbacks, key, path);
+}
+
+const set_target_callbacks = (HS, key) => {
+  const callbacks = HS.gl_state.get_image_callbacks(key);
+  return HS.gl_state.update_target_callbacks(callbacks, key, 'all');
+}
+
 const toTileTarget = (HS, viewer, target, tileSource) => {
   const shape_opts = to_shape_opts(tileSource);
   const caches_2d = HS.gl_state.caches_2d;
-  const set_image_callbacks = (key) => {
-    const callbacks = HS.gl_state.get_image_callbacks(key);
-    return HS.gl_state.update_target_callbacks(callbacks, key, 'all');
-  }
+
   return {
     ...tileSource,
     ...customTileCache(HS, 'all'),
     downloadTileStart: function(imageJob) {
       const { full_url, key, tile } = parseImageJob(imageJob);
-      const promises = set_image_callbacks(key);
+      const defer = set_target_callbacks(HS, key);
       // Wait for all source images to resolve 
-      const promise = Promise.all(promises).then((results) => {
+      const promise = defer.promise.then((results) => {
         const all_failed = results.every(x => !x);
         const msg = "All sources failed for tile.";
         if (all_failed) imageJob.finish(null, null, msg);
@@ -633,29 +710,56 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
 const getParentTile = (imageJob, tile) => {
   const { source } = imageJob;
   const mid = tile.bounds.getCenter();
-  if (tile.leven === 0) return null;
-  const up = Math.max(0, tile.level - 1);
-  const above = source.getTileAtPoint(up, mid);
-  const key = to_tile_key({...above, level: up});
+  if (tile.level === 0) return null;
+  const level = Math.max(0, tile.level - 1);
+  const { x, y } = source.getTileAtPoint(level, mid);
+  const bounds = source.getTileBounds(level, x, y, true);
+  const key = to_tile_key({ x, y, level });
   const offset = [
-    +(2 * above.x !== tile.x),
-    +(2 * above.y !== tile.y)
-  ]
-  return { key, offset };
+    +(2 * x !== tile.x), +(2 * y !== tile.y)
+  ];
+  const url = source.getTileUrl(level, x, y);
+  return { url, key, offset, bounds };
 }
 
 const cropParentTile = (shape_opts, p_data, p_tile, tile) => {
   const { width: w, height: h } = tile.sourceBounds;
+  const { width: wp, height: hp } = p_tile.bounds;
   const [ ix, iy ] = [0, 1].map(i => {
-    return p_tile.offset[i] * shape_opts.tile_square[i];
+    const block = shape_opts.tile_square[i];
+    const off = p_tile.offset[i] * block / 2;
+    if (i === 0) return off;
+    return hp - h/2 - off;
   });
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext('2d');
-  canvas.height = h;
-  canvas.width = w;
-  console.log(ix/2, iy/2, w/2, h/2, 0, 0, w, h);
-  ctx.drawImage(p_data, ix/2, iy/2, w/2, h/2, 0, 0, w, h);
-  return createImageBitmap(canvas);
+  const sx = 1 + Math.log2(wp/w);
+  const sy = 1 + Math.log2(hp/h);
+  return [sx, sy, ix, iy];
+}
+
+const fetch_tile = (key, full_url, resolver, aborter) => {
+  const controller = new AbortController();
+  const promise = fetch(full_url, {
+    method: "GET", signal: controller.signal
+  }).then(result => {
+    if (!result.ok) {
+      throw new Error(`Status ${result.status}`);
+    }
+    return result.blob();
+  }).then(blob => {
+    return createImageBitmap(blob);
+  }).then(data => {
+    const full = [0, 0, 0, 0];
+    resolver(data, full);
+  }).catch(() => {
+    resolver(null, null);
+  });
+  promise.controller = {
+    abort: () => {
+      aborter(key);
+      controller.abort();
+    }
+  }
+  return promise;
 }
 
 const toTileSource = (HS, tileSource) => {
@@ -674,65 +778,69 @@ const toTileSource = (HS, tileSource) => {
       const { full_url, key, tile } = parseImageJob(imageJob);
       const subpath = split_url(full_url);
       set_cache_gl(HS.gl_state, tile, shape_opts, 1);
-      const resolver = (ok) => {
-        const finish = (success) => {
+      const aborter = (key) => {
+        const waiter = to_image_callbacks(key, subpath);
+        if (waiter !== null) waiter.reject();
+      }
+      const resolver = (i_data, i_crop) => {
+        const finish = (key, data, crop) => {
+          if (data !== null && crop !== null) {
+            HS.gl_state.trackImageData(key, subpath, data, crop);
+          }
           const waiter = to_image_callbacks(key, subpath);
-          if (waiter !== null) waiter.resolve(success);
+          if (waiter !== null) waiter.resolve(data, crop);
           imageJob.finish({ tile, key, subpath });
         }
-        // Try to access parent tile
-        if (ok === true) return finish(true);
-        const p_tile = getParentTile(imageJob, tile);
-        const use_parent = (p_data) => {
+        const used_parent = (p_tile) => {
+          // Check if able to use parent
+          const p_key = p_tile.key;
+          const image_source = HS.gl_state.getImageData(p_key);
+          const p_source = image_source.get(subpath) || null;
+          if (p_source === null) return false;
+          // No recursive downsampling
+          if (p_source.ScaledCrop.some(s => s !== 0)) {
+            return finish(key, null, null);
+          }
           // Crop the parent tile
-          cropParentTile(shape_opts, p_data, p_tile, tile).then(data => {
-            HS.gl_state.trackImageData(key, subpath, data);
-            finish(true);
+          const p_data = p_source.ImageData; 
+          const p_crop = cropParentTile(shape_opts, p_data, p_tile, tile);
+          finish(key, p_data, p_crop);
+          return true;
+        }
+        const deferred_parent = (p_tile) => {
+          const p_key = p_tile.key;
+          const p_waiter = to_image_callbacks(p_key, subpath) || null;
+          if (p_waiter === null) return false;
+          p_waiter.promise.then((p_data, p_crop) => {
+            finish(key, p_data, p_crop);
+          }).catch( () => {
+            finish(key, null, null);
           });
+          return true;
         }
-        if (p_tile.key === null) return finish(false);
-        const image_data = HS.gl_state.getImageData(p_tile.key);
-        const p_waiter = to_image_callbacks(p_tile.key, subpath);
-        const p_data = image_data.get(subpath) || null;
-        // Depend on the parent tile
-        if (p_data) return use_parent(p_data);
-        if (p_waiter) {
-          p_waiter.resolve = (success) => {
-            p_waiter.resolve(success);
-            finish(true);
+        // Loaded current tile
+        if (i_data !== null) {
+          return finish(key, i_data, i_crop);
+        }
+        const p_tile = getParentTile(imageJob, tile);
+        if (p_tile === null) return finish(key, null, null);
+        // Try to access parent tile
+        const p_key = p_tile.key;
+        const p_url = p_tile.url;
+        // Depend on the loaded parent tile
+        if (used_parent(p_tile)) return;
+        if (deferred_parent(p_tile)) return;
+        // Depend on the fetched parent tile
+        set_parent_callback(HS, key, subpath);
+        const p_resolver = (p_data, crop) => {
+          finish(p_key, p_data, crop);
+          if (p_data !== null && crop !== null) {
+            return used_parent(p_tile);
           }
-          p_waiter.reject = () => {
-            p_waiter.reject();
-            finish(false);
-          }
         }
-        // TODO: Load the parent tile?
-        finish(false);
+        fetch_tile(p_key, p_url, p_resolver, aborter);
       }
-      const controller = new AbortController();
-      const abort = () => controller.abort();
-      const on_failure = (e) => {
-        resolver(false);
-      }
-      imageJob.userData.promise = fetch(full_url, {
-        method: "GET", signal: controller.signal
-      }).then(result => {
-        if (!result.ok) {
-          throw new Error(`Status ${result.status}`);
-        }
-        return result.blob();
-      }).then(blob => {
-        return createImageBitmap(blob);
-      }).then(data => {
-        HS.gl_state.trackImageData(key, subpath, data);
-        resolver(true);
-      }).catch(on_failure);
-      imageJob.userData.promise.controller = {
-        abort: () => {
-          controller.abort();
-          waiter.reject();
-        }
-      }
+      imageJob.userData.promise = fetch_tile(key, full_url, resolver, aborter);
     },
     downloadTileAbort: function(imageJob) {
       imageJob.userData.promise.controller.abort();
@@ -755,7 +863,7 @@ const to_uniforms = (via) => {
   const u_lens_scale = gl.getUniformLocation(program, "u_lens_scale");
   const u_full_height = gl.getUniformLocation(program, "u_full_height");
   const u_blend_alpha = gl.getUniformLocation(program, "u_blend_alpha");
-  const u_blend_mode = gl.getUniformLocation(program, "u_blend_mode");
+  const u_alpha_index = gl.getUniformLocation(program, "u_alpha_index");
   const u_t0_mode = gl.getUniformLocation(program, "u_t0_mode");
   const u_t1_mode = gl.getUniformLocation(program, "u_t1_mode");
   const u_t2_mode = gl.getUniformLocation(program, "u_t2_mode");
@@ -772,11 +880,22 @@ const to_uniforms = (via) => {
   const u_t5_color = gl.getUniformLocation(program, "u_t5_color");
   const u_t6_color = gl.getUniformLocation(program, "u_t6_color");
   const u_t7_color = gl.getUniformLocation(program, "u_t7_color");
+  const u_t0_crop = gl.getUniformLocation(program, "u_t0_crop");
+  const u_t1_crop = gl.getUniformLocation(program, "u_t1_crop");
+  const u_t2_crop = gl.getUniformLocation(program, "u_t2_crop");
+  const u_t3_crop = gl.getUniformLocation(program, "u_t3_crop");
+  const u_t4_crop = gl.getUniformLocation(program, "u_t4_crop");
+  const u_t5_crop = gl.getUniformLocation(program, "u_t5_crop");
+  const u_t6_crop = gl.getUniformLocation(program, "u_t6_crop");
+  const u_t7_crop = gl.getUniformLocation(program, "u_t7_crop");
+
   return {
-    u_lens, u_shape,
-    u_blend_mode, u_blend_alpha,
+    u_lens, u_shape, u_alpha_index, u_blend_alpha,
     u_lens_rad, u_lens_scale,
     u_level, u_origin, u_full_height,
+    u_t0_crop, u_t1_crop,
+    u_t2_crop, u_t3_crop, u_t4_crop,
+    u_t5_crop, u_t6_crop, u_t7_crop,
     u_t0_color, u_t1_color,
     u_t2_color, u_t3_color, u_t4_color,
     u_t5_color, u_t6_color, u_t7_color,
@@ -795,6 +914,8 @@ const to_cache_gl = (gl_state, shape_opts, flip_y, tile, cleanup) => {
 class GLState {
 
   constructor(HS) {
+    this.alphas = [];
+    this.num_textures = 8;
     this.caches_2d = new Map();
     this.caches_gl = new Map();
     this.image_data = new Map();
@@ -802,6 +923,28 @@ class GLState {
     this.target_image = null;
     this.settings = {};
     this.HS = HS;
+  }
+
+  nextAlpha(key) {
+    const reserved = 2;
+    const found = this.alphas.find(a => a.key === key);
+    if (found) {
+      return {
+        cached: true, index: found.index + reserved
+      }
+    }
+    // Reserve texture 0 for non-alpha
+    if (this.alphas.length < this.num_textures - reserved) {
+      const index = this.alphas.length;
+      this.alphas = [{ key, index }, ...this.alphas];
+    }
+    else {
+      const { index } = this.alphas.pop();
+      this.alphas = [{ key, index }, ...this.alphas];
+    }
+    return {
+      cached: false, index: this.alphas[0].index + reserved
+    }
   }
 
   setTargetImage(item) {
@@ -849,7 +992,10 @@ class GLState {
     const channels = sources.map(sub => {
       return sub.ImageData;
     });
-    return { channels, colors, modes };
+    const crops = sources.map(sub => {
+      return sub.ScaledCrop;
+    });
+    return { crops, channels, colors, modes };
   }
 
   set_cache_2D(key, v) {
@@ -865,40 +1011,52 @@ class GLState {
     return this.file_callbacks.get(key) || new Map;
   }
 
-  update_callbacks(sources, callbacks, key) {
+  update_callbacks(paths, callbacks, key) {
     const unset = (path) => {
       callbacks.delete(path);
     }
     const image_data = this.getImageData(key || '');
-    const defer = sources.reduce((defer, source) => {
+    const defer = paths.reduce((defer, path) => {
       // Check if image data exists
-      if (image_data.has(source.Path)) return defer;
-      if (defer.callbacks.has(source.Path)) return defer;
-      defer.promises.push(new Promise((resolve, reject) => {
+      if (image_data.has(path)) return defer;
+      if (defer.callbacks.has(path)) return defer;
+      const promise = new Promise((resolve, reject) => {
         const timeout_sec = 15; // Timeout per Image File
-        setTimeout(() => resolve(false), timeout_sec*1000);
+        setTimeout(() => resolve(null, null), timeout_sec*1000);
         // Load image data
-        defer.callbacks.set(source.Path, {
-          resolve: (success) => {
-            unset(source.Path);
-            resolve(success);
+        defer.callbacks.set(path, {
+          resolve: (data, crop) => {
+            unset(path);
+            resolve(data, crop);
           },
           reject: () => {
-            unset(source.Path);
+            unset(path);
             reject();
           }
         });
-      }));
+      })
+      // Allow "event handler" by reference to promise
+      const callbacks = defer.callbacks.get(path);
+      callbacks.promise = promise;
+      defer.promises.push(promise);
       return defer;
     }, { callbacks, promises: [] });
     const file_callbacks = this.file_callbacks;
     file_callbacks.set(key, defer.callbacks);
-    return defer.promises;
+    return {
+      callbacks: defer.callbacks,
+      promise: Promise.all(defer.promises)
+    };
   }
 
   update_target_callbacks(callbacks, key, target) {
     const sources = this.active_sources(target);
-    return this.update_callbacks(sources, callbacks, key);
+    const paths = sources.map(s => s.Path);
+    return this.update_callbacks(paths, callbacks, key);
+  }
+
+  update_parent_callback(callbacks, key, path) {
+    return this.update_callbacks([path], callbacks, key);
   }
 
   loaded_sources(key, target) {
@@ -910,8 +1068,10 @@ class GLState {
       if (!image_data.has(sub.Path)) return false;
       return true;
     }).map((sub) => {
-      const ImageData = image_data.get(sub.Path);
-      return { ...sub, ImageData }; 
+      const {
+        ImageData, ScaledCrop
+      } = image_data.get(sub.Path);
+      return { ...sub, ImageData, ScaledCrop }; 
     });
   }
 
@@ -953,14 +1113,16 @@ class GLState {
     if (_sources) _sources.delete(subpath);
   }
 
-  trackImageData(key, subpath, data) {
-    const _sources = this.image_data.get(key) || new Map;
-    _sources.set(subpath, data);
+  trackImageData(key, subpath, ImageData, ScaledCrop) {
+    const _sources = this.getImageData(key);
+    _sources.set(subpath, {
+      ImageData, ScaledCrop
+    });
     this.image_data.set(key, _sources);
   }
 
-  getImageData(tk) {
-    return this.image_data.get(tk) || new Map;
+  getImageData(key) {
+    return this.image_data.get(key) || new Map;
   }
 }
 

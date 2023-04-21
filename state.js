@@ -273,6 +273,7 @@ export const HashState = function(exhibit, options) {
     lensRad: 100,
     eventPoint: [0, 0],
     lensResizeBasis: null,
+    lensHeld: true,
     lensResizeMin: 80,
     lensResizeMax: 600,
     lensResizeSpeed: 1,
@@ -391,19 +392,24 @@ HashState.prototype = {
     const first_center = [first_point.x, first_point.y];
     this.createLensUI(viewer);
     this.updateLensUI(first_center);
-    viewer.addHandler('canvas-drag-end', (e) => {
+    viewer.addHandler('canvas-release', (e) => {
+      this.state.lensHeld = false;
       this.state.lensResizeBasis = null;
+    });
+    viewer.addHandler('canvas-press', (e) => {
+      const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
     });
     viewer.addHandler('canvas-drag', (e) => {
       const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
-      const { lensResizeBasis } = this.state;
-      if (this.isWithinLens([x, y]) && lensResizeBasis === null) {
+      this.state.lensHeld = this.isWithinLens([x, y]);
+      if (this.state.lensHeld) {
         e.preventDefaultAction = true;
         this.updateLensUI([x, y]);
         viewer.forceRedraw();
       }
       else if (this.isWithinResizeRing([x, y])) {
         e.preventDefaultAction = true;
+        const { lensResizeBasis } = this.state;
         if (lensResizeBasis === null) {
           const ref = toReferenceVector([x, y], this.lensCenter);
           this.state.lensResizeBasis = ref;
@@ -426,7 +432,7 @@ HashState.prototype = {
   },
 
   createLensUI (viewer) {
-    const nav_gap =  this.state.lensResizeThickness;
+    const nav_gap =  this.state.lensResizeThickness * .75;
     const { container, padding } = to_container(nav_gap);
     this.state.lensUI = {
       container, padding, nav_gap
@@ -464,7 +470,7 @@ HashState.prototype = {
   },
 
   isWithinLens (xy) {
-    const lens_border = 8;
+    const lens_border = 20;
     if (this.lensing === null) {
       return false;
     }

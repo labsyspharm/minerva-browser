@@ -271,12 +271,15 @@ export const HashState = function(exhibit, options) {
     },
     lensUI: null,
     lensRad: 100,
+    lensAlpha: 1,
     eventPoint: [0, 0],
     lensResizeBasis: null,
+    lensAlphaBasis: null,
     lensHeld: true,
     lensResizeMin: 80,
     lensResizeMax: 600,
     lensResizeSpeed: 1,
+    lensInsideBorder: 20,
     lensResizeThickness: 60,
     colorListeners: new Map(),
     activeChannel: -1,
@@ -370,16 +373,25 @@ const toReferenceVector = (origin, point) => {
   return [0,1].map(i => point[i] - origin[i]);
 }
 
-const changeDirection = (ref, vec) => {
+const resizeDirection = (ref, vec) => {
   const dot = (a,b) => a[0]*b[0] + a[1]*b[1];
   return -1 * Math.sign(dot(ref, vec));
 }
 
-const changeMagnitude = (ref, vec) => {
+const toAngleTrajectory = (ref, vec) => {
+  const diff = ref[1]*vec[0] - ref[0]*vec[1];
+  const sum = ref[0]*vec[0] + ref[1]*vec[1];
+  return Math.atan2(diff, sum);
+}
+
+const toTrajectory = (ref, vec) => {
   const dot = (a,b) => a[0]*b[0] + a[1]*b[1];
   const scalar = dot(ref,vec) / dot(ref,ref);
-  const projection = ref.map(x => scalar * x);
-  return toDistance([0, 0], projection);
+  return ref.map(x => scalar * x);
+}
+
+const toAngle = (vec) => {
+  return Math.atan2(vec[1], vec[0]);
 }
 
 HashState.prototype = {
@@ -395,6 +407,7 @@ HashState.prototype = {
     viewer.addHandler('canvas-release', (e) => {
       this.state.lensHeld = false;
       this.state.lensResizeBasis = null;
+      this.state.lensAlphaBasis = null;
     });
     viewer.addHandler('canvas-press', (e) => {
       const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
@@ -409,22 +422,43 @@ HashState.prototype = {
       }
       else if (this.isWithinResizeRing([x, y])) {
         e.preventDefaultAction = true;
-        const { lensResizeBasis } = this.state;
-        if (lensResizeBasis === null) {
-          const ref = toReferenceVector([x, y], this.lensCenter);
-          this.state.lensResizeBasis = ref;
+        const { lensResizeBasis, lensAlphaBasis } = this.state;
+        if (lensResizeBasis === null || lensAlphaBasis === null) {
+          this.state.lensResizeBasis = toReferenceVector([x, y], this.lensCenter);
+          this.state.lensAlphaBasis = toReferenceVector(this.lensCenter, [x, y]);
         }
-        const ref = this.state.lensResizeBasis;
-        const dir = changeDirection(ref, [e.delta.x, e.delta.y]);
-        const mag = changeMagnitude(ref, [e.delta.x, e.delta.y]);
-        const speed = this.state.lensResizeSpeed;
-        const new_rad = ((rad, scale) => {
-          const min = this.state.lensResizeMin;
-          const max = this.state.lensResizeMax;
-          if (isNaN(scale)) return rad;
-          return Math.min(Math.max(rad + scale, min), max);
-        })(this.lensRad, speed * dir * mag);
-        this.updateLensRadius(new_rad);
+        const basis_y = this.state.lensAlphaBasis[1];
+        const control_alpha = Math.sign(basis_y) === -1;
+        const control_resize = basis_y > this.lensRad / 4;
+        if (control_alpha) {
+          const ref = this.state.lensAlphaBasis;
+          const new_ref = toReferenceVector(this.lensCenter, [x, y]);
+          const alpha_angle = toAngleTrajectory(ref, new_ref);
+          const alpha_arc = this.lensRad * alpha_angle;
+          const max_arc = this.lensRad * Math.PI;
+          const new_alpha = ((alpha, change) => {
+            return Math.min(Math.max(alpha - change, 0.1), 1);
+          })(this.lensAlpha, alpha_arc / max_arc)
+          this.state.lensAlphaBasis = new_ref;
+          this.updateLensAlpha(new_alpha);
+        }
+        else if (control_resize) {
+          const ref = this.state.lensResizeBasis;
+          const resize_dir = resizeDirection(ref, [e.delta.x, e.delta.y]);
+          const resize_vector = toTrajectory(ref, [e.delta.x, e.delta.y]);
+          const resize_mag = toDistance([0, 0], resize_vector);
+          const resize_speed = this.state.lensResizeSpeed;
+          const new_rad = ((rad, scale) => {
+            const min = this.state.lensResizeMin;
+            const max = this.state.lensResizeMax;
+            if (isNaN(scale)) return rad;
+            return Math.min(Math.max(rad + scale, min), max);
+          })(this.lensRad, resize_speed * resize_dir * resize_mag);
+          this.updateLensRadius(new_rad);
+        }
+        else {
+          return;
+        }
         this.updateLensUI(this.lensCenter);
         viewer.forceRedraw();
       }
@@ -453,8 +487,16 @@ HashState.prototype = {
     update_container({ container, padding, nav_gap, rad, x, y, no_lens });
   },
 
+  updateLensAlpha (newAlpha) {
+    this.state.lensAlpha = newAlpha;
+  },
+
   updateLensRadius (newRad) {
     this.state.lensRad = newRad;
+  },
+
+  get lensAlpha () {
+    return this.state.lensAlpha;
   },
 
   get lensRad () {
@@ -470,7 +512,7 @@ HashState.prototype = {
   },
 
   isWithinLens (xy) {
-    const lens_border = 8;
+    const lens_border = this.state.lensInsideBorder;
     if (this.lensing === null) {
       return false;
     }

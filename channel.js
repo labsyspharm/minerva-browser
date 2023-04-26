@@ -180,20 +180,43 @@ const shaders = {
     return (u_origin + tile_flip) * scale;
   }
 
+  // Distance from alpha slider center
+  float alpha_slider(vec2 lens, vec2 v) {
+    vec2 global_v = tile_to_global(v);
+    float rad = u_lens_rad / u_lens_scale;
+    float angle = 3. * (u_blend_alpha - 0.03);
+    float x = lens.x - rad * cos(angle);
+    float y = lens.y - rad * sin(angle);
+    return distance(vec2(x, y), global_v);
+  }
+
   // Compare to lens radius
   int lens_status(vec2 lens, vec2 v) {
     vec2 global_v = tile_to_global(v);
     float d = distance(lens, global_v);
     float rad = u_lens_rad / u_lens_scale;
-    // Lens exceeds border
     float border = 3. / u_lens_scale;
+    // Exceeds lens border
     if (abs(d) > rad) {
+      float alpha_rad = 20. / u_lens_scale;
+      float alpha_ring = 23. / u_lens_scale;
+      float alpha_dist = alpha_slider(lens, v);
+      // Within controls
+      if (alpha_dist < alpha_rad) {
+        return 2;
+      }
+      if (alpha_dist < alpha_ring) {
+        return 1;
+      }
+      // Exceeds controls
       return 0;
     };
+    // On lens border
     if (abs(d) > rad - border) {
       return 1;
     };
-    return 2;
+    // Within lens
+    return 3;
   }
 
   // Sample texture at given texel offset
@@ -224,6 +247,9 @@ const shaders = {
       if (lens == 1) {
         return vec4(1.0);
       }
+      if (lens == 2) {
+        return vec4(0., 0., 0., 1.);
+      }
     }
     // Render empty unconditionally
     if (mode[1] == uint(0)) {
@@ -240,6 +266,10 @@ const shaders = {
   vec4 alpha_blend(vec4 v0, usampler2D t, vec3 rgb, vec4 crop, uvec2 mode) {
     vec4 v1 = color_channel(t, rgb, crop, mode);
     float a = u_blend_alpha * v1.a;
+    int lens = lens_status(u_lens, uv);
+    if (lens == 1 || lens == 2) {
+      a = 1.0;
+    }
     return (1. - a) * v0 + a * v1;
   }
 
@@ -499,7 +529,7 @@ const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out) =
   });
   const data = {
     blend_mode: 0,
-    blend_alpha: 1,
+    blend_alpha: HS.lensAlpha,
     alpha_index: index,
     alpha_cached: cached,
     max_level,

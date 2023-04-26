@@ -26,8 +26,8 @@
     "webpack-cli": "^4.9.1"
   },
   "scripts": {
-    "develop": "webpack --watch --mode development",
-    "build": "webpack --mode production"
+    "develop": "webpack --watch --mode development -c webpack.config.dev.js",
+    "build": "webpack --mode production && webpack --mode development -c webpack.config.dev.js"
   },
   "name": "minerva-browser",
   "version": "3.9.0",

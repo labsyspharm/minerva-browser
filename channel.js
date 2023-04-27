@@ -668,7 +668,7 @@ const set_target_callbacks = (HS, key) => {
 
 const render_layers = (HS, tileSource, viewer, opts) => {
   const { tile, key } = opts;
-  const hash = HS.gl_state.active_hash(key, 'base');
+  const hash = HS.gl_state.active_hash('base');
   const lens_scale = HS.gl_state.toLensScale(viewer);
   const lens_center = HS.gl_state.toLensCenter(viewer);
   const bottom_layer = document.createElement("canvas");
@@ -732,8 +732,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
     },
     getTileCacheDataAsContext2D: function(cache) {
       const out = cache._out;
-      const { key, tile } = out;
-      const hash = HS.gl_state.active_hash(key, 'base');
+      const hash = HS.gl_state.active_hash('base');
       // Measure viewport scale
       const lens_scale = HS.gl_state.toLensScale(viewer);
       const lens_center = HS.gl_state.toLensCenter(viewer);
@@ -741,6 +740,8 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       if (hash !== out.hash && out.busy === false) {
         out.busy = true;
         (async () => {
+          const { tile, key } = out;
+          const opts = { tile, key };
           const { bottom_layer, top_layer, hash } = render_layers(HS, tileSource, viewer, opts);
           out.bottom_layer = bottom_layer;
           out.top_layer = top_layer;
@@ -750,7 +751,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       }
       // Trigger redraw
       const shape_opts = to_shape_opts(tileSource);
-      const cache_gl_0 = set_cache_gl(HS.gl_state, tile, shape_opts, 0);
+      const cache_gl_0 = set_cache_gl(HS.gl_state, out.tile, shape_opts, 0);
       return render_output(HS, lens_scale, lens_center, cache_gl_0, out);
     }
   }
@@ -1116,7 +1117,7 @@ class GLState {
     });
   }
 
-  active_hash(key, target) {
+  active_hash(target) {
     const sources = this.active_sources(target);
     const hash = sources.map((source) => {
       const { Name, Colors } = source;

@@ -542,7 +542,7 @@ const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out) =
     crops: [],
     colors: [],
     modes: [[0, 1], ...alpha_modes],
-    channels: [bottom_layer, ...alpha_layers],
+    channels: [undefined, ...alpha_layers],
     width: bottom_layer.width,
     height: bottom_layer.height,
   };
@@ -652,6 +652,7 @@ const render_output = (HS, lens_scale, lens_center, cache_gl, out) => {
   // Copy both layers to resulting context
   rendered_layer.height = done.height;
   rendered_layer.width = done.width;
+  rendered_ctx.drawImage(bottom_layer, 0, 0, w, h, 0, 0, w, h);
   rendered_ctx.drawImage(done, 0, 0, w, h, 0, 0, w, h);
   return rendered_ctx;
 }

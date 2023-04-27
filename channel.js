@@ -407,7 +407,8 @@ const toBuffers = (flip_y, program, via) => {
 
 const to_gl_tile_key = (flip_y, tile) => {
   const [w, h] = to_tile_shape(tile);
-  return `${flip_y}-${w}-${h}`;
+  const { level } = tile;
+  return `${flip_y}-${level}-${w}-${h}`;
 }
 
 const to_tile_shape = (tile) => {
@@ -696,9 +697,7 @@ const render_layers = (HS, tileSource, viewer, opts) => {
 
 const finish_target = (HS, tileSource, viewer, imageJob, opts) => {
   // Update both layers in the cache
-  console.log('finishing')
   const layers = render_layers(HS, tileSource, viewer, opts);
-  console.log('finished')
   const _out = { ...opts, ...layers, busy: false };
   imageJob.finish(_out);
 }
@@ -739,7 +738,6 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const lens_scale = HS.gl_state.toLensScale(viewer);
       const lens_center = HS.gl_state.toLensCenter(viewer);
       // Return the cached 2D canvas output
-      console.log({ out });
       if (hash !== out.hash && out.busy === false) {
         out.busy = true;
         (async () => {

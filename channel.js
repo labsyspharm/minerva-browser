@@ -704,13 +704,15 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const lens_scale = HS.gl_state.toLensScale(viewer);
       const lens_center = HS.gl_state.toLensCenter(viewer);
       // Return the cached 2D canvas output
-      if (hash === cache_2d?.hash) {
+      if (hash === cache_2d?.hash && cache_2d?.ready) {
         // Render both layers from cache
         return render_output(HS, lens_scale, lens_center, cache_2d, cache_gl_0, out);
       }
-      else if (cache_2d) {
-        cache_2d.hash = hash;
+      else if (hash === cache_2d?.hash) {
+        return;
       }
+      HS.gl_state.set_cache_2D(key, { hash, ready: false });
+      requestAnimationFrame(() => {
       const bottom_layer = document.createElement("canvas");
       const top_layer = document.createElement("canvas");
       const bottom_ctx = bottom_layer.getContext('2d');
@@ -731,10 +733,13 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       top_ctx.drawImage(top_out, 0, 0, w, h, 0, 0, w, h);
 
       // Update both layers in the cache
-      const new_cache_2d = { top_layer, bottom_layer, w, h, hash };
+      const new_cache_2d = { top_layer, bottom_layer, w, h, hash, ready: true };
       HS.gl_state.set_cache_2D(key, new_cache_2d);
+      });
 
-      return render_output(HS, lens_scale, lens_center, new_cache_2d, cache_gl_0, out);
+      // Intentionally cause following warning:
+      // Attempting to draw tile when it's not yet loaded.
+      return null;
     }
   }
 }

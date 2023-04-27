@@ -1,4 +1,15 @@
-const render_tile = (props, uniforms, tile, via) => {
+const TEXTURE_RANGE = [
+  0,1,2,3,4,5,6,7,
+  8,9,10,11,12,13,14,15,
+  16,17,18,19,20,21,22,23,
+  24,25,26,27,28,29,30,31
+]
+const ACTIVE_TEXTURE_RANGE = [
+  0,1,2,3,4,5,6,7,
+  8,9,10,11,12,13,14,15
+]
+
+const render_alpha_tile = (props, uniforms, tile, via) => {
   const { gl } = via;
   if (props === null) {
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
@@ -9,24 +20,13 @@ const render_tile = (props, uniforms, tile, via) => {
   const { alpha_index, alpha_cached } = data;
   const {
     u_lens, u_shape, u_alpha_index, u_blend_alpha,
-    u_lens_rad, u_lens_scale,
-    u_level, u_origin, u_full_height,
-    u_t0_crop, u_t1_crop,
-    u_t2_crop, u_t3_crop, u_t4_crop,
-    u_t5_crop, u_t6_crop, u_t7_crop,
-    u_t0_color, u_t1_color,
-    u_t2_color, u_t3_color, u_t4_color,
-    u_t5_color, u_t6_color, u_t7_color,
-    u_t0_mode, u_t1_mode,
-    u_t2_mode, u_t3_mode, u_t4_mode,
-    u_t5_mode, u_t6_mode, u_t7_mode,
+    u_lens_rad, u_lens_scale, u_level, u_origin,
   } = uniforms;
   const w = data.width;
   const h = data.height;
   const max = data.max_level;
   const lens_rad = data.lens_rad;
   const lens_scale = data.lens_scale;
-  const full_height = data.full_height;
   const x = tile.x * data.tile_square[0];
   const y = tile.y * data.tile_square[1];
   const tile_lens_2fv = data.lens_center;
@@ -34,57 +34,73 @@ const render_tile = (props, uniforms, tile, via) => {
   const tile_origin_2fv = new Float32Array([x, y]);
   const tile_shape_2fv = new Float32Array([w, h]);
   const full = [0, 0, 0, 0];
-  const black = hex2gl("000000");
   gl.uniform1f(u_level, tile_level);
   gl.uniform2fv(u_lens, tile_lens_2fv);
   gl.uniform1f(u_lens_rad, lens_rad);
   gl.uniform1f(u_lens_scale, lens_scale);
   gl.uniform2fv(u_shape, tile_shape_2fv);
   gl.uniform2fv(u_origin, tile_origin_2fv);
-  gl.uniform1f(u_full_height, full_height);
   gl.uniform1i(u_alpha_index, alpha_index);
   gl.uniform1f(u_blend_alpha, data.blend_alpha);
-  gl.uniform3fv(u_t0_color, data.colors[0] || black);
-  gl.uniform3fv(u_t1_color, data.colors[1] || black);
-  gl.uniform3fv(u_t2_color, data.colors[2] || black);
-  gl.uniform3fv(u_t3_color, data.colors[3] || black);
-  gl.uniform3fv(u_t4_color, data.colors[4] || black);
-  gl.uniform3fv(u_t5_color, data.colors[5] || black);
-  gl.uniform3fv(u_t6_color, data.colors[6] || black);
-  gl.uniform3fv(u_t7_color, data.colors[7] || black);
-  gl.uniform4fv(u_t0_crop, data.crops[0] || full);
-  gl.uniform4fv(u_t1_crop, data.crops[1] || full);
-  gl.uniform4fv(u_t2_crop, data.crops[2] || full);
-  gl.uniform4fv(u_t3_crop, data.crops[3] || full);
-  gl.uniform4fv(u_t4_crop, data.crops[4] || full);
-  gl.uniform4fv(u_t5_crop, data.crops[5] || full);
-  gl.uniform4fv(u_t6_crop, data.crops[6] || full);
-  gl.uniform4fv(u_t7_crop, data.crops[7] || full);
-  gl.uniform2ui(u_t0_mode, ...(data.modes[0] || [0, 0]));
-  gl.uniform2ui(u_t1_mode, ...(data.modes[1] || [0, 0]));
-  gl.uniform2ui(u_t2_mode, ...(data.modes[2] || [0, 0]));
-  gl.uniform2ui(u_t3_mode, ...(data.modes[3] || [0, 0]));
-  gl.uniform2ui(u_t4_mode, ...(data.modes[4] || [0, 0]));
-  gl.uniform2ui(u_t5_mode, ...(data.modes[5] || [0, 0]));
-  gl.uniform2ui(u_t6_mode, ...(data.modes[6] || [0, 0]));
-  gl.uniform2ui(u_t7_mode, ...(data.modes[7] || [0, 0]));
 
   // Point to the alpha channel
-  if (alpha_index >= 2 && alpha_index < 8) {
-    gl.uniform1i(via.texture_uniforms.u_t1, alpha_index);
-    gl.uniform2ui(u_t1_mode, ...(data.modes[alpha_index] || [0, 0]));
-    gl.uniform3fv(u_t1_color, data.colors[alpha_index] || black);
-    gl.uniform4fv(u_t1_crop, data.crops[alpha_index] || full);
-  }
+  gl.uniform1i(via.texture_uniforms[0], alpha_index);
+  gl.uniform1i(via.texture_uniforms[1], alpha_index + 1);
+
   // Bind all needed textures
-  [0,1,2,3,4,5,6,7].forEach((i) => {
+  [0, 1].forEach((_i) => {
+    const i = alpha_index + _i;
+    const from = data.channels[_i];
+    // Allow caching of one alpha channel
+    gl.activeTexture(gl['TEXTURE'+i]);
+    gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.flip_y);
+    // Don't rebind if is cached alpha
+    if (alpha_cached) return;
+    // Actually re-bind the alpha tile texture
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
+              gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
+  });
+
+  // Actually draw the arrays
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  return gl.canvas;
+}
+
+const render_tile = (props, uniforms, tile, via) => {
+  const { gl } = via;
+  if (props === null) {
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    return via.gl.canvas;
+  }
+  const { data } = props;
+  const { alpha_index, alpha_cached } = data;
+  const {
+    u_shape, u_crops, u_colors, u_modes,
+  } = uniforms;
+  const w = data.width;
+  const h = data.height;
+  const x = tile.x * data.tile_square[0];
+  const y = tile.y * data.tile_square[1];
+  const tile_origin_2fv = new Float32Array([x, y]);
+  const tile_shape_2fv = new Float32Array([w, h]);
+  const full = [0, 0, 0, 0];
+  const black = hex2gl("000000");
+  gl.uniform2fv(u_shape, tile_shape_2fv);
+
+  // Bind all needed textures
+  ACTIVE_TEXTURE_RANGE.forEach((i) => {
+    gl.uniform4fv(u_crops[i], data.crops[i] || full);
+    gl.uniform3fv(u_colors[i], data.colors[i] || black);
+    gl.uniform2ui(u_modes[i], ...(data.modes[i] || [0, 0]));
+    // Load the data
     const from = data.channels[i];
     if (from === undefined) return;
     // Allow caching of one alpha channel
     gl.activeTexture(gl['TEXTURE'+i]);
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.flip_y);
-    if (alpha_cached && i === alpha_index) return;
     // Actually re-bind the tile texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
               gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
@@ -96,19 +112,17 @@ const render_tile = (props, uniforms, tile, via) => {
 
 const to_tile_props = (shown, HS, lens_scale, lens_center, cache_gl) => {
   const { 
-    tile_square, max_level, full_height
+    tile_square, max_level 
   } = cache_gl.shape_opts;
   if (shown.channels.length < 1) return null;
   if (shown.colors.length < 1) return null;
   if (shown.modes.length < 1) return null;
   if (shown.crops.length < 1) return null;
   const data = {
-    blend_mode: 1,
     blend_alpha: -1,
     alpha_index: -1,
     max_level,
     lens_scale,
-    full_height,
     lens_center,
     tile_square,
     lens_rad: 0,
@@ -122,21 +136,25 @@ const to_tile_props = (shown, HS, lens_scale, lens_center, cache_gl) => {
   return { data };
 }
 
-const shaders = {
+const VERTEX_SHADER = `#version 300 es
+in vec2 a_uv;
+out vec2 uv;
+
+void main() {
+// Texture coordinates
+uv = a_uv;
+
+// Clip coordinates
+vec2 full_pos = 2. * a_uv - 1.;
+gl_Position = vec4(full_pos, 0., 1.);
+}`
+const SHADERS = [{
   FRAGMENT_SHADER: `#version 300 es
   precision highp int;
   precision highp float;
   precision highp usampler2D;
 
-  uniform vec2 u_lens;
   uniform vec2 u_shape;
-  uniform vec2 u_origin;
-  uniform float u_level;
-  uniform float u_lens_rad;
-  uniform float u_lens_scale;
-  uniform float u_full_height;
-  uniform float u_blend_alpha;
-  uniform int u_alpha_index;
   uniform vec4 u_t0_crop;
   uniform vec4 u_t1_crop;
   uniform vec4 u_t2_crop;
@@ -169,6 +187,74 @@ const shaders = {
   uniform usampler2D u_t5;
   uniform usampler2D u_t6;
   uniform usampler2D u_t7;
+
+  in vec2 uv;
+  out vec4 color;
+
+  // Sample texture at given texel offset
+  uvec4 texel(usampler2D sam, vec2 size, vec2 pos, vec4 crop) {
+    vec2 s = vec2(pow(2.0, crop[0]), pow(2.0, crop[1]));
+    vec2 p = vec2(pos.x / s.x, pos.y / s.y);
+    vec2 off = vec2(crop[2], crop[3]);
+    float x = p.x + off.x / size.x;
+    if (s.x != 1. || s.y != 1.) {
+      float y = 1. - p.y - off.y / size.y;
+      return texture(sam, vec2(x, y));
+    }
+    float y = 1. - p.y;
+    return texture(sam, vec2(x, y));
+  }
+
+  // Colorize continuous u8 signal
+  vec4 color_channel(usampler2D sam, vec3 rgb, vec4 crop, uvec2 mode) {
+    uvec4 tex = texel(sam, u_shape, uv, crop);
+
+    // Render empty unconditionally
+    if (mode[1] == uint(0)) {
+      return vec4(0.0);
+    }
+
+    // Render exact rgba texture
+    if (mode[1] == uint(1)) {
+      return vec4(tex) / 255.;
+    }
+
+    // Scale color by texel value 
+    return vec4(rgb * float(tex.r) / 255., 1.0);
+  }
+
+  vec4 linear_blend() {
+    vec4 v0 = color_channel(u_t0, u_t0_color, u_t0_crop, u_t0_mode);
+    v0 = v0 + color_channel(u_t1, u_t1_color, u_t1_crop, u_t1_mode);
+    v0 = v0 + color_channel(u_t2, u_t2_color, u_t2_crop, u_t2_mode);
+    v0 = v0 + color_channel(u_t3, u_t3_color, u_t3_crop, u_t3_mode);
+    v0 = v0 + color_channel(u_t4, u_t4_color, u_t4_crop, u_t4_mode);
+    v0 = v0 + color_channel(u_t5, u_t5_color, u_t5_crop, u_t5_mode);
+    v0 = v0 + color_channel(u_t6, u_t6_color, u_t6_crop, u_t6_mode);
+    v0 = v0 + color_channel(u_t7, u_t7_color, u_t7_crop, u_t7_mode);
+    return v0;
+  }
+
+  void main() {
+    color = linear_blend();
+  }`,
+  VERTEX_SHADER 
+  }, {
+  FRAGMENT_SHADER: `#version 300 es
+  precision highp int;
+  precision highp float;
+  precision highp usampler2D;
+
+  uniform vec2 u_lens;
+  uniform vec2 u_shape;
+  uniform vec2 u_origin;
+  uniform float u_level;
+  uniform float u_lens_rad;
+  uniform float u_lens_scale;
+  uniform float u_blend_alpha;
+  uniform int u_alpha_index;
+  uniform usampler2D u_t0;
+  uniform usampler2D u_t1;
 
   in vec2 uv;
   out vec4 color;
@@ -220,51 +306,31 @@ const shaders = {
   }
 
   // Sample texture at given texel offset
-  uvec4 texel(usampler2D sam, vec2 size, vec2 pos, vec4 crop) {
-    vec2 s = vec2(pow(2.0, crop[0]), pow(2.0, crop[1]));
-    vec2 p = vec2(pos.x / s.x, pos.y / s.y);
-    vec2 off = vec2(crop[2], crop[3]);
-    float x = p.x + off.x / size.x;
-    if (s.x != 1. || s.y != 1.) {
-      float y = 1. - p.y - off.y / size.y;
-      return texture(sam, vec2(x, y));
-    }
-    float y = 1. - p.y;
-    return texture(sam, vec2(x, y));
+  uvec4 texel(usampler2D sam, vec2 size, vec2 pos) {
+    return texture(sam, vec2(pos.x, 1. - pos.y));
   }
 
   // Colorize continuous u8 signal
-  vec4 color_channel(usampler2D sam, vec3 rgb, vec4 crop, uvec2 mode) {
-    uvec4 tex = texel(sam, u_shape, uv, crop);
+  vec4 color_channel(usampler2D sam) {
+    uvec4 tex = texel(sam, u_shape, uv);
 
     // Render empty lens background
-    if (mode[0] == uint(1)) {
-      vec2 global_v = tile_to_global(uv);
-      int lens = lens_status(u_lens, uv);
-      if (lens == 0) {
-        return vec4(0.0);
-      }
-      if (lens == 1) {
-        return vec4(1.0);
-      }
-      if (lens == 2) {
-        return vec4(0., 0., 0., 1.);
-      }
-    }
-    // Render empty unconditionally
-    if (mode[1] == uint(0)) {
+    vec2 global_v = tile_to_global(uv);
+    int lens = lens_status(u_lens, uv);
+    if (lens == 0) {
       return vec4(0.0);
     }
-    // Render exact rgba texture
-    if (mode[1] == uint(1)) {
-      return vec4(tex) / 255.;
+    if (lens == 1) {
+      return vec4(1.0);
     }
-    // Scale color by texel value 
-    return vec4(rgb * float(tex.r) / 255., 1.0);
+    if (lens == 2) {
+      return vec4(0., 0., 0., 1.);
+    }
+    return vec4(tex) / 255.;
   }
 
-  vec4 alpha_blend(vec4 v0, usampler2D t, vec3 rgb, vec4 crop, uvec2 mode) {
-    vec4 v1 = color_channel(t, rgb, crop, mode);
+  vec4 alpha_blend(vec4 v0, usampler2D t) {
+    vec4 v1 = color_channel(t);
     float a = u_blend_alpha * v1.a;
     int lens = lens_status(u_lens, uv);
     if (lens == 1 || lens == 2) {
@@ -273,51 +339,14 @@ const shaders = {
     return (1. - a) * v0 + a * v1;
   }
 
-  vec4 linear_blend() {
-    vec4 v0 = color_channel(u_t0, u_t0_color, u_t0_crop, u_t0_mode);
-    if (u_alpha_index < 2) {
-      v0 = v0 + color_channel(u_t1, u_t1_color, u_t1_crop, u_t1_mode);
-    }
-    if (u_alpha_index != 2) {
-      v0 = v0 + color_channel(u_t2, u_t2_color, u_t2_crop, u_t2_mode);
-    }
-    if (u_alpha_index != 3) {
-      v0 = v0 + color_channel(u_t3, u_t3_color, u_t3_crop, u_t3_mode);
-    }
-    if (u_alpha_index != 4) {
-      v0 = v0 + color_channel(u_t4, u_t4_color, u_t4_crop, u_t4_mode);
-    }
-    if (u_alpha_index != 5) {
-      v0 = v0 + color_channel(u_t5, u_t5_color, u_t5_crop, u_t5_mode);
-    }
-    if (u_alpha_index != 6) {
-      v0 = v0 + color_channel(u_t6, u_t6_color, u_t6_crop, u_t6_mode);
-    }
-    if (u_alpha_index != 7) {
-      v0 = v0 + color_channel(u_t7, u_t7_color, u_t7_crop, u_t7_mode);
-    }
-    return v0;
-  }
-
   void main() {
-    color = linear_blend();
+    color = vec4(texel(u_t0, u_shape, uv)) / 255.;
     if (u_blend_alpha > 0. && u_alpha_index >= 2) {
-      color = alpha_blend(color, u_t1, u_t1_color, u_t1_crop, u_t1_mode);
+      color = alpha_blend(color, u_t1);
     }
   }`,
-  VERTEX_SHADER: `#version 300 es
-  in vec2 a_uv;
-  out vec2 uv;
-
-  void main() {
-  // Texture coordinates
-  uv = a_uv;
-
-  // Clip coordinates
-  vec2 full_pos = 2. * a_uv - 1.;
-  gl_Position = vec4(full_pos, 0., 1.);
-  }`
-}
+  VERTEX_SHADER 
+}]
 
 const to_vertices = () => {
   const one_point_size = 2 * Float32Array.BYTES_PER_ELEMENT;
@@ -354,28 +383,9 @@ const toBuffers = (flip_y, program, via) => {
   // Allow for custom loading
   const gl = via.gl;
 
-  // Get GLSL locations
-  const u_t0 = gl.getUniformLocation(program, 'u_t0');
-  const u_t1 = gl.getUniformLocation(program, 'u_t1');
-  const u_t2 = gl.getUniformLocation(program, 'u_t2');
-  const u_t3 = gl.getUniformLocation(program, 'u_t3');
-  const u_t4 = gl.getUniformLocation(program, 'u_t4');
-  const u_t5 = gl.getUniformLocation(program, 'u_t5');
-  const u_t6 = gl.getUniformLocation(program, 'u_t6');
-  const u_t7 = gl.getUniformLocation(program, 'u_t7');
   const a_uv = gl.getAttribLocation(program, 'a_uv');
   const u8 = gl.getUniformLocation(program, 'u8');
-
-  // Assign uniform values
   gl.uniform1ui(u8, 255);
-  gl.uniform1i(u_t0, 0);
-  gl.uniform1i(u_t1, 1);
-  gl.uniform1i(u_t2, 2);
-  gl.uniform1i(u_t3, 3);
-  gl.uniform1i(u_t4, 4);
-  gl.uniform1i(u_t5, 5);
-  gl.uniform1i(u_t6, 6);
-  gl.uniform1i(u_t7, 7);
 
   // Assign vertex inputs
   gl.bindBuffer(gl.ARRAY_BUFFER, via.buffer);
@@ -386,7 +396,7 @@ const toBuffers = (flip_y, program, via) => {
   gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, 0, via.one_point_size,
                          0 * via.points_list_size);
 
-  [0,1,2,3,4,5,6,7].forEach((i) => {
+  TEXTURE_RANGE.forEach((i) => {
     // Set Texture
     gl.activeTexture(gl['TEXTURE'+i]);
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
@@ -398,17 +408,20 @@ const toBuffers = (flip_y, program, via) => {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  })
+  });
 
-  return {
-    u_t0, u_t1, u_t2, u_t3, u_t4, u_t5, u_t6, u_t7
-  }
+  return ACTIVE_TEXTURE_RANGE.map((i) => {
+    // Assign uniforms
+    const u_t = gl.getUniformLocation(program, `u_t${i}`);
+    gl.uniform1i(u_t, i);
+    return u_t;
+  })
 }
 
 const to_gl_tile_key = (flip_y, tile) => {
   const [w, h] = to_tile_shape(tile);
   const { level } = tile;
-  return `${flip_y}-${level}-${w}-${h}`;
+  return `${flip_y}-${w}-${h}`;
 }
 
 const to_tile_shape = (tile) => {
@@ -431,15 +444,18 @@ const initialize_gl = (flip_y, tile, cleanup) => {
   tile_canvas.addEventListener("webglcontextlost", cleanup, false);
   tile_canvas.id = "tile-"+key+"-"+r1+'-'+r2;
   const gl = tile_canvas.getContext('webgl2');
+  const is_alpha_shader = flip_y ? 0 : 1;
+  const shaders = SHADERS[+is_alpha_shader];
   const program = toProgram(gl, shaders);
   update_shape(gl, tile);
   gl.useProgram(program);
-  const textures = [0,1,2,3,4,5,6,7].map(() => gl.createTexture());
+  const textures = TEXTURE_RANGE.map(() => gl.createTexture());
   const texture_uniforms = toBuffers(flip_y, program, {
     gl, ...to_vertices(), buffer: gl.createBuffer(), textures
   });
   const via = { gl, flip_y, texture_uniforms, textures, program };
-  return { via };
+  const uniforms = to_uniforms(via);
+  return { via, uniforms };
 }
 
 const hex2gl = (hex) => {
@@ -459,7 +475,9 @@ const split_url = (full_url) => {
 const set_cache_gl = (gl_state, tile, shape_opts, flip_y) => {
   const key = to_gl_tile_key(flip_y, tile);
   const caches_gl = gl_state.caches_gl;
-  if (caches_gl.has(key)) return caches_gl.get(key);
+  if (caches_gl.has(key)) {
+    return caches_gl.get(key);
+  }
   const cache_gl = to_cache_gl(
     gl_state, shape_opts, flip_y, tile,
     () => caches_gl.delete(key)
@@ -503,13 +521,12 @@ const customTileCache = (HS, target) => {
 }
 
 const to_shape_opts = (tileSource) => {
-  const full_height = tileSource.height;
   const max_level = tileSource.maxLevel;
   const tile_square = [
     tileSource.tileWidth, tileSource.tileHeight
   ]
   return {
-   full_height, max_level, tile_square
+    max_level, tile_square
   };
 }
 
@@ -517,36 +534,25 @@ const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out) =
   const { tile, key } = out;
   const lens_rad = HS.lensRad;
   const { 
-    tile_square, max_level, full_height
+    tile_square, max_level 
   } = cache_gl.shape_opts;
   const { index, cached } = HS.gl_state.nextAlpha(key);
   // Allow blending of two alpha layers
   const [ bottom_layer, top_layer ] = layers;
-  const alpha_layers = [0,1,2,3,4,5,6,7].map(i => {
-    return [undefined, top_layer][+(i === index)];
-  }).slice(1);
-  const alpha_modes = alpha_layers.map(layer => {
-    return layer ? [1, 1] : [0, 0];
-  });
   const data = {
-    blend_mode: 0,
-    blend_alpha: HS.lensAlpha,
     alpha_index: index,
     alpha_cached: cached,
+    blend_alpha: HS.lensAlpha,
     max_level,
     lens_scale,
-    full_height,
     lens_center,
     tile_square,
     lens_rad,
-    crops: [],
-    colors: [],
-    modes: [[0, 1], ...alpha_modes],
-    channels: [bottom_layer, ...alpha_layers],
+    channels: [bottom_layer, top_layer],
     width: bottom_layer.width,
     height: bottom_layer.height,
   };
-  return render_tile({ data }, cache_gl.uniforms, tile, cache_gl.via);
+  return render_alpha_tile({ data }, cache_gl.uniforms, tile, cache_gl.via);
 }
 
 const render_to_cache = (HS, lens_scale, lens_center, key, tile, target, cache_gl) => {
@@ -912,53 +918,29 @@ const to_uniforms = (via) => {
   const u_origin = gl.getUniformLocation(program, "u_origin");
   const u_lens_rad = gl.getUniformLocation(program, "u_lens_rad");
   const u_lens_scale = gl.getUniformLocation(program, "u_lens_scale");
-  const u_full_height = gl.getUniformLocation(program, "u_full_height");
   const u_blend_alpha = gl.getUniformLocation(program, "u_blend_alpha");
   const u_alpha_index = gl.getUniformLocation(program, "u_alpha_index");
-  const u_t0_mode = gl.getUniformLocation(program, "u_t0_mode");
-  const u_t1_mode = gl.getUniformLocation(program, "u_t1_mode");
-  const u_t2_mode = gl.getUniformLocation(program, "u_t2_mode");
-  const u_t3_mode = gl.getUniformLocation(program, "u_t3_mode");
-  const u_t4_mode = gl.getUniformLocation(program, "u_t4_mode");
-  const u_t5_mode = gl.getUniformLocation(program, "u_t5_mode");
-  const u_t6_mode = gl.getUniformLocation(program, "u_t6_mode");
-  const u_t7_mode = gl.getUniformLocation(program, "u_t7_mode");
-  const u_t0_color = gl.getUniformLocation(program, "u_t0_color");
-  const u_t1_color = gl.getUniformLocation(program, "u_t1_color");
-  const u_t2_color = gl.getUniformLocation(program, "u_t2_color");
-  const u_t3_color = gl.getUniformLocation(program, "u_t3_color");
-  const u_t4_color = gl.getUniformLocation(program, "u_t4_color");
-  const u_t5_color = gl.getUniformLocation(program, "u_t5_color");
-  const u_t6_color = gl.getUniformLocation(program, "u_t6_color");
-  const u_t7_color = gl.getUniformLocation(program, "u_t7_color");
-  const u_t0_crop = gl.getUniformLocation(program, "u_t0_crop");
-  const u_t1_crop = gl.getUniformLocation(program, "u_t1_crop");
-  const u_t2_crop = gl.getUniformLocation(program, "u_t2_crop");
-  const u_t3_crop = gl.getUniformLocation(program, "u_t3_crop");
-  const u_t4_crop = gl.getUniformLocation(program, "u_t4_crop");
-  const u_t5_crop = gl.getUniformLocation(program, "u_t5_crop");
-  const u_t6_crop = gl.getUniformLocation(program, "u_t6_crop");
-  const u_t7_crop = gl.getUniformLocation(program, "u_t7_crop");
+
+  const u_crops = ACTIVE_TEXTURE_RANGE.map((i) => {
+    return gl.getUniformLocation(program, `u_t${i}_crop`);
+  });
+  const u_colors = ACTIVE_TEXTURE_RANGE.map((i) => {
+    return gl.getUniformLocation(program, `u_t${i}_color`);
+  });
+  const u_modes = ACTIVE_TEXTURE_RANGE.map((i) => {
+    return gl.getUniformLocation(program, `u_t${i}_mode`);
+  });
 
   return {
     u_lens, u_shape, u_alpha_index, u_blend_alpha,
     u_lens_rad, u_lens_scale,
-    u_level, u_origin, u_full_height,
-    u_t0_crop, u_t1_crop,
-    u_t2_crop, u_t3_crop, u_t4_crop,
-    u_t5_crop, u_t6_crop, u_t7_crop,
-    u_t0_color, u_t1_color,
-    u_t2_color, u_t3_color, u_t4_color,
-    u_t5_color, u_t6_color, u_t7_color,
-    u_t0_mode, u_t1_mode,
-    u_t2_mode, u_t3_mode, u_t4_mode,
-    u_t5_mode, u_t6_mode, u_t7_mode
+    u_level, u_origin,
+    u_crops, u_colors, u_modes
   };
 }
 
 const to_cache_gl = (gl_state, shape_opts, flip_y, tile, cleanup) => {
-  const { via } = initialize_gl(flip_y, tile, cleanup);
-  const uniforms = to_uniforms(via);
+  const { via, uniforms } = initialize_gl(flip_y, tile, cleanup);
   return { via, shape_opts, uniforms };
 }
 
@@ -966,7 +948,7 @@ class GLState {
 
   constructor(HS) {
     this.alphas = [];
-    this.num_textures = 8;
+    this.num_textures = TEXTURE_RANGE.length;
     this.caches_2d = new Map();
     this.caches_gl = new Map();
     this.image_data = new Map();
@@ -977,15 +959,20 @@ class GLState {
   }
 
   nextAlpha(key) {
+    const step = 2;
     const reserved = 2;
     const found = this.alphas.find(a => a.key === key);
-    if (found) {
-      return {
-        cached: true, index: found.index + reserved
-      }
+    const to_output = (item, cached) => {
+      const index = step * item.index + reserved;
+      return { index, cached };
     }
-    // Reserve texture 0 for non-alpha
-    if (this.alphas.length < this.num_textures - reserved) {
+    if (found) {
+      return to_output(found, true);
+    }
+    const first_few_slots = (
+      step * this.alphas.length < this.num_textures - reserved
+    );
+    if (first_few_slots) {
       const index = this.alphas.length;
       this.alphas = [{ key, index }, ...this.alphas];
     }
@@ -993,9 +980,7 @@ class GLState {
       const { index } = this.alphas.pop();
       this.alphas = [{ key, index }, ...this.alphas];
     }
-    return {
-      cached: false, index: this.alphas[0].index + reserved
-    }
+    return to_output(this.alphas[0], false);
   }
 
   setTargetImage(item) {

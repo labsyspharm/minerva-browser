@@ -632,10 +632,10 @@ const need_top_layer = (HS, lens_scale, lens_center, cache_gl, tile) => {
   return is_within_lens(HS, lens_scale, lens_center, cache_gl, tile);
 }
 
-const render_output = (HS, lens_scale, lens_center, cache_2d, cache_gl, out) => {
+const render_output = (HS, lens_scale, lens_center, cache_gl, out) => {
 
   const { key, tile } = out;
-  const { top_layer, bottom_layer, w, h } = cache_2d;
+  const { top_layer, bottom_layer, w, h } = out;
   const layers = [bottom_layer, top_layer];
 
   const need_top = need_top_layer(HS, lens_scale, lens_center, cache_gl, tile);
@@ -665,14 +665,18 @@ const set_target_callbacks = (HS, key) => {
   return HS.gl_state.update_target_callbacks(callbacks, key, 'all');
 }
 
-const finish_target = (HS, viewer, imageJob, opts) => {
+const render_layers = (HS, tileSource, viewer, opts) => {
   const { tile, key } = opts;
+  const hash = HS.gl_state.active_hash(key, 'base');
   const lens_scale = HS.gl_state.toLensScale(viewer);
   const lens_center = HS.gl_state.toLensCenter(viewer);
   const bottom_layer = document.createElement("canvas");
   const top_layer = document.createElement("canvas");
   const bottom_ctx = bottom_layer.getContext('2d');
   const top_ctx = top_layer.getContext('2d');
+
+  const shape_opts = to_shape_opts(tileSource);
+  const cache_gl_1 = set_cache_gl(HS.gl_state, tile, shape_opts, 1);
 
   // Copy bottom layer to 2d context
   const bottom_out = render_to_cache(HS, lens_scale, lens_center, key, tile, 'base', cache_gl_1);
@@ -687,15 +691,19 @@ const finish_target = (HS, viewer, imageJob, opts) => {
   top_layer.height = h;
   top_layer.width = w;
   top_ctx.drawImage(top_out, 0, 0, w, h, 0, 0, w, h);
+  return { top_layer, bottom_layer, w, h, hash };
+}
 
+const finish_target = (HS, tileSource, viewer, imageJob, opts) => {
   // Update both layers in the cache
-  const new_cache_2d = { top_layer, bottom_layer, w, h, hash };
-  HS.gl_state.set_cache_2D(key, new_cache_2d);
-  imageJob.finish({ tile, key, new_cache_2d });
+  console.log('finishing')
+  const layers = render_layers(HS, tileSource, viewer, opts);
+  console.log('finished')
+  const _out = { ...opts, ...layers, busy: false };
+  imageJob.finish(_out);
 }
 
 const toTileTarget = (HS, viewer, target, tileSource) => {
-  const shape_opts = to_shape_opts(tileSource);
   const caches_2d = HS.gl_state.caches_2d;
 
   return {
@@ -709,8 +717,9 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
         const all_failed = results.every(x => !x);
         const msg = "All sources failed for tile.";
         if (all_failed) imageJob.finish(null, null, msg);
-        else finish_target(HS, viewer, imageJob, { tile, key });
-      }).catch(() => {
+        else finish_target(HS, tileSource, viewer, imageJob, { tile, key });
+      }).catch((e) => {
+        console.error(e);
         imageJob.finish(null);
       });
       promise.controller = {
@@ -725,23 +734,26 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
     getTileCacheDataAsContext2D: function(cache) {
       const out = cache._out;
       const { key, tile } = out;
-      const cache_2d = HS.gl_state.get_cache_2D(key);
       const hash = HS.gl_state.active_hash(key, 'base');
-      const cache_gl_0 = set_cache_gl(HS.gl_state, tile, shape_opts, 0);
-      const cache_gl_1 = set_cache_gl(HS.gl_state, tile, shape_opts, 1);
       // Measure viewport scale
       const lens_scale = HS.gl_state.toLensScale(viewer);
       const lens_center = HS.gl_state.toLensCenter(viewer);
       // Return the cached 2D canvas output
-      if (hash === out.hash) {
-        // Render both layers from cache
-        return render_output(HS, lens_scale, lens_center, cache_2d, cache_gl_0, out);
+      console.log({ out });
+      if (hash !== out.hash && out.busy === false) {
+        out.busy = true;
+        (async () => {
+          const { bottom_layer, top_layer, hash } = render_layers(HS, tileSource, viewer, opts);
+          out.bottom_layer = bottom_layer;
+          out.top_layer = top_layer;
+          out.hash = hash;
+          out.busy = false;
+        })();
       }
-      out.hash = hash;
-
-      // Intentionally cause following warning:
-      // Attempting to draw tile when it's not yet loaded.
-      return null;
+      // Trigger redraw
+      const shape_opts = to_shape_opts(tileSource);
+      const cache_gl_0 = set_cache_gl(HS.gl_state, tile, shape_opts, 0);
+      return render_output(HS, lens_scale, lens_center, cache_gl_0, out);
     }
   }
 }

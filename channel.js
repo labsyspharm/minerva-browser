@@ -665,6 +665,35 @@ const set_target_callbacks = (HS, key) => {
   return HS.gl_state.update_target_callbacks(callbacks, key, 'all');
 }
 
+const finish_target = (HS, viewer, imageJob, opts) => {
+  const { tile, key } = opts;
+  const lens_scale = HS.gl_state.toLensScale(viewer);
+  const lens_center = HS.gl_state.toLensCenter(viewer);
+  const bottom_layer = document.createElement("canvas");
+  const top_layer = document.createElement("canvas");
+  const bottom_ctx = bottom_layer.getContext('2d');
+  const top_ctx = top_layer.getContext('2d');
+
+  // Copy bottom layer to 2d context
+  const bottom_out = render_to_cache(HS, lens_scale, lens_center, key, tile, 'base', cache_gl_1);
+  const h = bottom_out.height;
+  const w = bottom_out.width;
+  bottom_layer.height = h;
+  bottom_layer.width = w;
+  bottom_ctx.drawImage(bottom_out, 0, 0, w, h, 0, 0, w, h);
+
+  // Copy top layer to 2d context
+  const top_out = render_to_cache(HS, lens_scale, lens_center, key, tile, 'lens', cache_gl_1);
+  top_layer.height = h;
+  top_layer.width = w;
+  top_ctx.drawImage(top_out, 0, 0, w, h, 0, 0, w, h);
+
+  // Update both layers in the cache
+  const new_cache_2d = { top_layer, bottom_layer, w, h, hash };
+  HS.gl_state.set_cache_2D(key, new_cache_2d);
+  imageJob.finish({ tile, key, new_cache_2d });
+}
+
 const toTileTarget = (HS, viewer, target, tileSource) => {
   const shape_opts = to_shape_opts(tileSource);
   const caches_2d = HS.gl_state.caches_2d;
@@ -680,7 +709,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
         const all_failed = results.every(x => !x);
         const msg = "All sources failed for tile.";
         if (all_failed) imageJob.finish(null, null, msg);
-        else imageJob.finish({ tile, key, subpath: "" });
+        else finish_target(HS, viewer, imageJob, { tile, key });
       }).catch(() => {
         imageJob.finish(null);
       });
@@ -704,38 +733,11 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const lens_scale = HS.gl_state.toLensScale(viewer);
       const lens_center = HS.gl_state.toLensCenter(viewer);
       // Return the cached 2D canvas output
-      if (hash === cache_2d?.hash && cache_2d?.ready) {
+      if (hash === out.hash) {
         // Render both layers from cache
         return render_output(HS, lens_scale, lens_center, cache_2d, cache_gl_0, out);
       }
-      else if (hash === cache_2d?.hash) {
-        return;
-      }
-      HS.gl_state.set_cache_2D(key, { hash, ready: false });
-      requestAnimationFrame(() => {
-      const bottom_layer = document.createElement("canvas");
-      const top_layer = document.createElement("canvas");
-      const bottom_ctx = bottom_layer.getContext('2d');
-      const top_ctx = top_layer.getContext('2d');
-
-      // Copy bottom layer to 2d context
-      const bottom_out = render_to_cache(HS, lens_scale, lens_center, key, tile, 'base', cache_gl_1);
-      const h = bottom_out.height;
-      const w = bottom_out.width;
-      bottom_layer.height = h;
-      bottom_layer.width = w;
-      bottom_ctx.drawImage(bottom_out, 0, 0, w, h, 0, 0, w, h);
-
-      // Copy top layer to 2d context
-      const top_out = render_to_cache(HS, lens_scale, lens_center, key, tile, 'lens', cache_gl_1);
-      top_layer.height = h;
-      top_layer.width = w;
-      top_ctx.drawImage(top_out, 0, 0, w, h, 0, 0, w, h);
-
-      // Update both layers in the cache
-      const new_cache_2d = { top_layer, bottom_layer, w, h, hash, ready: true };
-      HS.gl_state.set_cache_2D(key, new_cache_2d);
-      });
+      out.hash = hash;
 
       // Intentionally cause following warning:
       // Attempting to draw tile when it's not yet loaded.
@@ -1034,15 +1036,6 @@ class GLState {
       return sub.ScaledCrop;
     });
     return { crops, channels, colors, modes };
-  }
-
-  set_cache_2D(key, v) {
-    this.caches_2d.set(key, v);
-  }
-
-  get_cache_2D(key) {
-    if (!this.caches_2d.has(key)) return null;
-    return this.caches_2d.get(key);
   }
 
   get_image_callbacks(key) {

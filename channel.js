@@ -668,7 +668,7 @@ const set_target_callbacks = (HS, key) => {
 
 const render_layers = (HS, tileSource, viewer, opts) => {
   const { tile, key } = opts;
-  const hash = HS.gl_state.active_hash('base');
+  const hash = HS.gl_state.active_hash(key, 'base');
   const lens_scale = HS.gl_state.toLensScale(viewer);
   const lens_center = HS.gl_state.toLensCenter(viewer);
   const bottom_layer = document.createElement("canvas");
@@ -732,7 +732,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
     },
     getTileCacheDataAsContext2D: function(cache) {
       const out = cache._out;
-      const hash = HS.gl_state.active_hash('base');
+      const hash = HS.gl_state.active_hash(out.key, 'base');
       // Measure viewport scale
       const lens_scale = HS.gl_state.toLensScale(viewer);
       const lens_center = HS.gl_state.toLensCenter(viewer);
@@ -1117,13 +1117,15 @@ class GLState {
     });
   }
 
-  active_hash(target) {
+  active_hash(key, target) {
     const sources = this.active_sources(target);
-    const hash = sources.map((source) => {
+    const loaded = this.loaded_sources(key, target);
+    const hash_main = sources.map((source) => {
       const { Name, Colors } = source;
       return Name + '_' + Colors.join('_');
     }).join('-');
-    return hash;
+    const all_loaded = sources.length === loaded.length;
+    return `${hash_main}-${all_loaded}`;
   }
 
   active_sources(target) {

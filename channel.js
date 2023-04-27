@@ -1117,7 +1117,7 @@ class GLState {
   }
 
   active_hash(key, target) {
-    const sources = this.loaded_sources(key, target);
+    const sources = this.active_sources(target);
     const hash = sources.map((source) => {
       const { Name, Colors } = source;
       return Name + '_' + Colors.join('_');

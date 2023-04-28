@@ -756,22 +756,17 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
           const { tile, key } = out;
           const opts = { tile, key };
           const { bottom_layer, top_layer, hash } = render_layers(HS, tileSource, viewer, opts);
+          HS.gl_state.dropAlpha(key);
           out.bottom_layer = bottom_layer;
           out.top_layer = top_layer;
           out.hash = hash;
           out.busy = false;
         })();
       }
-      else if (hash === out.hash && out.busy === false && need_top) {
-        out.busy = true;
-        (async () => {
-          render_output(HS, lens_scale, lens_center, cache_gl_0, out);
-          out.busy = false;
-        })();
-      }
-      else {
+      if (need_top === false) {
         return out.bottom_layer.getContext('2d');
       }
+      render_output(HS, lens_scale, lens_center, cache_gl_0, out);
       return cache_gl_0.via.gl; 
     }
   }
@@ -977,27 +972,36 @@ class GLState {
 
   nextAlpha(key, n_tex) {
     const step = 2;
-    const reserved = 2;
-    const found = this.alphas.find(a => a.key === key);
+    const reserved = 1;
+    const found = this.alphas.find(item => {
+      return item[1] === key;
+    });
     const to_output = (item, cached) => {
-      const index = step * item.index + reserved;
+      const index = step * (item[0] + reserved);
       return { index, cached };
     }
     if (found) {
       return to_output(found, true);
     }
-    const first_few_slots = (
-      step * this.alphas.length < n_tex - reserved
-    );
-    if (first_few_slots) {
-      const index = this.alphas.length;
-      this.alphas = [{ key, index }, ...this.alphas];
+    const len = Math.floor(n_tex / step) - reserved;
+    if (this.alphas.length < len) {
+      const alpha_map = new Map(this.alphas);
+      const index = [...Array(len).keys()].find(index => {
+        return !alpha_map.has(index);
+      });
+      this.alphas = [[ index, key ], ...this.alphas];
     }
     else {
-      const { index } = this.alphas.pop();
-      this.alphas = [{ key, index }, ...this.alphas];
+      const index = this.alphas.pop()[0];
+      this.alphas = [[ index, key ], ...this.alphas];
     }
     return to_output(this.alphas[0], false);
+  }
+
+  dropAlpha(key) {
+    this.alphas = this.alphas.filter((item) => {
+      return key !== item[1];
+    });
   }
 
   setTargetImage(item) {

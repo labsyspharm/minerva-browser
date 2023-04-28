@@ -9,6 +9,16 @@ const ACTIVE_TEXTURE_RANGE = [
   8,9,10,11,12,13,14,15
 ]
 
+const to_uniforms = (program, gl, is_alpha_shader) => {
+  if (is_alpha_shader) {
+    return [ TEXTURE_RANGE, [0, 1], to_alpha_uniforms(program, gl) ];
+  }
+  return [
+    ACTIVE_TEXTURE_RANGE, ACTIVE_TEXTURE_RANGE,
+    to_linear_uniforms(program, gl, ACTIVE_TEXTURE_RANGE)
+  ];
+}
+
 const render_alpha_tile = (props, uniforms, tile, via) => {
   const { gl } = via;
   if (props === null) {
@@ -48,7 +58,7 @@ const render_alpha_tile = (props, uniforms, tile, via) => {
   gl.uniform1i(via.texture_uniforms[1], alpha_index + 1);
 
   // Bind all needed textures
-  [0, 1].forEach((_i) => {
+  via.texture_uniforms.forEach((_, _i) => {
     const i = alpha_index + _i;
     const from = data.channels[_i];
     // Allow caching of one alpha channel
@@ -67,7 +77,7 @@ const render_alpha_tile = (props, uniforms, tile, via) => {
   return gl.canvas;
 }
 
-const render_tile = (props, uniforms, tile, via) => {
+const render_linear_tile = (props, uniforms, tile, via) => {
   const { gl } = via;
   if (props === null) {
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
@@ -90,7 +100,7 @@ const render_tile = (props, uniforms, tile, via) => {
   gl.uniform2fv(u_shape, tile_shape_2fv);
 
   // Bind all needed textures
-  ACTIVE_TEXTURE_RANGE.forEach((i) => {
+  via.texture_uniforms.forEach((_, i) => {
     gl.uniform4fv(u_crops[i], data.crops[i] || full);
     gl.uniform3fv(u_colors[i], data.colors[i] || black);
     gl.uniform2ui(u_modes[i], ...(data.modes[i] || [0, 0]));
@@ -379,7 +389,7 @@ const toProgram = (gl, shaders) => {
   return validate(gl,'Program','LINK','LINK',program);
 }
 
-const toBuffers = (flip_y, program, via) => {
+const toBuffers = (flip_y, tex, active_tex, program, via) => {
   // Allow for custom loading
   const gl = via.gl;
 
@@ -396,7 +406,7 @@ const toBuffers = (flip_y, program, via) => {
   gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, 0, via.one_point_size,
                          0 * via.points_list_size);
 
-  TEXTURE_RANGE.forEach((i) => {
+  tex.forEach((i) => {
     // Set Texture
     gl.activeTexture(gl['TEXTURE'+i]);
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
@@ -410,7 +420,7 @@ const toBuffers = (flip_y, program, via) => {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   });
 
-  return ACTIVE_TEXTURE_RANGE.map((i) => {
+  return active_tex.map((i) => {
     // Assign uniforms
     const u_t = gl.getUniformLocation(program, `u_t${i}`);
     gl.uniform1i(u_t, i);
@@ -449,12 +459,14 @@ const initialize_gl = (flip_y, tile, cleanup) => {
   const program = toProgram(gl, shaders);
   update_shape(gl, tile);
   gl.useProgram(program);
-  const textures = TEXTURE_RANGE.map(() => gl.createTexture());
-  const texture_uniforms = toBuffers(flip_y, program, {
+  const [tex, active_tex, uniforms] = to_uniforms(
+    program, gl, is_alpha_shader
+  );
+  const textures = tex.map(() => gl.createTexture());
+  const texture_uniforms = toBuffers(flip_y, tex, active_tex, program, {
     gl, ...to_vertices(), buffer: gl.createBuffer(), textures
   });
   const via = { gl, flip_y, texture_uniforms, textures, program };
-  const uniforms = to_uniforms(via);
   return { via, uniforms };
 }
 
@@ -536,7 +548,8 @@ const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out) =
   const { 
     tile_square, max_level 
   } = cache_gl.shape_opts;
-  const { index, cached } = HS.gl_state.nextAlpha(key);
+  const n_tex = cache_gl.via.textures.length;
+  const { index, cached } = HS.gl_state.nextAlpha(key, n_tex);
   // Allow blending of two alpha layers
   const [ bottom_layer, top_layer ] = layers;
   const data = {
@@ -558,7 +571,7 @@ const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out) =
 const render_to_cache = (HS, lens_scale, lens_center, key, tile, target, cache_gl) => {
   const shown = HS.gl_state.to_shown(key || '', target);
   const props = to_tile_props(shown, HS, lens_scale, lens_center, cache_gl);
-  return render_tile(props, cache_gl.uniforms, tile, cache_gl.via);
+  return render_linear_tile(props, cache_gl.uniforms, tile, cache_gl.via);
 }
 
 const scale_to_global = (max_level, tile) => {
@@ -644,20 +657,12 @@ const render_output = (HS, lens_scale, lens_center, cache_gl, out) => {
   const { key, tile } = out;
   const { top_layer, bottom_layer, w, h } = out;
   const layers = [bottom_layer, top_layer];
-
-  const need_top = need_top_layer(HS, lens_scale, lens_center, cache_gl, tile);
-  if (need_top === false) {
-    return bottom_layer.getContext('2d');
-  }
-  
+ 
   // Render both layers from cache
-  const rendered_layer = document.createElement("canvas");
-  const rendered_ctx = rendered_layer.getContext('2d');
+  const rendered_ctx = out.context;
   const done = render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out);
 
   // Copy both layers to resulting context
-  rendered_layer.height = done.height;
-  rendered_layer.width = done.width;
   rendered_ctx.drawImage(done, 0, 0, w, h, 0, 0, w, h);
   return rendered_ctx;
 }
@@ -704,13 +709,17 @@ const render_layers = (HS, tileSource, viewer, opts) => {
 const finish_target = (HS, tileSource, viewer, imageJob, opts) => {
   // Update both layers in the cache
   const layers = render_layers(HS, tileSource, viewer, opts);
-  const _out = { ...opts, ...layers, busy: false };
+  const canvas = document.createElement("canvas");
+  canvas.height = layers.top_layer.height;
+  canvas.width = layers.bottom_layer.width;
+  const context = canvas.getContext('2d');
+  const _out = { 
+    ...opts, ...layers, context, busy: false
+  };
   imageJob.finish(_out);
 }
 
 const toTileTarget = (HS, viewer, target, tileSource) => {
-  const caches_2d = HS.gl_state.caches_2d;
-
   return {
     ...tileSource,
     ...customTileCache(HS, 'all'),
@@ -740,8 +749,11 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const out = cache._out;
       const hash = HS.gl_state.active_hash(out.key, 'base');
       // Measure viewport scale
+      const shape_opts = to_shape_opts(tileSource);
       const lens_scale = HS.gl_state.toLensScale(viewer);
       const lens_center = HS.gl_state.toLensCenter(viewer);
+      const cache_gl_0 = set_cache_gl(HS.gl_state, out.tile, shape_opts, 0);
+      const need_top = need_top_layer(HS, lens_scale, lens_center, cache_gl_0, out.tile);
       // Return the cached 2D canvas output
       if (hash !== out.hash && out.busy === false) {
         out.busy = true;
@@ -755,10 +767,17 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
           out.busy = false;
         })();
       }
-      // Trigger redraw
-      const shape_opts = to_shape_opts(tileSource);
-      const cache_gl_0 = set_cache_gl(HS.gl_state, out.tile, shape_opts, 0);
-      return render_output(HS, lens_scale, lens_center, cache_gl_0, out);
+      else if (hash === out.hash && out.busy === false && need_top) {
+        out.busy = true;
+        (async () => {
+          render_output(HS, lens_scale, lens_center, cache_gl_0, out);
+          out.busy = false;
+        })();
+      }
+      else {
+        return out.bottom_layer.getContext('2d');
+      }
+      return out.context
     }
   }
 }
@@ -910,8 +929,25 @@ const toTileSource = (HS, tileSource) => {
   }
 }
 
-const to_uniforms = (via) => {
-  const { program, gl } = via;
+const to_linear_uniforms = (program, gl, active_tex) => {
+  const u_shape = gl.getUniformLocation(program, "u_shape");
+
+  const u_crops = active_tex.map((i) => {
+    return gl.getUniformLocation(program, `u_t${i}_crop`);
+  });
+  const u_colors = active_tex.map((i) => {
+    return gl.getUniformLocation(program, `u_t${i}_color`);
+  });
+  const u_modes = active_tex.map((i) => {
+    return gl.getUniformLocation(program, `u_t${i}_mode`);
+  });
+
+  return {
+    u_shape, u_crops, u_colors, u_modes
+  };
+}
+
+const to_alpha_uniforms = (program, gl) => {
   const u_lens = gl.getUniformLocation(program, "u_lens");
   const u_shape = gl.getUniformLocation(program, "u_shape");
   const u_level = gl.getUniformLocation(program, "u_level");
@@ -921,21 +957,9 @@ const to_uniforms = (via) => {
   const u_blend_alpha = gl.getUniformLocation(program, "u_blend_alpha");
   const u_alpha_index = gl.getUniformLocation(program, "u_alpha_index");
 
-  const u_crops = ACTIVE_TEXTURE_RANGE.map((i) => {
-    return gl.getUniformLocation(program, `u_t${i}_crop`);
-  });
-  const u_colors = ACTIVE_TEXTURE_RANGE.map((i) => {
-    return gl.getUniformLocation(program, `u_t${i}_color`);
-  });
-  const u_modes = ACTIVE_TEXTURE_RANGE.map((i) => {
-    return gl.getUniformLocation(program, `u_t${i}_mode`);
-  });
-
   return {
     u_lens, u_shape, u_alpha_index, u_blend_alpha,
-    u_lens_rad, u_lens_scale,
-    u_level, u_origin,
-    u_crops, u_colors, u_modes
+    u_lens_rad, u_lens_scale, u_level, u_origin
   };
 }
 
@@ -948,8 +972,6 @@ class GLState {
 
   constructor(HS) {
     this.alphas = [];
-    this.num_textures = TEXTURE_RANGE.length;
-    this.caches_2d = new Map();
     this.caches_gl = new Map();
     this.image_data = new Map();
     this.file_callbacks = new Map();
@@ -958,7 +980,7 @@ class GLState {
     this.HS = HS;
   }
 
-  nextAlpha(key) {
+  nextAlpha(key, n_tex) {
     const step = 2;
     const reserved = 2;
     const found = this.alphas.find(a => a.key === key);
@@ -970,7 +992,7 @@ class GLState {
       return to_output(found, true);
     }
     const first_few_slots = (
-      step * this.alphas.length < this.num_textures - reserved
+      step * this.alphas.length < n_tex - reserved
     );
     if (first_few_slots) {
       const index = this.alphas.length;

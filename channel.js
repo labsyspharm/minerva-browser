@@ -659,12 +659,7 @@ const render_output = (HS, lens_scale, lens_center, cache_gl, out) => {
   const layers = [bottom_layer, top_layer];
  
   // Render both layers from cache
-  const rendered_ctx = out.context;
-  const done = render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out);
-
-  // Copy both layers to resulting context
-  rendered_ctx.drawImage(done, 0, 0, w, h, 0, 0, w, h);
-  return rendered_ctx;
+  render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out);
 }
 
 const set_parent_callback = (HS, key, path) => {
@@ -777,7 +772,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       else {
         return out.bottom_layer.getContext('2d');
       }
-      return out.context
+      return cache_gl_0.via.gl; 
     }
   }
 }

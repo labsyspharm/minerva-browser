@@ -771,7 +771,9 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       // Render lens layer if needed
       const found = HS.gl_state.cachedAlpha(out.key);
       if (found === null) {
-        render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
+        (async () => {
+          render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
+        })();
         return null; //Trigger warning, drawing tile when not yet loaded
       }
       render_output(HS, lens_scale, lens_center, cache_gl_0, out, false);

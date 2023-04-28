@@ -19,7 +19,7 @@ const to_uniforms = (program, gl, is_alpha_shader) => {
   ];
 }
 
-const render_alpha_tile = (props, uniforms, tile, via) => {
+const render_alpha_tile = (props, uniforms, tile, via, skip) => {
   const { gl } = via;
   if (props === null) {
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
@@ -73,7 +73,9 @@ const render_alpha_tile = (props, uniforms, tile, via) => {
   });
 
   // Actually draw the arrays
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  if (skip !== true) {
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
   return gl.canvas;
 }
 
@@ -542,7 +544,7 @@ const to_shape_opts = (tileSource) => {
   };
 }
 
-const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out) => {
+const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out, skip) => {
   const { tile, key } = out;
   const lens_rad = HS.lensRad;
   const { 
@@ -565,7 +567,7 @@ const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out) =
     width: bottom_layer.width,
     height: bottom_layer.height,
   };
-  return render_alpha_tile({ data }, cache_gl.uniforms, tile, cache_gl.via);
+  return render_alpha_tile({ data }, cache_gl.uniforms, tile, cache_gl.via, skip);
 }
 
 const render_to_cache = (HS, lens_scale, lens_center, key, tile, target, cache_gl) => {
@@ -652,14 +654,14 @@ const need_top_layer = (HS, lens_scale, lens_center, cache_gl, tile) => {
   return is_within_lens(HS, lens_scale, lens_center, cache_gl, tile);
 }
 
-const render_output = (HS, lens_scale, lens_center, cache_gl, out) => {
+const render_output = (HS, lens_scale, lens_center, cache_gl, out, skip) => {
 
   const { key, tile } = out;
   const { top_layer, bottom_layer, w, h } = out;
   const layers = [bottom_layer, top_layer];
  
   // Render both layers from cache
-  render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out);
+  render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out, skip);
 }
 
 const set_parent_callback = (HS, key, path) => {
@@ -766,7 +768,13 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       if (need_top === false) {
         return out.bottom_layer.getContext('2d');
       }
-      render_output(HS, lens_scale, lens_center, cache_gl_0, out);
+      // Render lens layer if needed
+      const found = HS.gl_state.cachedAlpha(out.key);
+      if (found === null) {
+        render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
+        return null; //Trigger warning, drawing tile when not yet loaded
+      }
+      render_output(HS, lens_scale, lens_center, cache_gl_0, out, false);
       return cache_gl_0.via.gl; 
     }
   }
@@ -970,17 +978,22 @@ class GLState {
     this.HS = HS;
   }
 
-  nextAlpha(key, n_tex) {
-    const step = 2;
-    const reserved = 1;
+  cachedAlpha(key) {
     const found = this.alphas.find(item => {
       return item[1] === key;
     });
+    return found || null;
+  }
+
+  nextAlpha(key, n_tex) {
+    const step = 2;
+    const reserved = 1;
     const to_output = (item, cached) => {
       const index = step * (item[0] + reserved);
       return { index, cached };
     }
-    if (found) {
+    const found = this.cachedAlpha(key);
+    if (found !== null) {
       return to_output(found, true);
     }
     const len = Math.floor(n_tex / step) - reserved;

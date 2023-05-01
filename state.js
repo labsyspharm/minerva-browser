@@ -276,6 +276,8 @@ export const HashState = function(exhibit, options) {
     lensResizeBasis: null,
     lensAlphaBasis: null,
     lensHeld: true,
+    lensAlphaHeld: true,
+    lensResizeHeld: true,
     lensResizeMin: 60,
     lensResizeMax: 600,
     lensResizeSpeed: 1,
@@ -457,6 +459,8 @@ HashState.prototype = {
     this.updateLensUI(first_center);
     viewer.addHandler('canvas-release', (e) => {
       this.state.lensHeld = false;
+      this.state.lensAlphaHeld = false;
+      this.state.lensResizeHeld = false;
       this.state.lensResizeBasis = null;
       this.state.lensAlphaBasis = null;
     });
@@ -466,6 +470,11 @@ HashState.prototype = {
       if (this.isWithinResizeRing([x, y])) {
         this.state.lensResizeBasis = toReferenceVector([x, y], this.lensCenter);
         this.state.lensAlphaBasis = toReferenceVector(this.lensCenter, [x, y]);
+        const basis_y = this.state.lensAlphaBasis[1];
+        const control_alpha = Math.sign(basis_y) === -1;
+        const control_resize = basis_y > this.lensRad / 4;
+        if (control_resize) this.state.lensResizeHeld = true;
+        else if (control_alpha) this.state.lensAlphaHeld = true;
       }
     });
     viewer.addHandler('canvas-drag', (e) => {
@@ -477,12 +486,9 @@ HashState.prototype = {
         this.updateLensUI([x, y]);
         viewer.forceRedraw();
       }
-      else if (resizing) {
+      else if (this.state.lensResizeHeld || this.state.lensAlphaHeld) {
         e.preventDefaultAction = true;
-        const basis_y = this.state.lensAlphaBasis[1];
-        const control_alpha = Math.sign(basis_y) === -1;
-        const control_resize = basis_y > this.lensRad / 4;
-        if (control_alpha) {
+        if (this.state.lensAlphaHeld) {
           const ref = this.state.lensAlphaBasis;
           const new_ref = toReferenceVector(this.lensCenter, [x, y]);
           const alpha_angle = toAngleTrajectory(ref, new_ref);
@@ -494,7 +500,7 @@ HashState.prototype = {
           this.state.lensAlphaBasis = new_ref;
           this.updateLensAlpha(new_alpha);
         }
-        else if (control_resize) {
+        else if (this.state.lensResizeHeld) {
           const ref = this.state.lensResizeBasis;
           const resize_dir = resizeDirection(ref, [e.delta.x, e.delta.y]);
           const resize_vector = toTrajectory(ref, [e.delta.x, e.delta.y]);

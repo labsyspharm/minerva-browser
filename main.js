@@ -1,6 +1,7 @@
 import SimpleEventHandler from "./simpleEventHandler.js"
 import { get_links_alias } from "./links_alias.js"
 import { toTileTarget, toTileSource } from "./channel"
+import { ThreeJSDrawer } from './threejsdrawer'
 import { getAjaxHeaders } from "./state"
 import { getGetTileUrl } from "./state"
 import { HashState } from "./state"
@@ -3405,6 +3406,7 @@ const build_page_with_exhibit = function(exhibit, options) {
 
   // Initialize openseadragon
   const viewer = OpenSeadragon({
+    customDrawer: ThreeJSDrawer,
     maxImageCacheCount,
     id: options.id + '-openseadragon',
     prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.3.1/images/',

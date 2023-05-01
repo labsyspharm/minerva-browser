@@ -774,7 +774,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
         (async () => {
           render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
         })();
-        return null; //Trigger warning, drawing tile when not yet loaded
+//        return null; //Trigger warning, drawing tile when not yet loaded
       }
       render_output(HS, lens_scale, lens_center, cache_gl_0, out, false);
       return cache_gl_0.via.gl; 

@@ -9,11 +9,12 @@
     "jquery": "3.5.1",
     "js-yaml": "^3.14.0",
     "lz-string": "^1.4.4",
-    "openseadragon": "^4.0.0",
+    "openseadragon": "github:pearcetm/openseadragon#8a4c95ef4b435088933f1e82b80de4a70a77ac97",
     "popper.js": "1.16.0",
     "process": "^0.11.10",
     "sha1": "^1.1.1",
     "showdown": "^1.9.1",
+    "three": "^0.152.1",
     "vega": "^5.20.2",
     "vega-embed": "^6.20.3",
     "vega-lite": "^5.1.0"

@@ -477,7 +477,7 @@ HashState.prototype = {
         this.updateLensUI([x, y]);
         viewer.forceRedraw();
       }
-      else if (resizing && this.isWithinResizeRing([x, y])) {
+      else if (resizing) {
         e.preventDefaultAction = true;
         const basis_y = this.state.lensAlphaBasis[1];
         const control_alpha = Math.sign(basis_y) === -1;

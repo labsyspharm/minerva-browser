@@ -276,7 +276,7 @@ export const HashState = function(exhibit, options) {
     lensResizeBasis: null,
     lensAlphaBasis: null,
     lensHeld: true,
-    lensResizeMin: 80,
+    lensResizeMin: 60,
     lensResizeMax: 600,
     lensResizeSpeed: 1,
     lensInsideBorder: 20,
@@ -305,19 +305,32 @@ export const HashState = function(exhibit, options) {
   this.newExhibit();
   this._gl_state = new GLState(this)
 };
+
+const toClipPath = (rad, nav_gap) => {
+  const norm = 100*(2*rad) / nav_gap;
+  const arc = Math.asin(nav_gap/(2*rad));
+  const c = [...Array(32)].map((_, _i, _a) => {
+    const diff = _i*arc/(_a.length-1)+Math.PI/2;
+    const angle = (arc/2 - diff);
+    const x = Math.round(Math.cos(angle)*norm*10)/10;
+    const y = Math.round(Math.sin(angle)*norm*10)/10;
+    return `${y+50+norm}% ${x+50}%`;
+  }).join(',');
+  return `polygon(100% 0, 0 0, 0 100%, 100% 100%, ${c})`;
+}
  
 const to_container = (nav_gap) => {
-   const container = document.createElement('div');
-   container.setAttribute('class', `minerva-lens-ui-wrapper`);
-   container.setAttribute('style', `
-     display: grid;
-     position: absolute;
-     pointer-events: none;
-     grid-template-columns: ${nav_gap}px auto ${nav_gap}px;
-     grid-template-rows: ${nav_gap}px auto ${nav_gap}px;
-     justify-content: center;
-     align-content: center;
-   `);
+  const container = document.createElement('div');
+  container.setAttribute('class', `minerva-lens-ui-wrapper`);
+  container.setAttribute('style', `
+    display: grid;
+    position: absolute;
+    pointer-events: none;
+    grid-template-columns: ${nav_gap}px auto ${nav_gap}px;
+    grid-template-rows: ${nav_gap}px auto ${nav_gap}px;
+    justify-content: center;
+    align-content: center;
+  `);
   const padding = document.createElement('div');
   padding.setAttribute('style', `
     grid-column: 2; grid-row: 2;
@@ -325,13 +338,32 @@ const to_container = (nav_gap) => {
     align-content: center;
     display: grid;
   `);
-  const handle = document.createElement('div');
-  handle.setAttribute('class', `bg-trans`);
-  handle.setAttribute('style', `
-    grid-column: 3; grid-row: 3;
+  const alpha_handle = document.createElement('div');
+  alpha_handle.setAttribute('style', `
+    grid-column: 2; grid-row: 2;
     color: rgba(0, 123, 255, 1);
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: 1fr auto 1fr;
+    justify-content: center;
+    align-content: center;
+    display: grid;
+  `);
+  const alpha_label = document.createElement('span');
+  alpha_label.setAttribute('class', `bg-trans`);
+  alpha_label.setAttribute('style', `
     border-radius: ${nav_gap/2}px;
-    font-size: ${nav_gap}px;
+    border: 2px solid white;
+    padding-top: 5px;
+    height: ${nav_gap}px;
+    width: ${nav_gap}px;
+    grid-column: 2;
+    grid-row: 2;
+  `);
+  const size_handle = document.createElement('div');
+  size_handle.setAttribute('class', `bg-trans`);
+  size_handle.setAttribute('style', `
+    grid-column: 3; grid-row: 3;
+    border-radius: ${nav_gap/2}px;
     border: 2px solid white;
     grid-template-columns: 1fr auto 1fr;
     grid-template-rows: 1fr auto 1fr;
@@ -339,28 +371,47 @@ const to_container = (nav_gap) => {
     align-content: center;
     display: grid;
   `);
-  const handle_label = document.createElement('span');
-  handle_label.setAttribute('style', `
+  const size_label = document.createElement('span');
+  size_label.setAttribute('style', `
+    font-family: Arial;
     padding-top: 5px;
     grid-column: 2;
     grid-row: 2;
   `);
-  handle_label.innerText = "⤡";
-  handle.append(handle_label);
+  const size_svg = (new DOMParser()).parseFromString(`
+<svg fill="#007bff" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 358.666 358.666" xml:space="preserve" transform="rotate(-45)"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g> <g> <polygon points="190.367,316.44 190.367,42.226 236.352,88.225 251.958,72.619 179.333,0 106.714,72.613 122.291,88.231 168.302,42.226 168.302,316.44 122.314,270.443 106.708,286.044 179.333,358.666 251.958,286.056 236.363,270.432 "></polygon> </g> </g> </g></svg>
+`, "image/svg+xml").children[0];
+  size_svg.style = `
+    width: ${nav_gap-5}px;
+    margin-top: -6px;
+  `;
+  size_label.appendChild(size_svg);
+  size_handle.append(size_label);
+  alpha_handle.append(alpha_label);
   container.append(padding);
-  container.append(handle);
-  return { container, padding };
+  container.append(size_handle);
+  container.append(alpha_handle);
+  return { container, padding, alpha_label, alpha_handle };
 }
 
 const to_pad = (rad, nav_gap) => {
   return Math.ceil(2*rad / Math.sqrt(2)) - 20;
 }
 
-const update_container = ({ container, padding, nav_gap, rad, x, y, no_lens }) => {
+const update_container = ({ 
+  alpha_handle, alpha_label, container, padding, nav_gap,
+  alpha, rad, x, y, no_lens
+}) => {
+  const alpha_angle = 3 * (alpha - 0.03);
   const pad = to_pad(rad, nav_gap);
   const css_x = Math.round(x - rad) + 'px';
   const css_y = Math.round(y - rad) + 'px';
+  container.style.border = "2px solid white";
+  container.style.borderRadius = rad + "px";
   container.style.display = ['grid', 'none'][+no_lens];
+  alpha_handle.style.transform = `rotate(${alpha_angle}rad)`;
+  alpha_label.style.clipPath = toClipPath(rad, nav_gap);
+  alpha_label.style.translate = `-${rad}px 0px`;
   container.style.height = 2*rad + 'px';
   container.style.width = 2*rad + 'px';
   padding.style.height = pad + 'px';
@@ -411,22 +462,23 @@ HashState.prototype = {
     });
     viewer.addHandler('canvas-press', (e) => {
       const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
+      this.state.lensHeld = this.isWithinLens([x, y]);
+      if (this.isWithinResizeRing([x, y])) {
+        this.state.lensResizeBasis = toReferenceVector([x, y], this.lensCenter);
+        this.state.lensAlphaBasis = toReferenceVector(this.lensCenter, [x, y]);
+      }
     });
     viewer.addHandler('canvas-drag', (e) => {
+      const { lensResizeBasis, lensAlphaBasis } = this.state;
       const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
-      this.state.lensHeld = this.isWithinLens([x, y]);
+      const resizing = (lensResizeBasis !== null && lensAlphaBasis !== null);
       if (this.state.lensHeld) {
         e.preventDefaultAction = true;
         this.updateLensUI([x, y]);
         viewer.forceRedraw();
       }
-      else if (this.isWithinResizeRing([x, y])) {
+      else if (resizing && this.isWithinResizeRing([x, y])) {
         e.preventDefaultAction = true;
-        const { lensResizeBasis, lensAlphaBasis } = this.state;
-        if (lensResizeBasis === null || lensAlphaBasis === null) {
-          this.state.lensResizeBasis = toReferenceVector([x, y], this.lensCenter);
-          this.state.lensAlphaBasis = toReferenceVector(this.lensCenter, [x, y]);
-        }
         const basis_y = this.state.lensAlphaBasis[1];
         const control_alpha = Math.sign(basis_y) === -1;
         const control_resize = basis_y > this.lensRad / 4;
@@ -467,9 +519,11 @@ HashState.prototype = {
 
   createLensUI (viewer) {
     const nav_gap =  this.state.lensResizeThickness * .75;
-    const { container, padding } = to_container(nav_gap);
+    const {
+      container, padding, alpha_handle, alpha_label
+    } = to_container(nav_gap);
     this.state.lensUI = {
-      container, padding, nav_gap
+      container, padding, alpha_handle, alpha_label, nav_gap
     };
     const { parentElement } = viewer.element;
     parentElement.append(container);
@@ -477,14 +531,15 @@ HashState.prototype = {
 
   updateLensUI (newLensCenter) {
     const rad = this.lensRad;
+    const alpha = this.lensAlpha;
     if (!this.state.lensUI) return;
     if (newLensCenter) {
       this.lensCenter = newLensCenter;
     }
     const [x, y] = this.lensCenter;
     const no_lens = this.lensing === null;
-    const { container, padding, nav_gap } = this.state.lensUI;
-    update_container({ container, padding, nav_gap, rad, x, y, no_lens });
+    const { lensUI } = this.state;
+    update_container({ ...lensUI, alpha, rad, x, y, no_lens });
   },
 
   updateLensAlpha (newAlpha) {

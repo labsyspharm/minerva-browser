@@ -1,9 +1,4 @@
-const TEXTURE_RANGE = [
-  0,1,2,3,4,5,6,7,
-  8,9,10,11,12,13,14,15,
-  16,17,18,19,20,21,22,23,
-  24,25,26,27,28,29,30,31
-]
+const TEXTURE_RANGE = [...new Array(1024).keys()];
 const ACTIVE_TEXTURE_RANGE = [
   0,1,2,3,4,5,6,7,
   8,9,10,11,12,13,14,15
@@ -54,20 +49,20 @@ const render_alpha_tile = (props, uniforms, tile, via, skip) => {
   gl.uniform1f(u_blend_alpha, data.blend_alpha);
 
   // Point to the alpha channel
-  gl.uniform1i(via.texture_uniforms[0], alpha_index);
-  gl.uniform1i(via.texture_uniforms[1], alpha_index + 1);
+  gl.uniform1i(via.texture_uniforms[0], 0);
+  gl.uniform1i(via.texture_uniforms[1], 1);
 
   // Bind all needed textures
   via.texture_uniforms.forEach((_, _i) => {
     const i = alpha_index + _i;
     const from = data.channels[_i];
     // Allow caching of one alpha channel
-    gl.activeTexture(gl['TEXTURE'+i]);
+    gl.activeTexture(gl['TEXTURE'+_i]);
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.flip_y);
-    // Don't rebind if is cached alpha
+    // Don't re-upload if is cached alpha
     if (alpha_cached) return;
-    // Actually re-bind the alpha tile texture
+    // Actually re-upload the alpha tile texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
               gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
   });
@@ -113,7 +108,7 @@ const render_linear_tile = (props, uniforms, tile, via) => {
     gl.activeTexture(gl['TEXTURE'+i]);
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.flip_y);
-    // Actually re-bind the tile texture
+    // Actually re-upload the tile texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
               gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
   });
@@ -374,7 +369,6 @@ const toBuffers = (flip_y, tex, active_tex, program, via) => {
 
   tex.forEach((i) => {
     // Set Texture
-    gl.activeTexture(gl['TEXTURE'+i]);
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip_y);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
@@ -389,6 +383,7 @@ const toBuffers = (flip_y, tex, active_tex, program, via) => {
   return active_tex.map((i) => {
     // Assign uniforms
     const u_t = gl.getUniformLocation(program, `u_t${i}`);
+    gl.activeTexture(gl['TEXTURE'+i]);
     gl.uniform1i(u_t, i);
     return u_t;
   })
@@ -953,16 +948,15 @@ class GLState {
 
   nextAlpha(key, n_tex) {
     const step = 2;
-    const reserved = 1;
     const to_output = (item, cached) => {
-      const index = step * (item[0] + reserved);
+      const index = step * item[0];
       return { index, cached };
     }
     const found = this.cachedAlpha(key);
     if (found !== null) {
       return to_output(found, true);
     }
-    const len = Math.floor(n_tex / step) - reserved;
+    const len = Math.floor(n_tex / step);
     if (this.alphas.length < len) {
       const alpha_map = new Map(this.alphas);
       const index = [...Array(len).keys()].find(index => {

@@ -24,7 +24,7 @@ const render_alpha_tile = (props, uniforms, tile, via, skip) => {
   const { data } = props;
   const { alpha_index, alpha_cached } = data;
   const {
-    u_lens, u_shape, u_alpha_index, u_blend_alpha,
+    u_lens, u_shape, u_blend_alpha,
     u_lens_rad, u_lens_scale, u_level, u_origin,
   } = uniforms;
   const w = data.width;
@@ -45,7 +45,6 @@ const render_alpha_tile = (props, uniforms, tile, via, skip) => {
   gl.uniform1f(u_lens_scale, lens_scale);
   gl.uniform2fv(u_shape, tile_shape_2fv);
   gl.uniform2fv(u_origin, tile_origin_2fv);
-  gl.uniform1i(u_alpha_index, alpha_index);
   gl.uniform1f(u_blend_alpha, data.blend_alpha);
 
   // Point to the alpha channel
@@ -77,9 +76,7 @@ const render_alpha_tile = (props, uniforms, tile, via, skip) => {
 const render_linear_tile = (props, uniforms, tile, via) => {
   const { gl } = via;
   if (props === null) {
-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    return via.gl.canvas;
+    return null;
   }
   const { data } = props;
   const { alpha_index, alpha_cached } = data;
@@ -107,7 +104,7 @@ const render_linear_tile = (props, uniforms, tile, via) => {
     // Allow caching of one alpha channel
     gl.activeTexture(gl['TEXTURE'+i]);
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.stage);
     // Actually re-upload the tile texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
               gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
@@ -259,7 +256,6 @@ const SHADERS = [{
   uniform float u_lens_rad;
   uniform float u_lens_scale;
   uniform float u_blend_alpha;
-  uniform int u_alpha_index;
   uniform usampler2D u_t0;
   uniform usampler2D u_t1;
 
@@ -312,7 +308,7 @@ const SHADERS = [{
 
   void main() {
     color = vec4(texel(u_t0, u_shape, uv)) / 255.;
-    if (u_blend_alpha > 0. && u_alpha_index >= 2) {
+    if (u_blend_alpha > 0.) {
       color = alpha_blend(color, u_t1);
     }
   }`,
@@ -370,7 +366,7 @@ const toBuffers = (stage, tex, active_tex, program, via) => {
   tex.forEach((i) => {
     // Set Texture
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.stage);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
     // Assign texture parameters
@@ -531,7 +527,6 @@ const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out, s
 
 const render_to_cache = (HS, lens_scale, lens_center, key, tile, target, cache_gl) => {
   const shown = HS.gl_state.to_shown(key || '', target);
-  if (shown.length === 0) return null;
   const props = to_tile_props(shown, HS, lens_scale, lens_center, cache_gl);
   return render_linear_tile(props, cache_gl.uniforms, tile, cache_gl.via);
 }
@@ -614,14 +609,33 @@ const need_top_layer = (HS, lens_scale, lens_center, cache_gl, tile) => {
   return is_within_lens(HS, lens_scale, lens_center, cache_gl, tile);
 }
 
-const render_output = (HS, lens_scale, lens_center, cache_gl, out, skip) => {
+const to_status = (out) => {
+  const has_layers = out.top_layer && out.bottom_layer;
+  const ready = out.all_loaded && has_layers;
+  const loaded = out.all_loaded;
+  return [ loaded, ready ];
+}
 
+const render_output = (HS, lens_scale, lens_center, cache_gl, out, skip) => {
   const { key, tile } = out;
-  const { top_layer, bottom_layer, w, h } = out;
+  const { top_layer, bottom_layer } = out;
   const layers = [bottom_layer, top_layer];
- 
-  // Render both layers from cache
-  render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out, skip);
+  if (!to_status(out)[1]) {
+    return null;
+  }
+  const found = HS.gl_state.cachedAlpha(out.key);
+  if (found === null && out.busy === false) {
+    out.busy = true;
+    (async () => {
+      render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out, true);
+      out.busy = false;
+    })();
+    if (skip) return null;
+    return out.bottom_layer.getContext('2d');
+  }
+  if (skip) return null;
+  render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out, false);
+  return cache_gl.via.gl; 
 }
 
 const render_layers = (HS, tileSource, viewer, opts) => {
@@ -700,51 +714,33 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const cache_gl_0 = set_cache_gl(HS.gl_state, out.tile, shape_opts, 0);
       const need_top = need_top_layer(HS, lens_scale, lens_center, cache_gl_0, out.tile);
       out.all_loaded = HS.gl_state.all_loaded(out.key);
-      const to_status = (out) => {
-        const has_layers = out.top_layer && out.bottom_layer;
-        const ready = out.all_loaded && has_layers;
-        const loaded = out.all_loaded;
-        return [ loaded, ready ];
-      }
+
       if (!to_status(out)[0]) {
-        HS.gl_state.dropAlpha(out.key);
+        return null;
       }
       // Return the cached 2D canvas output
       if (hash !== out.hash && out.busy === false && to_status(out)[0]) {
-        HS.gl_state.dropAlpha(out.key);
         out.busy = true;
         (async () => {
           const { tile, key } = out;
           const opts = { tile, key };
           out.all_loaded = HS.gl_state.all_loaded(out.key);
-          const { bottom_layer, top_layer, hash } = render_layers(HS, tileSource, viewer, opts);
+          const { 
+            bottom_layer, top_layer, hash
+          } = render_layers(HS, tileSource, viewer, opts);
+          HS.gl_state.dropAlpha(out.key);
           out.bottom_layer = bottom_layer;
           out.top_layer = top_layer;
           out.hash = hash;
-          if (to_status(out).every(x => x)) {
-            render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
-          }
           out.busy = false;
         })();
+        return null; 
       }
-      if (!to_status(out).every(x => x)) {
-        return null;
-      }
-      if (need_top === false) {
-        return out.bottom_layer.getContext('2d');
+      if (need_top === false || !to_status(out)[1]) {
+        return out.bottom_layer?.getContext('2d') || null;
       }
       // Render lens layer if needed
-      const found = HS.gl_state.cachedAlpha(out.key);
-      if (found === null) {
-        (async () => {
-          if (to_status(out).every(x => x)) {
-            render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
-          }
-        })();
-        return null; //Trigger warning, drawing tile when not yet loaded
-      }
-      render_output(HS, lens_scale, lens_center, cache_gl_0, out, false);
-      return cache_gl_0.via.gl; 
+      return render_output(HS, lens_scale, lens_center, cache_gl_0, out, false);
     }
   }
 }
@@ -791,13 +787,12 @@ const fetch_tile = (full_url, resolver) => {
     return createImageBitmap(blob);
   }).then(bitmap => {
     const full = [0, 0, 0, 0];
-    const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
-    const data = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
-    resolver(data, full);
+//    const canvas = document.createElement('canvas');
+//    canvas.width = bitmap.width;
+//    canvas.height = bitmap.height;
+//    const ctx = canvas.getContext('2d');
+//    ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
+    resolver(bitmap, full);
   }).catch(() => {
     resolver(null, null);
   });
@@ -833,9 +828,19 @@ const toTileSource = (HS, tileSource) => {
         }
         const p_tile = getParentTile(imageJob, tile);
         if (p_tile === null) return finish(key, null, null, 4);
+        const tracked = HS.gl_state.getTrackedTile(p_tile.key);
+        const p_tracked = tracked.get(subpath);
+        // Access existing parent tile
+        if (p_tracked) {
+          const { ImageData, ScaledCrop } = p_tracked;
+          // Only allow cropping from one level above
+          if (ScaledCrop.every(x => x === 0)) {
+            return used_parent(ImageData, p_tile, 2);
+          }
+        }
         // Try to access parent tile
-        const p_resolver = (p_data, crop) => {
-          if (p_data !== null && crop !== null) {
+        const p_resolver = (p_data) => {
+          if (p_data !== null) {
             return used_parent(p_data, p_tile, 2);
           }
         }
@@ -880,10 +885,9 @@ const to_alpha_uniforms = (program, gl) => {
   const u_lens_rad = gl.getUniformLocation(program, "u_lens_rad");
   const u_lens_scale = gl.getUniformLocation(program, "u_lens_scale");
   const u_blend_alpha = gl.getUniformLocation(program, "u_blend_alpha");
-  const u_alpha_index = gl.getUniformLocation(program, "u_alpha_index");
 
   return {
-    u_lens, u_shape, u_alpha_index, u_blend_alpha,
+    u_lens, u_shape, u_blend_alpha,
     u_lens_rad, u_lens_scale, u_level, u_origin
   };
 }

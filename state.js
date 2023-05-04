@@ -2,7 +2,7 @@ import { encode } from './render'
 import { decode } from './render'
 import { unpackGrid } from './render'
 import { remove_undefined } from './render'
-import { GLState, toDistance } from './channel'
+import { toTileKey, GLState, toDistance } from './channel'
 
 import LZString from "lz-string"
 const yaml = require('js-yaml');
@@ -457,6 +457,18 @@ HashState.prototype = {
     const first_center = [first_point.x, first_point.y];
     this.createLensUI(viewer);
     this.updateLensUI(first_center);
+    viewer.addHandler('tile-loaded', (e) => {
+      const key = toTileKey(e.tile);
+      const { data, subpath, crop } = e.data;
+      if (subpath === undefined) return;
+      if (!data || !crop) {
+        this.gl_state.trackTile(key, subpath, null);
+        return;
+      }
+      this.gl_state.trackTile(key, subpath, {
+        ImageData: data, ScaledCrop: crop
+      });
+    });
     viewer.addHandler('canvas-release', (e) => {
       this.state.lensHeld = false;
       this.state.lensAlphaHeld = false;

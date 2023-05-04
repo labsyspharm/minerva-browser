@@ -459,7 +459,7 @@ const set_cache_gl = (gl_state, tile, shape_opts, stage) => {
   return cache_gl;
 }
 
-const to_tile_key = ({level, x, y}) => {
+const toTileKey = ({level, x, y}) => {
   return `${level}-${x}-${y}`;
 }
 
@@ -467,20 +467,20 @@ const parseImageJob = (imageJob) => {
   const full_url = imageJob.src;
   const parts = full_url.split('/');
   const { tile } = imageJob;
-  const key = to_tile_key(tile);
+  const key = toTileKey(tile);
   return { full_url, key, tile };
 }
 
 const customTileCache = (HS, target) => {
-  const is_source = target === null;
+  const is_target = target !== null;
   return {
     createTileCache: function(cache_gl, out) {
       cache_gl._out = out;
     },
     destroyTileCache: function(cache_gl) {
-      if (is_source) {
-        const { key, subpath } = cache_gl._out;
-        HS.gl_state.untrackTile(key, subpath);
+      if (is_target) {
+        const { key } = cache_gl._out;
+        HS.gl_state.untrackTiles(key);
       }
       delete cache_gl._out;
     },
@@ -531,6 +531,7 @@ const render_from_cache = (HS, lens_scale, lens_center, layers, cache_gl, out, s
 
 const render_to_cache = (HS, lens_scale, lens_center, key, tile, target, cache_gl) => {
   const shown = HS.gl_state.to_shown(key || '', target);
+  if (shown.length === 0) return null;
   const props = to_tile_props(shown, HS, lens_scale, lens_center, cache_gl);
   return render_linear_tile(props, cache_gl.uniforms, tile, cache_gl.via);
 }
@@ -638,29 +639,39 @@ const render_layers = (HS, tileSource, viewer, opts) => {
 
   // Copy bottom layer to 2d context
   const bottom_out = render_to_cache(HS, lens_scale, lens_center, key, tile, 'base', cache_gl_1);
-  const h = bottom_out.height;
-  const w = bottom_out.width;
-  bottom_layer.height = h;
-  bottom_layer.width = w;
-  bottom_ctx.drawImage(bottom_out, 0, 0, w, h, 0, 0, w, h);
+  if (bottom_out) {
+    const h = bottom_out.height;
+    const w = bottom_out.width;
+    bottom_layer.height = h;
+    bottom_layer.width = w;
+    bottom_ctx.drawImage(bottom_out, 0, 0, w, h, 0, 0, w, h);
+  }
 
   // Copy top layer to 2d context
   const top_out = render_to_cache(HS, lens_scale, lens_center, key, tile, 'lens', cache_gl_1);
-  top_layer.height = h;
-  top_layer.width = w;
-  top_ctx.drawImage(top_out, 0, 0, w, h, 0, 0, w, h);
-  return { top_layer, bottom_layer, w, h, hash };
+  if (top_out) {
+    const h = top_out.height;
+    const w = top_out.width;
+    top_layer.height = h;
+    top_layer.width = w;
+    top_ctx.drawImage(top_out, 0, 0, w, h, 0, 0, w, h);
+  }
+  return {
+    bottom_layer: bottom_out ? bottom_layer : null,
+    top_layer: top_out ? top_layer : null,
+    hash
+  };
 }
 
 const finish_target = (HS, tileSource, viewer, imageJob, opts) => {
   // Update both layers in the cache
-  const layers = render_layers(HS, tileSource, viewer, opts);
-  const canvas = document.createElement("canvas");
-  canvas.height = layers.top_layer.height;
-  canvas.width = layers.bottom_layer.width;
-  const context = canvas.getContext('2d');
+  const layers = {
+    top_layer: null,
+    bottom_layer: null,
+    hash: HS.gl_state.active_hash(opts.key, 'all')
+  }
   const _out = { 
-    ...opts, ...layers, context, all_loaded: false, busy: false
+    ...opts, ...layers, all_loaded: false, busy: false
   };
   imageJob.finish(_out);
 }
@@ -671,10 +682,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
     ...customTileCache(HS, 'all'),
     downloadTileStart: function(imageJob) {
       const { full_url, key, tile } = parseImageJob(imageJob);
-      const sources = HS.gl_state.active_sources('all');
-      sources.map(source => {
-        HS.gl_state.untrackTile(key, source.Path);
-      });
+      HS.gl_state.untrackTiles(key);
       // Wait for all source images to resolve 
       finish_target(HS, tileSource, viewer, imageJob, { tile, key });
       return;
@@ -692,11 +700,18 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const cache_gl_0 = set_cache_gl(HS.gl_state, out.tile, shape_opts, 0);
       const need_top = need_top_layer(HS, lens_scale, lens_center, cache_gl_0, out.tile);
       out.all_loaded = HS.gl_state.all_loaded(out.key);
-      if (!out.all_loaded) {
+      const to_status = (out) => {
+        const has_layers = out.top_layer && out.bottom_layer;
+        const ready = out.all_loaded && has_layers;
+        const loaded = out.all_loaded;
+        return [ loaded, ready ];
+      }
+      if (!to_status(out)[0]) {
         HS.gl_state.dropAlpha(out.key);
       }
       // Return the cached 2D canvas output
-      if (hash !== out.hash && out.busy === false) {
+      if (hash !== out.hash && out.busy === false && to_status(out)[0]) {
+        HS.gl_state.dropAlpha(out.key);
         out.busy = true;
         (async () => {
           const { tile, key } = out;
@@ -706,31 +721,24 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
           out.bottom_layer = bottom_layer;
           out.top_layer = top_layer;
           out.hash = hash;
-          if (out.all_loaded) {
+          if (to_status(out).every(x => x)) {
             render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
-          }
-          else {
-            HS.gl_state.dropAlpha(out.key);
           }
           out.busy = false;
         })();
       }
+      if (!to_status(out).every(x => x)) {
+        return null;
+      }
       if (need_top === false) {
         return out.bottom_layer.getContext('2d');
-      }
-      if (!out.all_loaded) {
-        HS.gl_state.dropAlpha(out.key);
-        return null;
       }
       // Render lens layer if needed
       const found = HS.gl_state.cachedAlpha(out.key);
       if (found === null) {
         (async () => {
-          if (out.all_loaded) {
+          if (to_status(out).every(x => x)) {
             render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
-          }
-          else {
-            HS.gl_state.dropAlpha(out.key);
           }
         })();
         return null; //Trigger warning, drawing tile when not yet loaded
@@ -748,7 +756,7 @@ const getParentTile = (imageJob, tile) => {
   const level = Math.max(0, tile.level - 1);
   const { x, y } = source.getTileAtPoint(level, mid);
   const bounds = source.getTileBounds(level, x, y, true);
-  const key = to_tile_key({ x, y, level });
+  const key = toTileKey({ x, y, level });
   const offset = [
     +(2 * x !== tile.x), +(2 * y !== tile.y)
   ];
@@ -810,15 +818,9 @@ const toTileSource = (HS, tileSource) => {
       const { full_url, key, tile } = parseImageJob(imageJob);
       const subpath = split_url(full_url);
       set_cache_gl(HS.gl_state, tile, shape_opts, 1);
-      HS.gl_state.untrackTile(key, subpath);
       const resolver = (i_data, i_crop) => {
         const finish = (key, data, crop, trace) => {
-          imageJob.finish({ tile, key, subpath });
-          if (data !== null && crop !== null) {
-            HS.gl_state.trackTile(key, subpath, {
-              ImageData: data, ScaledCrop: crop
-            });
-          }
+          imageJob.finish({ tile, key, subpath, crop, data });
         }
         const used_parent = (p_data, p_tile, trace) => {
           const p_crop = cropParentTile(shape_opts, p_data, p_tile, tile);
@@ -1051,6 +1053,14 @@ class GLState {
     }, new Map());
   }
 
+  untrackTiles(key) {
+    const sources = this.active_sources('all');
+    sources.map(source => {
+      this.untrackTile(key, source.Path);
+    });
+    this.dropAlpha(key);
+  }
+
   untrackTile(key, subpath) {
     this.trackTile(key, subpath, null);
   }
@@ -1066,4 +1076,4 @@ class GLState {
   }
 }
 
-export { toTileTarget, toTileSource, GLState, toDistance }
+export { toTileKey, toTileTarget, toTileSource, GLState, toDistance }

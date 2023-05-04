@@ -660,7 +660,7 @@ const finish_target = (HS, tileSource, viewer, imageJob, opts) => {
   canvas.width = layers.bottom_layer.width;
   const context = canvas.getContext('2d');
   const _out = { 
-    ...opts, ...layers, context, fully_loaded: false, busy: false
+    ...opts, ...layers, context, all_loaded: false, busy: false
   };
   imageJob.finish(_out);
 }
@@ -697,13 +697,13 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
         (async () => {
           const { tile, key } = out;
           const opts = { tile, key };
-          out.fully_loaded = HS.gl_state.all_loaded(out.key);
+          out.all_loaded = HS.gl_state.all_loaded(out.key);
           const { bottom_layer, top_layer, hash } = render_layers(HS, tileSource, viewer, opts);
           HS.gl_state.dropAlpha(key);
           out.bottom_layer = bottom_layer;
           out.top_layer = top_layer;
           out.hash = hash;
-          if (HS.gl_state.all_loaded(out.key) && out.fully_loaded) {
+          if (HS.gl_state.all_loaded(out.key) && out.all_loaded) {
             render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
           }
           out.busy = false;
@@ -712,14 +712,14 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       if (need_top === false) {
         return out.bottom_layer.getContext('2d');
       }
-      if (!HS.gl_state.all_loaded(out.key) || !out.fully_loaded) {
-        return out.bottom_layer.getContext('2d');
+      if (!HS.gl_state.all_loaded(out.key) || !out.all_loaded) {
+        return null;
       }
       // Render lens layer if needed
       const found = HS.gl_state.cachedAlpha(out.key);
       if (found === null) {
         (async () => {
-          if (HS.gl_state.all_loaded(out.key) && out.fully_loaded) {
+          if (HS.gl_state.all_loaded(out.key) && out.all_loaded) {
             render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
           }
         })();
@@ -1000,10 +1000,11 @@ class GLState {
 
   all_loaded(key) {
     const sources = this.active_sources('all');
-    const loaded = this.loaded_sources(key, 'all');
-    const tracked = this.getTrackedTile(key).values();
-    const loading = [...tracked].filter(x => !x).length;
-    return loading === 0 && sources.length === loaded.length;
+    const tracked = this.getTrackedTile(key);
+    const loading = [...sources].filter(source => {
+      return !(tracked.get(source.Path) || null);
+    });
+    return loading.length === 0;
   }
 
   active_hash(key, target) {

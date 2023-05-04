@@ -59,7 +59,7 @@ const render_alpha_tile = (props, uniforms, tile, via, skip) => {
     // Allow caching of one alpha channel
     gl.activeTexture(gl['TEXTURE'+_i]);
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.flip_y);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.stage);
     // Don't re-upload if is cached alpha
     if (alpha_cached) return;
     // Actually re-upload the alpha tile texture
@@ -107,7 +107,7 @@ const render_linear_tile = (props, uniforms, tile, via) => {
     // Allow caching of one alpha channel
     gl.activeTexture(gl['TEXTURE'+i]);
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, via.flip_y);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
     // Actually re-upload the tile texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
               gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
@@ -350,7 +350,7 @@ const toProgram = (gl, shaders) => {
   return validate(gl,'Program','LINK','LINK',program);
 }
 
-const toBuffers = (flip_y, tex, active_tex, program, via) => {
+const toBuffers = (stage, tex, active_tex, program, via) => {
   // Allow for custom loading
   const gl = via.gl;
 
@@ -370,7 +370,7 @@ const toBuffers = (flip_y, tex, active_tex, program, via) => {
   tex.forEach((i) => {
     // Set Texture
     gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip_y);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 
     // Assign texture parameters
@@ -389,10 +389,10 @@ const toBuffers = (flip_y, tex, active_tex, program, via) => {
   })
 }
 
-const to_gl_tile_key = (flip_y, tile) => {
+const to_gl_tile_key = (stage, tile) => {
   const [w, h] = to_tile_shape(tile);
   const { level } = tile;
-  return `${flip_y}-${w}-${h}`;
+  return `${stage}-${w}-${h}`;
 }
 
 const to_tile_shape = (tile) => {
@@ -407,15 +407,15 @@ const update_shape = (gl, tile) => {
   gl.viewport(0, 0, w, h);
 }
 
-const initialize_gl = (flip_y, tile, cleanup) => {
-  const key = to_gl_tile_key(flip_y, tile);
+const initialize_gl = (stage, tile, cleanup) => {
+  const key = to_gl_tile_key(stage, tile);
   const r1 = (Math.random() + 1).toString(36).substring(2);
   const r2 = (Math.random() + 1).toString(36).substring(2);
   const tile_canvas = document.createElement('canvas');
   tile_canvas.addEventListener("webglcontextlost", cleanup, false);
   tile_canvas.id = "tile-"+key+"-"+r1+'-'+r2;
   const gl = tile_canvas.getContext('webgl2');
-  const is_alpha_shader = flip_y ? 0 : 1;
+  const is_alpha_shader = stage ? 0 : 1;
   const shaders = SHADERS[+is_alpha_shader];
   const program = toProgram(gl, shaders);
   update_shape(gl, tile);
@@ -424,10 +424,10 @@ const initialize_gl = (flip_y, tile, cleanup) => {
     program, gl, is_alpha_shader
   );
   const textures = tex.map(() => gl.createTexture());
-  const texture_uniforms = toBuffers(flip_y, tex, active_tex, program, {
+  const texture_uniforms = toBuffers(stage, tex, active_tex, program, {
     gl, ...to_vertices(), buffer: gl.createBuffer(), textures
   });
-  const via = { gl, flip_y, texture_uniforms, textures, program };
+  const via = { gl, stage, texture_uniforms, textures, program };
   return { via, uniforms };
 }
 
@@ -445,14 +445,14 @@ const split_url = (full_url) => {
   return parts.slice(-2)[0];
 } 
 
-const set_cache_gl = (gl_state, tile, shape_opts, flip_y) => {
-  const key = to_gl_tile_key(flip_y, tile);
+const set_cache_gl = (gl_state, tile, shape_opts, stage) => {
+  const key = to_gl_tile_key(stage, tile);
   const caches_gl = gl_state.caches_gl;
   if (caches_gl.has(key)) {
     return caches_gl.get(key);
   }
   const cache_gl = to_cache_gl(
-    gl_state, shape_opts, flip_y, tile,
+    gl_state, shape_opts, stage, tile,
     () => caches_gl.delete(key)
   );
   caches_gl.set(key, cache_gl);
@@ -480,7 +480,7 @@ const customTileCache = (HS, target) => {
     destroyTileCache: function(cache_gl) {
       if (is_source) {
         const { key, subpath } = cache_gl._out;
-        HS.gl_state.untrackImageData(key, subpath);
+        HS.gl_state.untrackTile(key, subpath);
       }
       delete cache_gl._out;
     },
@@ -623,19 +623,9 @@ const render_output = (HS, lens_scale, lens_center, cache_gl, out, skip) => {
   render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out, skip);
 }
 
-const set_parent_callback = (HS, key, path) => {
-  const callbacks = HS.gl_state.get_image_callbacks(key);
-  HS.gl_state.update_parent_callback(callbacks, key, path);
-}
-
-const set_target_callbacks = (HS, key) => {
-  const callbacks = HS.gl_state.get_image_callbacks(key);
-  return HS.gl_state.update_target_callbacks(callbacks, key, 'all');
-}
-
 const render_layers = (HS, tileSource, viewer, opts) => {
   const { tile, key } = opts;
-  const hash = HS.gl_state.active_hash(key, 'base');
+  const hash = HS.gl_state.active_hash(key, 'all');
   const lens_scale = HS.gl_state.toLensScale(viewer);
   const lens_center = HS.gl_state.toLensCenter(viewer);
   const bottom_layer = document.createElement("canvas");
@@ -670,7 +660,7 @@ const finish_target = (HS, tileSource, viewer, imageJob, opts) => {
   canvas.width = layers.bottom_layer.width;
   const context = canvas.getContext('2d');
   const _out = { 
-    ...opts, ...layers, context, busy: false
+    ...opts, ...layers, context, fully_loaded: false, busy: false
   };
   imageJob.finish(_out);
 }
@@ -681,29 +671,20 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
     ...customTileCache(HS, 'all'),
     downloadTileStart: function(imageJob) {
       const { full_url, key, tile } = parseImageJob(imageJob);
-      const defer = set_target_callbacks(HS, key);
-      // Wait for all source images to resolve 
-      const promise = defer.promise.then((results) => {
-        const all_failed = results.every(x => !x);
-        const msg = "All sources failed for tile.";
-        if (all_failed) imageJob.finish(null, null, msg);
-        else finish_target(HS, tileSource, viewer, imageJob, { tile, key });
-      }).catch((e) => {
-        console.error(e);
-        imageJob.finish(null);
+      const sources = HS.gl_state.active_sources('all');
+      sources.map(source => {
+        HS.gl_state.untrackTile(key, source.Path);
       });
-      promise.controller = {
-        abort: () => promise.reject()
-      };
-      imageJob.userData.promise = promise;
+      // Wait for all source images to resolve 
+      finish_target(HS, tileSource, viewer, imageJob, { tile, key });
       return;
     },
     downloadTileAbort: function(imageJob) {
-      imageJob.userData.promise.controller.abort();
+      return;
     },
     getTileCacheDataAsContext2D: function(cache) {
       const out = cache._out;
-      const hash = HS.gl_state.active_hash(out.key, 'base');
+      const hash = HS.gl_state.active_hash(out.key, 'all');
       // Measure viewport scale
       const shape_opts = to_shape_opts(tileSource);
       const lens_scale = HS.gl_state.toLensScale(viewer);
@@ -716,22 +697,31 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
         (async () => {
           const { tile, key } = out;
           const opts = { tile, key };
+          out.fully_loaded = HS.gl_state.all_loaded(out.key);
           const { bottom_layer, top_layer, hash } = render_layers(HS, tileSource, viewer, opts);
           HS.gl_state.dropAlpha(key);
           out.bottom_layer = bottom_layer;
           out.top_layer = top_layer;
           out.hash = hash;
+          if (HS.gl_state.all_loaded(out.key) && out.fully_loaded) {
+            render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
+          }
           out.busy = false;
         })();
       }
       if (need_top === false) {
         return out.bottom_layer.getContext('2d');
       }
+      if (!HS.gl_state.all_loaded(out.key) || !out.fully_loaded) {
+        return out.bottom_layer.getContext('2d');
+      }
       // Render lens layer if needed
       const found = HS.gl_state.cachedAlpha(out.key);
       if (found === null) {
         (async () => {
-          render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
+          if (HS.gl_state.all_loaded(out.key) && out.fully_loaded) {
+            render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
+          }
         })();
         return null; //Trigger warning, drawing tile when not yet loaded
       }
@@ -770,7 +760,7 @@ const cropParentTile = (shape_opts, p_data, p_tile, tile) => {
   return [sx, sy, ix, iy];
 }
 
-const fetch_tile = (key, full_url, resolver, aborter) => {
+const fetch_tile = (full_url, resolver) => {
   const controller = new AbortController();
   const promise = fetch(full_url, {
     method: "GET", signal: controller.signal
@@ -781,15 +771,20 @@ const fetch_tile = (key, full_url, resolver, aborter) => {
     return result.blob();
   }).then(blob => {
     return createImageBitmap(blob);
-  }).then(data => {
+  }).then(bitmap => {
     const full = [0, 0, 0, 0];
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
+    const data = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
     resolver(data, full);
   }).catch(() => {
     resolver(null, null);
   });
   promise.controller = {
     abort: () => {
-      aborter(key);
       controller.abort();
     }
   }
@@ -798,13 +793,6 @@ const fetch_tile = (key, full_url, resolver, aborter) => {
 
 const toTileSource = (HS, tileSource) => {
   const shape_opts = to_shape_opts(tileSource);
-  const to_image_callbacks = (key, path) => {
-    const callbacks = HS.gl_state.get_image_callbacks(key);
-    if (!callbacks.has(path)) {
-      return null; 
-    };
-    return callbacks.get(path);
-  }
   return {
     ...tileSource,
     ...customTileCache(HS, null),
@@ -812,70 +800,36 @@ const toTileSource = (HS, tileSource) => {
       const { full_url, key, tile } = parseImageJob(imageJob);
       const subpath = split_url(full_url);
       set_cache_gl(HS.gl_state, tile, shape_opts, 1);
-      const aborter = (key) => {
-        const waiter = to_image_callbacks(key, subpath);
-        if (waiter !== null) waiter.reject();
-      }
+      HS.gl_state.untrackTile(key, subpath);
       const resolver = (i_data, i_crop) => {
-        const finish = (key, data, crop) => {
-          if (data !== null && crop !== null) {
-            HS.gl_state.trackImageData(key, subpath, data, crop);
-          }
-          const waiter = to_image_callbacks(key, subpath);
-          if (waiter !== null) waiter.resolve(data, crop);
+        const finish = (key, data, crop, trace) => {
           imageJob.finish({ tile, key, subpath });
-        }
-        const used_parent = (p_tile) => {
-          // Check if able to use parent
-          const p_key = p_tile.key;
-          const image_source = HS.gl_state.getImageData(p_key);
-          const p_source = image_source.get(subpath) || null;
-          if (p_source === null) return false;
-          // No recursive downsampling
-          if (p_source.ScaledCrop.some(s => s !== 0)) {
-            return finish(key, null, null);
+          if (data !== null && crop !== null) {
+            HS.gl_state.trackTile(key, subpath, {
+              ImageData: data, ScaledCrop: crop
+            });
           }
-          // Crop the parent tile
-          createImageBitmap(p_source.ImageData).then(data => {
-            const p_crop = cropParentTile(shape_opts, data, p_tile, tile);
-            finish(key, data, p_crop);
-          }); 
-          return true;
         }
-        const deferred_parent = (p_tile) => {
-          const p_key = p_tile.key;
-          const p_waiter = to_image_callbacks(p_key, subpath) || null;
-          if (p_waiter === null) return false;
-          p_waiter.promise.then((p_data, p_crop) => {
-            used_parent(p_tile);
-          }).catch( () => {
-            finish(key, null, null);
-          });
+        const used_parent = (p_data, p_tile, trace) => {
+          const p_crop = cropParentTile(shape_opts, p_data, p_tile, tile);
+          finish(key, p_data, p_crop, 1);
           return true;
         }
         // Loaded current tile
         if (i_data !== null) {
-          return finish(key, i_data, i_crop);
+          return finish(key, i_data, i_crop, 3);
         }
         const p_tile = getParentTile(imageJob, tile);
-        if (p_tile === null) return finish(key, null, null);
+        if (p_tile === null) return finish(key, null, null, 4);
         // Try to access parent tile
-        const p_key = p_tile.key;
-        const p_url = p_tile.url;
-        // Depend on the loaded parent tile
-        if (used_parent(p_tile)) return;
-        if (deferred_parent(p_tile)) return;
-        // Depend on the fetched parent tile
-        set_parent_callback(HS, key, subpath);
         const p_resolver = (p_data, crop) => {
-          finish(p_key, p_data, crop);
           if (p_data !== null && crop !== null) {
-            return used_parent(p_tile);
+            return used_parent(p_data, p_tile, 2);
           }
         }
-        fetch_tile(p_key, p_url, p_resolver, aborter);
+        fetch_tile(p_tile.url, p_resolver);
       }
-      imageJob.userData.promise = fetch_tile(key, full_url, resolver, aborter);
+      imageJob.userData.promise = fetch_tile(full_url, resolver);
     },
     downloadTileAbort: function(imageJob) {
       imageJob.userData.promise.controller.abort();
@@ -922,8 +876,8 @@ const to_alpha_uniforms = (program, gl) => {
   };
 }
 
-const to_cache_gl = (gl_state, shape_opts, flip_y, tile, cleanup) => {
-  const { via, uniforms } = initialize_gl(flip_y, tile, cleanup);
+const to_cache_gl = (gl_state, shape_opts, stage, tile, cleanup) => {
+  const { via, uniforms } = initialize_gl(stage, tile, cleanup);
   return { via, shape_opts, uniforms };
 }
 
@@ -933,7 +887,6 @@ class GLState {
     this.alphas = [];
     this.caches_gl = new Map();
     this.image_data = new Map();
-    this.file_callbacks = new Map();
     this.target_image = null;
     this.settings = {};
     this.HS = HS;
@@ -1028,66 +981,15 @@ class GLState {
     return { crops, channels, colors, modes };
   }
 
-  get_image_callbacks(key) {
-    return this.file_callbacks.get(key) || new Map;
-  }
-
-  update_callbacks(paths, callbacks, key) {
-    const unset = (path) => {
-      callbacks.delete(path);
-    }
-    const image_data = this.getImageData(key || '');
-    const defer = paths.reduce((defer, path) => {
-      // Check if image data exists
-      if (image_data.has(path)) return defer;
-      if (defer.callbacks.has(path)) return defer;
-      const promise = new Promise((resolve, reject) => {
-        const timeout_sec = 15; // Timeout per Image File
-        setTimeout(() => resolve(null, null), timeout_sec*1000);
-        // Load image data
-        defer.callbacks.set(path, {
-          resolve: (data, crop) => {
-            unset(path);
-            resolve(data, crop);
-          },
-          reject: () => {
-            unset(path);
-            reject();
-          }
-        });
-      })
-      // Allow "event handler" by reference to promise
-      const callbacks = defer.callbacks.get(path);
-      callbacks.promise = promise;
-      defer.promises.push(promise);
-      return defer;
-    }, { callbacks, promises: [] });
-    const file_callbacks = this.file_callbacks;
-    file_callbacks.set(key, defer.callbacks);
-    return {
-      callbacks: defer.callbacks,
-      promise: Promise.all(defer.promises)
-    };
-  }
-
-  update_target_callbacks(callbacks, key, target) {
-    const sources = this.active_sources(target);
-    const paths = sources.map(s => s.Path);
-    return this.update_callbacks(paths, callbacks, key);
-  }
-
-  update_parent_callback(callbacks, key, path) {
-    return this.update_callbacks([path], callbacks, key);
-  }
-
   loaded_sources(key, target) {
-    const image_data = this.getImageData(key);
+    const image_data = this.getTrackedTile(key);
     const sources = this.active_sources(target);
     const channel_map = this.channel_map(target);
     return sources.filter((sub) => {
-      if (!channel_map.has(sub.Path)) return false;
-      if (!image_data.has(sub.Path)) return false;
-      return true;
+      return (
+        channel_map.has(sub.Path)
+        && image_data.get(sub.Path)
+      );
     }).map((sub) => {
       const {
         ImageData, ScaledCrop
@@ -1096,14 +998,21 @@ class GLState {
     });
   }
 
+  all_loaded(key) {
+    const sources = this.active_sources('all');
+    const loaded = this.loaded_sources(key, 'all');
+    const tracked = this.getTrackedTile(key).values();
+    const loading = [...tracked].filter(x => !x).length;
+    return loading === 0 && sources.length === loaded.length;
+  }
+
   active_hash(key, target) {
+    const all_loaded = this.all_loaded(key);
     const sources = this.active_sources(target);
-    const loaded = this.loaded_sources(key, target);
     const hash_main = sources.map((source) => {
       const { Name, Colors } = source;
       return Name + '_' + Colors.join('_');
     }).join('-');
-    const all_loaded = sources.length === loaded.length;
     return `${hash_main}-${all_loaded}`;
   }
 
@@ -1131,20 +1040,17 @@ class GLState {
     }, new Map());
   }
 
-  untrackImageData(key, subpath) {
-    const _sources = this.image_data.get(key);
-    if (_sources) _sources.delete(subpath);
+  untrackTile(key, subpath) {
+    this.trackTile(key, subpath, null);
   }
 
-  trackImageData(key, subpath, ImageData, ScaledCrop) {
-    const _sources = this.getImageData(key);
-    _sources.set(subpath, {
-      ImageData, ScaledCrop
-    });
+  trackTile(key, subpath, tracked) {
+    const _sources = this.getTrackedTile(key);
+    _sources.set(subpath, tracked);
     this.image_data.set(key, _sources);
   }
 
-  getImageData(key) {
+  getTrackedTile(key) {
     return this.image_data.get(key) || new Map;
   }
 }

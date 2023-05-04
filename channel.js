@@ -733,8 +733,10 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
           out.top_layer = top_layer;
           out.hash = hash;
           out.busy = false;
+          if (need_top) {
+            render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
+          }
         })();
-        return null; 
       }
       if (need_top === false || !to_status(out)[1]) {
         return out.bottom_layer?.getContext('2d') || null;

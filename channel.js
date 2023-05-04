@@ -691,6 +691,10 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const lens_center = HS.gl_state.toLensCenter(viewer);
       const cache_gl_0 = set_cache_gl(HS.gl_state, out.tile, shape_opts, 0);
       const need_top = need_top_layer(HS, lens_scale, lens_center, cache_gl_0, out.tile);
+      out.all_loaded = HS.gl_state.all_loaded(out.key);
+      if (!out.all_loaded) {
+        HS.gl_state.dropAlpha(out.key);
+      }
       // Return the cached 2D canvas output
       if (hash !== out.hash && out.busy === false) {
         out.busy = true;
@@ -699,12 +703,14 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
           const opts = { tile, key };
           out.all_loaded = HS.gl_state.all_loaded(out.key);
           const { bottom_layer, top_layer, hash } = render_layers(HS, tileSource, viewer, opts);
-          HS.gl_state.dropAlpha(key);
           out.bottom_layer = bottom_layer;
           out.top_layer = top_layer;
           out.hash = hash;
-          if (HS.gl_state.all_loaded(out.key) && out.all_loaded) {
+          if (out.all_loaded) {
             render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
+          }
+          else {
+            HS.gl_state.dropAlpha(out.key);
           }
           out.busy = false;
         })();
@@ -712,15 +718,19 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       if (need_top === false) {
         return out.bottom_layer.getContext('2d');
       }
-      if (!HS.gl_state.all_loaded(out.key) || !out.all_loaded) {
+      if (!out.all_loaded) {
+        HS.gl_state.dropAlpha(out.key);
         return null;
       }
       // Render lens layer if needed
       const found = HS.gl_state.cachedAlpha(out.key);
       if (found === null) {
         (async () => {
-          if (HS.gl_state.all_loaded(out.key) && out.all_loaded) {
+          if (out.all_loaded) {
             render_output(HS, lens_scale, lens_center, cache_gl_0, out, true);
+          }
+          else {
+            HS.gl_state.dropAlpha(out.key);
           }
         })();
         return null; //Trigger warning, drawing tile when not yet loaded

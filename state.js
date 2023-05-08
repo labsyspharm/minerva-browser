@@ -459,14 +459,15 @@ HashState.prototype = {
     this.updateLensUI(first_center);
     viewer.addHandler('tile-loaded', (e) => {
       const key = toTileKey(e.tile);
-      const { data, subpath, crop } = e.data;
+      const { data, subpath, crop, scaled } = e.data;
       if (subpath === undefined) return;
       if (!data || !crop) {
         this.gl_state.trackTile(key, subpath, null);
         return;
       }
       this.gl_state.trackTile(key, subpath, {
-        ImageData: data, ScaledCrop: crop
+        ImageData: data, ScaledCrop: crop,
+        IsScaled: scaled
       });
     });
     viewer.addHandler('canvas-release', (e) => {

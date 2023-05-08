@@ -752,10 +752,8 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
         const out_full = render_output(HS, lens_scale, lens_center, cache_gl_0, out, false);
         if (out_full !== null) return out_full;
       }
-      if (out.all_loaded) {
-        const out_bottom = out.bottom_layer?.getContext('2d') || null;
-        if (out_bottom !== null) return out_bottom;
-      }
+      const out_bottom = out.bottom_layer?.getContext('2d') || null;
+      if (out_bottom !== null) return out_bottom;
       const ctx = out.ctx;
       const allow_downsample = true;
       if (allow_downsample && out.tile.level > 0) {

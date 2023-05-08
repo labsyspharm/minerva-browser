@@ -3414,7 +3414,7 @@ const build_page_with_exhibit = function(exhibit, options) {
     zoomInButton: options.id + '-zoom-in',
     maxZoomPixelRatio: 10,
     visibilityRatio: .9,
-    immediateRender: true,
+    immediateRender: false,
     degrees: exhibit.Rotation || 0
   });
   const tile_target = to_tile_target(grid[0][0], grid_shape, hashstate, viewer);

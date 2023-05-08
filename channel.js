@@ -787,7 +787,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
         }
         return ctx;
       }
-      return null;
+      return ctx;
     }
   }
 }

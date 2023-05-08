@@ -63,7 +63,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
             compositeOperation: layer.Blend,
             crossOriginPolicy: 'anonymous',
             ajaxHeaders: ajaxHeaders,
-            tileSource: toTileSource(hashstate, {
+            tileSource: toTileSource(hashstate, viewer, {
               height: image.Height,
               width:  image.Width,
               name: layer.Name,
@@ -3405,6 +3405,7 @@ const build_page_with_exhibit = function(exhibit, options) {
 
   // Initialize openseadragon
   const viewer = OpenSeadragon({
+    debugMode: true,
     maxImageCacheCount,
     id: options.id + '-openseadragon',
     prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.3.1/images/',

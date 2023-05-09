@@ -505,11 +505,6 @@ const customTileCache = (HS, shape_opts, target) => {
 //        console.log('destroy ', ckey);
       }
     },
-    getTileHashKey(level, x, y, url) {
-      const key = toTileKey({ level, x, y });
-      const tracked = HS.gl_state.getTrackedTile(key);
-      return toChannelTileKey(split_url(url), key);
-    },
     getTileCacheData: function(record) {
       return record._out;
     },
@@ -702,7 +697,7 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const loader = HS.gl_state.load(shape_opts, { key, tile });
       loader.then(out => {
         imageJob.finish(out);
-      }).catch(() => {
+      }).catch((e) => {
         imageJob.finish(null, null, '');
       })
     },
@@ -819,6 +814,7 @@ const toTileSource = (HS, viewer, tileSource) => {
         }
         const p_tile = getParentTile(imageJob.source, tile);
         if (p_tile === null) {
+          HS.gl_state.trackFailed(key, subpath);
           return imageJob.finish(null, null, '');
         }
         // Try to access parent tile
@@ -826,6 +822,7 @@ const toTileSource = (HS, viewer, tileSource) => {
           if (p_data !== null) {
             return used_parent(p_data);
           }
+          HS.gl_state.trackFailed(key, subpath);
           imageJob.finish(null, null, '');
         }
         const {width: w, height: h} = positionTiles(viewer, HS, tile);
@@ -889,7 +886,7 @@ class GLState {
   constructor(HS) {
     this.alphas = [];
     this.channels = [];
-    this.blocking = false;
+    this.failed = new Map();
     this.loaders = new Map();
     this.caches_gl = new Map();
     this.targetImage = null;
@@ -900,15 +897,16 @@ class GLState {
 
   load(shape_opts, opts) {
     const { viewer } = this;
-    const check = (key) => {
-      return this.all_loaded(key);
-    }
     const prom = new Promise((resolve, reject) => {
       const start = new Date();
       const max_ms = 30000;
       const retry = () => {
-        const ready = !this.blocking;
-        if (ready && check(opts.key)) {
+        const timeout = new Date() - start > max_ms;
+        const failed = this.some_failed(opts.key);
+        const done = this.all_done(opts.key);
+        const done_failed = done && failed;
+        const done_well = done && !failed;
+        if (done_well) {
           const { 
             bottom_layer, top_layer
           } = render_layers(this, shape_opts, viewer, opts);
@@ -917,13 +915,14 @@ class GLState {
           resolve({
             ...opts, top_layer, bottom_layer
           });
+          return;
+        }
+        else if (timeout || done_failed) {
+          this.dropAlpha(opts.key);
+          this.loaders.delete(opts.key);
+          return reject();
         }
         else {
-          if (new Date() - start > max_ms) {
-            this.dropAlpha(opts.key);
-            this.loaders.delete(opts.key);
-            return reject();
-          }
           setTimeout(() => {
             requestAnimationFrame(retry);
           }, 1000/24);
@@ -1047,39 +1046,52 @@ class GLState {
   }
 
   loaded_sources(key, target) {
-    const tracked_data = this.getTrackedTile(key);
+    const tracked_loaded = this.getTrackedLoaded(key);
     const sources = this.active_sources(target);
     const channel_map = this.channel_map(target);
     return sources.filter((sub) => {
       return (
         channel_map.has(sub.Path)
-        && tracked_data.get(sub.Path)
+        && tracked_loaded.get(sub.Path)
       );
     }).map((sub) => {
       const {
         ImageData, ScaledCrop
-      } = tracked_data.get(sub.Path);
+      } = tracked_loaded.get(sub.Path);
       return { ...sub, ImageData, ScaledCrop }; 
     });
   }
 
-  half_loaded(key) {
+  num_failed(key) {
     const sources = this.active_sources('all');
-    const tracked = this.getTrackedTile(key);
-    const loading = [...sources].filter(source => {
-      return !(tracked.get(source.Path) || null);
+    const tracked_failed = this.getTrackedFailed(key);
+    const failed = [...sources].filter(source => {
+      return tracked_failed.has(source.Path);
     });
-    const half = Math.ceil(0.5 * sources.length);
-    return loading.length <= half;
+    return failed.length;
+  }
+
+  num_loading(key) {
+    const sources = this.active_sources('all');
+    const tracked_loaded = this.getTrackedLoaded(key);
+    const loading = [...sources].filter(source => {
+      return !(tracked_loaded.get(source.Path) || null);
+    });
+    const failed = this.num_failed(key);
+    return Math.max(0, loading.length - failed);
+  }
+
+  all_done(key) {
+    return this.num_loading(key) === 0;
+  }
+
+  some_failed(key) {
+    return this.num_failed(key) > 0;
   }
 
   all_loaded(key) {
-    const sources = this.active_sources('all');
-    const tracked = this.getTrackedTile(key);
-    const loading = [...sources].filter(source => {
-      return !(tracked.get(source.Path) || null);
-    });
-    return loading.length === 0;
+    const loading = this.num_loading(key);
+    return loading == 0;
   }
 
   active_sources(target) {
@@ -1126,13 +1138,30 @@ class GLState {
 
   untrackTiles() {
     const { viewer, targetImage } = this;
-    this.blocking = true;
     const { tileCache } = viewer;
     tileCache.clearTilesFor(targetImage);
-    this.blocking = false;
   }
 
-  getTrackedTile(key) {
+  trackFailed(key, subpath) {
+    const failed = this.getTrackedFailed(key);
+    failed.add(subpath);
+    this.failed.set(key, failed);
+  }
+
+  getTrackedFailed(key) {
+    return this.failed.get(key) || new Set();
+  }
+
+  getTrackedLoaded(key) {
+    return this.getTrackedTile(key, (record) => {
+      const ImageData = record._out.data;
+      const ScaledCrop = record._out.crop;
+      const needs = [ImageData, ScaledCrop];
+      return needs.every(x => !!x);
+    });
+  }
+
+  getTrackedTile(key, filter) {
     const { viewer, targetImage } = this;
     const { _tilesLoaded } = viewer.tileCache;
     return _tilesLoaded.reduce((o, t) => {
@@ -1141,11 +1170,10 @@ class GLState {
       const t_key = toTileKey(t.tile);
       if (t_key !== key) return o;
       const { subpath } = record._out;
-      const ImageData = record._out.data;
-      const ScaledCrop = record._out.crop;
-      const IsScaled = record._out.scaled;
-      const needs = [ImageData, ScaledCrop];
-      if (needs.every(x => !!x)) {
+      if (filter(record)) {
+        const ImageData = record._out.data;
+        const ScaledCrop = record._out.crop;
+        const IsScaled = record._out.scaled;
         o.set(subpath, {
           ImageData, ScaledCrop, IsScaled
         });

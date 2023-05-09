@@ -332,6 +332,7 @@ RenderOSD.prototype = {
       // Update OpenSeadragon
       this.activateViewport();
       newMarkers(this.tileSources, HS.isVisibleLayer.bind(HS));
+      HS.gl_state.untrackTiles();
     }
     this.viewer.forceRedraw();
   },

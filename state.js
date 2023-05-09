@@ -283,7 +283,6 @@ export const HashState = function(exhibit, options) {
     lensResizeSpeed: 1,
     lensInsideBorder: 20,
     lensResizeThickness: 60,
-    colorListeners: new Map(),
     activeChannel: -1,
     drawType: "lasso",
     addingOpen: false,
@@ -457,19 +456,6 @@ HashState.prototype = {
     const first_center = [first_point.x, first_point.y];
     this.createLensUI(viewer);
     this.updateLensUI(first_center);
-    viewer.addHandler('tile-loaded', (e) => {
-      const key = toTileKey(e.tile);
-      const { data, subpath, crop, scaled } = e.data;
-      if (subpath === undefined) return;
-      if (!data || !crop) {
-        this.gl_state.trackTile(key, subpath, null);
-        return;
-      }
-      this.gl_state.trackTile(key, subpath, {
-        ImageData: data, ScaledCrop: crop,
-        IsScaled: scaled
-      });
-    });
     viewer.addHandler('canvas-release', (e) => {
       this.state.lensHeld = false;
       this.state.lensAlphaHeld = false;
@@ -691,7 +677,7 @@ HashState.prototype = {
       return ['d', 's', 'w', 'g', 'm', 'a', 'v', 'o', 'p'];
     }
     else {
-      return ['s', 'w', 'g', 'm', 'a', 'v', 'o', 'p'];
+      return ['s', 'w', 'g', 'm', 'a', 'v', 'o', 'p', 'r'];
     }
   },
 
@@ -878,14 +864,22 @@ HashState.prototype = {
     const count = this.cgs.length;
     this.state.g = pos_modulo(g, count);
     // Dispatch color event
-    // TODO: only needed if colors differ
-    this.dispatchColorEvent();
     this.activeChannel = -1;
   },
 
   /*
    * Exhibit Hash Keys
    */
+
+  // Lens radius
+  get r() {
+    return Math.round(this.lensRad);
+  },
+
+  set r(_r) {
+    const r = parseInt(_r, 10);
+    this.updateLensRadius(r);
+  },
 
   // Waypoint index
   get w() {
@@ -1757,18 +1751,6 @@ HashState.prototype = {
     const key = 'Name';
     const subgroups = this.lens_subgroups;
     return is_active({ masks, subgroups, key, match });
-  },
-
-  addColorListener(key, fn) {
-    this.state.colorListeners.set(key, fn);  
-  },
-
-  dispatchColorEvent() {
-    const fns = this.state.colorListeners.entries();
-    [...fns].forEach(([key, fn]) => {
-      if (key === 'lens') fn();
-      else fn();
-    });
   },
 
   isVisibleLayer(match) {

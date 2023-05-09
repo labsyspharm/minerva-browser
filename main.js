@@ -3379,6 +3379,7 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
     opacity: 1,
     width: displayWidth,
     success: ({ item }) => {
+      hashstate.gl_state.setViewer(viewer);
       hashstate.gl_state.setTargetImage(item);
     }
   }
@@ -3398,10 +3399,10 @@ const build_page_with_exhibit = function(exhibit, options) {
     const t = Math.max(w*h, 256**2) * rgba;
     return (max_memory_gb * 4*gb) / t;
   })(grid[0][0].TileSize);
-  const ideal_cache_count = 50 * layers.length;
-  const maxImageCacheCount = Math.min(
+  const ideal_cache_count = 20 * layers.length;
+  const maxImageCacheCount = Math.max(200, Math.min(
     max_max_cache_count, ideal_cache_count 
-  );
+  ));
 
   // Initialize openseadragon
   const viewer = OpenSeadragon({

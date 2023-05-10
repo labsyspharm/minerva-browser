@@ -499,7 +499,7 @@ const customTileCache = (HS, shape_opts, target) => {
       if (is_target) {
         const waiting = HS.gl_state.loaders.get(out.key) || null;
         if (waiting !== null) {
-          waiting.reject();
+          waiting?.reject();
         }
 //        const ckey = toChannelTileKey(out.subpath, out.key);
 //        console.log('destroy ', ckey);
@@ -927,12 +927,10 @@ class GLState {
           return reject();
         }
         else {
-          setTimeout(() => {
-            requestAnimationFrame(retry);
-          }, 1000/24);
+          setTimeout(retry, 1000/24);
         }
       }
-      requestAnimationFrame(retry);
+      setTimeout(retry, 1000/24);
     });
     this.loaders.set(opts.key, prom);
     return prom;

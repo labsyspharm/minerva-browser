@@ -323,16 +323,30 @@ Render.prototype = {
     $('#copy_link_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
     $('.minerva-edit_description_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
 
+    const isMobile = () => {
+      const fixed_el = document.querySelector('.minerva-fixed');
+      return (fixed_el?.clientWidth || 0) <= 750;
+    }
+
     // Button to toggle sidebar
-    $('.minerva-toggle-sidebar').click(function(e) {
+    $('.minerva-toggle-sidebar').click((e) => {
       e.preventDefault();
       $(".minerva-sidebar-menu").toggleClass("toggled");
+      if (isMobile()) {
+        if (HS.infoOpen) this.toggleInfo();
+        $(".minerva-legend").addClass("toggled");
+      }
     });
 
     // Button to toggle legend
-    $('.minerva-toggle-legend').click(function(e) {
+    $('.minerva-toggle-legend').click((e) => {
       e.preventDefault();
       $(".minerva-legend").toggleClass("toggled");
+      const closed = $(".minerva-legend").hasClass("toggled");
+      if (closed && HS.infoOpen) this.toggleInfo();
+      if (isMobile()) {
+        $(".minerva-sidebar-menu").addClass("toggled");
+      }
     });
 
     // Left arrow decreases waypoint by 1
@@ -1013,7 +1027,6 @@ Render.prototype = {
         $(colorize).css('background-color', '#'+color);
         colorize.addEventListener("click", () => {
           HS.group = updateColor(group, color, activeChannel);
-          HS.dispatchColorEvent();
           this.newView(true);
         });
         if (picked.test(color)) {

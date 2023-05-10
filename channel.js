@@ -770,13 +770,16 @@ const fetch_tile = (full_url, w, h, resolver) => {
   const promise = fetch(full_url, {
     method: "GET", signal: controller.signal
   }).then(result => {
-    if (!result.ok) {
-      throw new Error(`Status ${result.status}`);
-    }
+    if (!result.ok) return null; 
     return result.blob();
   }).then(blob => {
+    if (!blob) return null;
     return createImageBitmap(blob);
   }).then(bitmap => {
+    if (!bitmap) {
+      resolver(null, null);
+      return;
+    };
     const full = [0, 0, w, h];
     resolver(bitmap, full);
   }).catch(() => {
@@ -812,9 +815,10 @@ const toTileSource = (HS, viewer, tileSource) => {
         if (i_data !== null) {
           return finish(key, i_data, i_crop, false);
         }
+        HS.gl_state.trackFailed(key, subpath);
+        const tracked_failed = HS.gl_state.getTrackedFailed(key);
         const p_tile = getParentTile(imageJob.source, tile);
         if (p_tile === null) {
-          HS.gl_state.trackFailed(key, subpath);
           return imageJob.finish(null, null, '');
         }
         // Try to access parent tile

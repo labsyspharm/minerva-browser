@@ -213,10 +213,11 @@ RenderOSD.prototype = {
     this.viewer.addHandler('animation-finish', function(e) {
       const THIS = e.userData;
       const HS = THIS.hashstate;
+      const { minZoomImageRatio } = THIS.viewer.viewport;
       const scale = THIS.viewer.viewport.getZoom();
       const pan = THIS.viewer.viewport.getCenter();
       HS.v = [
-        round4(scale),
+        round4(Math.max(scale, minZoomImageRatio)),
         round4(pan.x),
         round4(pan.y)
       ];

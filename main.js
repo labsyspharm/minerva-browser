@@ -2248,7 +2248,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   grid-row: 1;
   display: grid;
   grid-column: 3;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: auto auto 1fr;
   grid-template-columns: auto auto 200px;
   -webkit-transition: all 0.5s ease;
   -moz-transition: all 0.5s ease;

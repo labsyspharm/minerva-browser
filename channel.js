@@ -900,15 +900,11 @@ class GLState {
   load(shape_opts, opts) {
     const { viewer } = this;
     const prom = new Promise((resolve, reject) => {
-      const start = new Date();
-      const max_ms = 30000;
-      const retry = () => {
-        const timeout = new Date() - start > max_ms;
-        const failed = this.some_failed(opts.key);
-        const done = this.all_done(opts.key);
-        const done_failed = done && failed;
-        const done_well = done && !failed;
-        if (done_well) {
+      const max_ms = 5000;
+      const retry = (start) => {
+        const timeout = (new Date() - start) > max_ms;
+        const { ok, error } = this.key_status(opts.key);
+        if (ok) {
           const { 
             bottom_layer, top_layer
           } = render_layers(this, shape_opts, viewer, opts);
@@ -919,16 +915,17 @@ class GLState {
           });
           return;
         }
-        else if (timeout || done_failed) {
+        else if (timeout || error) {
+          const msg =  ['error', 'timeout'][+timeout];
           this.dropAlpha(opts.key);
           this.loaders.delete(opts.key);
           return reject();
         }
         else {
-          setTimeout(retry, 1000/24);
+          setTimeout(() => retry(new Date()), 1000/24);
         }
       }
-      setTimeout(retry, 1000/24);
+      setTimeout(() => retry(new Date()), 1000/24);
     });
     this.loaders.set(opts.key, prom);
     return prom;
@@ -1092,6 +1089,14 @@ class GLState {
   all_loaded(key) {
     const loading = this.num_loading(key);
     return loading == 0;
+  }
+
+  key_status(key) {
+    const failed = this.some_failed(key);
+    const ready = this.all_done(key);
+    const error = ready && failed;
+    const ok = ready && !failed;
+    return { ready, error, ok };
   }
 
   active_sources(target) {

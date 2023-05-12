@@ -900,9 +900,8 @@ class GLState {
   load(shape_opts, opts) {
     const { viewer } = this;
     const prom = new Promise((resolve, reject) => {
-      const max_ms = 5000;
-      const retry = (start) => {
-        const timeout = (new Date() - start) > max_ms;
+      const retry = () => {
+        const can_timeout = this.loaders.has(opts.key); 
         const { ok, error } = this.key_status(opts.key);
         if (ok) {
           const { 
@@ -915,17 +914,16 @@ class GLState {
           });
           return;
         }
-        else if (timeout || error) {
-          const msg =  ['error', 'timeout'][+timeout];
+        else if (error) {
           this.dropAlpha(opts.key);
           this.loaders.delete(opts.key);
           return reject();
         }
-        else {
-          setTimeout(() => retry(new Date()), 1000/24);
+        else if (can_timeout) {
+          setTimeout(() => retry(), 1000/5);
         }
       }
-      setTimeout(() => retry(new Date()), 1000/24);
+      setTimeout(() => retry(), 1000/24);
     });
     this.loaders.set(opts.key, prom);
     return prom;

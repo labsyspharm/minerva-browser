@@ -400,10 +400,8 @@ const toBuffers = (stage, tex, active_tex, program, via) => {
   })
 }
 
-const to_gl_tile_key = (stage, tile) => {
-  const [w, h] = to_tile_shape(tile);
-  const { level } = tile;
-  return `${stage}-${w}-${h}`;
+const to_gl_tile_key = (stage) => {
+  return `${stage}-gl`;
 }
 
 const to_tile_shape = (tile) => {
@@ -411,25 +409,23 @@ const to_tile_shape = (tile) => {
   return [width, height].map(x => Math.ceil(x));
 }
 
-const update_shape = (gl, tile) => {
-  const [w, h] = to_tile_shape(tile);
+const update_shape = (gl, w, h) => {
   gl.canvas.width = w;
   gl.canvas.height = h;
   gl.viewport(0, 0, w, h);
 }
 
-const initialize_gl = (stage, tile, cleanup) => {
-  const key = to_gl_tile_key(stage, tile);
+const initialize_gl = (shape_opts, stage, tile, cleanup) => {
   const r1 = (Math.random() + 1).toString(36).substring(2);
   const r2 = (Math.random() + 1).toString(36).substring(2);
   const tile_canvas = document.createElement('canvas');
   tile_canvas.addEventListener("webglcontextlost", cleanup, false);
-  tile_canvas.id = "tile-"+key+"-"+r1+'-'+r2;
+  tile_canvas.id = "tile-"+r1+'-'+r2;
   const gl = tile_canvas.getContext('webgl2');
   const is_alpha_shader = stage ? 0 : 1;
   const shaders = SHADERS[+is_alpha_shader];
   const program = toProgram(gl, shaders);
-  update_shape(gl, tile);
+  update_shape(gl, ...shape_opts.tile_square);
   gl.useProgram(program);
   const [tex, active_tex, uniforms] = to_uniforms(
     program, gl, is_alpha_shader
@@ -456,7 +452,7 @@ const split_url = (full_url) => {
 } 
 
 const set_cache_gl = (gl_state, tile, shape_opts, stage) => {
-  const key = to_gl_tile_key(stage, tile);
+  const key = to_gl_tile_key(stage);
   const caches_gl = gl_state.caches_gl;
   if (caches_gl.has(key)) {
     return caches_gl.get(key);
@@ -649,6 +645,7 @@ const render_output = (HS, lens_scale, lens_center, cache_gl, out) => {
   const layers = [bottom_layer, top_layer];
   const has_layers = layers.some(l => !!l);
   if (has_layers === false) return null;
+  update_shape(cache_gl.via.gl, ...to_tile_shape(out.tile));
   render_from_cache(HS, lens_scale, lens_center, layers, cache_gl, out, false);
   return cache_gl.via.gl; 
 }
@@ -662,6 +659,7 @@ const render_layers = (gl_state, shape_opts, viewer, opts) => {
   const bottom_ctx = bottom_layer.getContext('2d');
   const top_ctx = top_layer.getContext('2d');
   const cache_gl_1 = set_cache_gl(gl_state, tile, shape_opts, 1);
+  update_shape(cache_gl_1.via.gl, ...to_tile_shape(opts.tile));
   const h = cache_gl_1.via.gl.canvas.height;
   const w = cache_gl_1.via.gl.canvas.width;
   bottom_layer.height = h;
@@ -881,7 +879,7 @@ const to_alpha_uniforms = (program, gl) => {
 }
 
 const to_cache_gl = (gl_state, shape_opts, stage, tile, cleanup) => {
-  const { via, uniforms } = initialize_gl(stage, tile, cleanup);
+  const { via, uniforms } = initialize_gl(shape_opts, stage, tile, cleanup);
   return { via, shape_opts, uniforms };
 }
 

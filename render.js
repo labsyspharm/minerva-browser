@@ -241,11 +241,10 @@ export const Render = function(hashstate, osd) {
 
 Render.prototype = {
 
-  init: function(aspect_ratio) {
+  init: function() {
 
     const HS = this.hashstate;
     // Go to true center
-    HS.v = [HS.v[0], 0.5 * aspect_ratio, 0.5];
     HS.newExhibit();
 
     // Read hash

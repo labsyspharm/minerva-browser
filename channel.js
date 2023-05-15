@@ -1,6 +1,16 @@
 const TEXTURE_RANGE = [...new Array(1024).keys()];
 const ACTIVE_TEXTURE_RANGE = [...new Array(16).keys()];
 
+// Return a function for Openseadragon's getTileUrl API
+const getGetTileUrl = function(ipath, lpath, max, format) {
+  // This default function simply requests for rendered jpegs
+  return function(level, x, y) {
+    const fileExt = '.' + format;
+    const fname = (max - level) + '_' + x + '_' + y + fileExt;
+    return ipath + '/' + lpath + '/' + fname;
+  };
+};
+
 const to_uniforms = (program, gl, is_alpha_shader) => {
   if (is_alpha_shader) {
     return [ TEXTURE_RANGE, [0, 1], to_alpha_uniforms(program, gl) ];
@@ -446,11 +456,6 @@ const hex2gl = (hex) => {
   return new Float32Array(bytes);
 }
 
-const split_url = (full_url) => {
-  const reverse = s => [...s].reverse().join('');
-  return reverse(reverse(full_url).split('/')[1] || '');
-} 
-
 const set_cache_gl = (gl_state, tile, shape_opts, stage) => {
   const key = to_gl_tile_key(stage);
   const caches_gl = gl_state.caches_gl;
@@ -485,21 +490,9 @@ const customTileCache = (HS, shape_opts, target) => {
   return {
     createTileCache: function(record, out) {
       record._out = out;
-      if (is_target) {
-//        const ckey = toChannelTileKey(out.subpath, out.key);
-//        console.log('create ', ckey);
-      }
     },
     destroyTileCache: function(record) {
-      const out = record._out;
-      if (is_target) {
-        const waiting = HS.gl_state.loaders.get(out.key) || null;
-        if (waiting !== null) {
-          waiting?.reject();
-        }
-//        const ckey = toChannelTileKey(out.subpath, out.key);
-//        console.log('destroy ', ckey);
-      }
+      record._out = null;
     },
     getTileCacheData: function(record) {
       return record._out;
@@ -692,12 +685,9 @@ const toTileTarget = (HS, viewer, target, tileSource) => {
       const [w, h] = to_tile_shape(tile);
       canvas.height = h;
       canvas.width = w;
-      const loader = HS.gl_state.load(shape_opts, { key, tile });
-      loader.then(out => {
-        imageJob.finish(out);
-      }).catch((e) => {
-        imageJob.finish(null, null, '');
-      })
+      HS.gl_state.load(shape_opts, {
+        key, tile, imageJob, tileSource
+      });
     },
     downloadTileAbort: function(imageJob) {
       imageJob.userData.promise.controller.abort();
@@ -734,12 +724,12 @@ const getParentTile = (source, tile) => {
   return { url, key, x, y, level };
 }
 
-const positionTiles = (viewer, HS, tile) => {
+const positionTiles = (viewer, gl_state, tile) => {
   const { width: w, height: h } = tile.sourceBounds;
-  const source = HS.gl_state.targetImage.source;
+  const source = gl_state.targetImage.source;
   const to_image_coords = (x, y) => {
     const p = new OpenSeadragon.Point(x, y);
-    return HS.gl_state.targetImage.viewportToImageCoordinates(p);
+    return gl_state.targetImage.viewportToImageCoordinates(p);
   }
   const t = tile.bounds;
   const p_level = Math.max(0, tile.level - 1);
@@ -791,57 +781,42 @@ const fetch_tile = (full_url, w, h, resolver) => {
   return promise;
 }
 
-const toTileSource = (HS, viewer, tileSource) => {
-  const shape_opts = to_shape_opts(tileSource);
-  return {
-    ...tileSource,
-    ...customTileCache(HS, shape_opts, null),
-    downloadTileStart: function(imageJob) {
-      const { full_url, key, tile } = parseImageJob(imageJob);
-      const subpath = split_url(full_url);
-      set_cache_gl(HS.gl_state, tile, shape_opts, 1);
-      const resolver = (i_data, i_crop) => {
-        const finish = (key, data, crop, scaled) => {
-          imageJob.finish({ tile, key, subpath, crop, data, scaled });
-        }
-        const p_crop = positionTiles(viewer, HS, tile).crop;
-        const used_parent = (p_data) => {
-          finish(key, p_data, p_crop, true);
-          return true;
-        }
-        // Loaded current tile
-        if (i_data !== null) {
-          return finish(key, i_data, i_crop, false);
-        }
-        HS.gl_state.trackFailed(key, subpath);
-        const tracked_failed = HS.gl_state.getTrackedFailed(key);
-        const p_tile = getParentTile(imageJob.source, tile);
-        if (p_tile === null) {
-          return imageJob.finish(null, null, '');
-        }
-        // Try to access parent tile
-        const p_resolver = (p_data) => {
-          if (p_data !== null) {
-            return used_parent(p_data);
-          }
-          HS.gl_state.trackFailed(key, subpath);
-          imageJob.finish(null, null, '');
-        }
-        const {width: w, height: h} = positionTiles(viewer, HS, tile);
-        fetch_tile(p_tile.url, w, h, p_resolver);
-      }
-      const [ w, h ] = to_tile_shape(tile);
-      imageJob.userData.promise = fetch_tile(full_url, w, h, resolver);
-    },
-    downloadTileAbort: function(imageJob) {
-      imageJob.userData.promise.controller.abort();
-    },
-    getTileCacheDataAsContext2D: function() {
-      // This should never occur, never actually drawn
-      const canvas = document.createElement("canvas");
-      return canvas.getContext('2d');
+
+const downloadImage = (gl_state, shape_opts, opts) => {
+  const { targetImage, full_url, subpath, key, tile } = opts;
+  return new Promise((resolve, reject) => {
+    const finish = (key, ImageData, ScaledCrop) => {
+      resolve({ tile, subpath, key, ImageData, ScaledCrop });
     }
-  }
+    const [ w, h ] = to_tile_shape(tile);
+    return fetch_tile(full_url, w, h, (i_data, i_crop) => {
+      const p_crop = positionTiles(viewer, gl_state, tile).crop;
+      const used_parent = (p_data) => {
+        return finish(key, p_data, p_crop, true);
+      }
+      if (i_data !== null) {
+        return finish(key, i_data, i_crop, false);
+      }
+      gl_state.trackFailed(key, subpath);
+      const tracked_failed = gl_state.getTrackedFailed(key);
+      const p_tile = getParentTile(targetImage.source, tile);
+      if (p_tile === null) {
+        return reject(); // no parent of top level
+      }
+      // Fetch parent tile
+      const {
+        width: w, height: h
+      } = positionTiles(viewer, gl_state, tile);
+      fetch_tile(p_tile.url, w, h, (p_data) => {
+        if (p_data !== null) {
+          return used_parent(p_data);
+        }
+        // no parent tile
+        gl_state.trackFailed(key, subpath);
+        return reject();
+      });
+    });
+  });
 }
 
 const to_linear_uniforms = (program, gl, active_tex) => {
@@ -889,46 +864,55 @@ class GLState {
     this.alphas = [];
     this.channels = [];
     this.failed = new Map();
-    this.loaders = new Map();
+    this.imageCache = new Map()
     this.caches_gl = new Map();
     this.targetImage = null;
     this.viewer = null;
-    this.settings = {};
     this.HS = HS;
   }
 
   load(shape_opts, opts) {
-    const { viewer } = this;
-    const prom = new Promise((resolve, reject) => {
-      const max_ms = 5000;
-      const retry = (start) => {
-        const timeout = (new Date() - start) > max_ms;
-        const { ok, error } = this.key_status(opts.key);
-        if (ok) {
-          const { 
-            bottom_layer, top_layer
-          } = render_layers(this, shape_opts, viewer, opts);
-          this.dropAlpha(opts.key);
-          this.loaders.delete(opts.key);
-          resolve({
-            ...opts, top_layer, bottom_layer
-          });
-          return;
-        }
-        else if (timeout || error) {
-          const msg =  ['error', 'timeout'][+timeout];
-          this.dropAlpha(opts.key);
-          this.loaders.delete(opts.key);
-          return reject();
-        }
-        else {
-          setTimeout(() => retry(new Date()), 1000/24);
-        }
+    const { HS, viewer } = this;
+    const { targetImage } = this;
+    const { level, x, y } = opts.tile;
+    const { key, tile, tileSource } = opts;
+    const { Path, MaxLevel } = tileSource.image;
+    const sources = this.active_sources('all');
+    set_cache_gl(this, tile, shape_opts, 1);
+    const promise = Promise.all(sources.map((source) => {
+      const { Format, Path: subpath } = source;
+      const tracked_loaded = this.getTrackedLoaded(key);
+      if (tracked_loaded.has(subpath)) {
+        const cachedImage = tracked_loaded.get(subpath);
+        return Promise.resolve(cachedImage);
       }
-      setTimeout(() => retry(new Date()), 1000/24);
-    });
-    this.loaders.set(opts.key, prom);
-    return prom;
+      const getTileUrl = getGetTileUrl(
+        Path, subpath, MaxLevel, Format
+      )
+      const full_url = getTileUrl(level, x, y);
+      return downloadImage(this, shape_opts, {
+        targetImage, full_url, subpath, key, tile
+      });
+    }));
+    promise.then((r) => {
+      const loaded = new Map(r.map((file) => {
+        return [file.subpath, file];
+      }));
+      const entries = sources.map((sub) => {
+        const file = loaded.get(sub.Path);
+        return [sub.Path, { ...sub, ...file }];
+      });
+      this.imageCache.set(key, new Map(entries));
+      const { 
+        bottom_layer, top_layer
+      } = render_layers(this, shape_opts, viewer, opts);
+      this.dropAlpha(key);
+      opts.imageJob.finish({
+        ...opts, top_layer, bottom_layer
+      });
+    }).catch((e) => {
+      opts.imageJob.finish(null, null, '');
+    })
   }
 
   toCached(cache, key, sub) {
@@ -1059,46 +1043,6 @@ class GLState {
     });
   }
 
-  num_failed(key) {
-    const sources = this.active_sources('all');
-    const tracked_failed = this.getTrackedFailed(key);
-    const failed = [...sources].filter(source => {
-      return tracked_failed.has(source.Path);
-    });
-    return failed.length;
-  }
-
-  num_loading(key) {
-    const sources = this.active_sources('all');
-    const tracked_loaded = this.getTrackedLoaded(key);
-    const loading = [...sources].filter(source => {
-      return !(tracked_loaded.get(source.Path) || null);
-    });
-    const failed = this.num_failed(key);
-    return Math.max(0, loading.length - failed);
-  }
-
-  all_done(key) {
-    return this.num_loading(key) === 0;
-  }
-
-  some_failed(key) {
-    return this.num_failed(key) > 0;
-  }
-
-  all_loaded(key) {
-    const loading = this.num_loading(key);
-    return loading == 0;
-  }
-
-  key_status(key) {
-    const failed = this.some_failed(key);
-    const ready = this.all_done(key);
-    const error = ready && failed;
-    const ok = ready && !failed;
-    return { ready, error, ok };
-  }
-
   active_sources(target) {
     if (target === 'lens') {
       return this.HS.lens_subgroups;
@@ -1123,24 +1067,6 @@ class GLState {
     }, new Map());
   }
 
-  /*
-  untrackTile(key) {
-    const { _tilesLoaded } = tileCache;
-    for ( var i = 0; i < _tilesLoaded.length; ++i ) {
-      const tileRecord = _tilesLoaded[ i ];
-      if ( tileRecord.tiledImage !== targetImage ) {
-        continue;
-      }
-      if (toTileKey(tiledRecord.tile) === key) {
-        continue;
-      }
-      tileCache._unloadTile(tileRecord);
-      _tilesLoaded.splice( i, 1 );
-      i--;
-    }
-  }
-  */
-
   untrackTiles() {
     const { viewer, targetImage } = this;
     const { tileCache } = viewer;
@@ -1158,34 +1084,8 @@ class GLState {
   }
 
   getTrackedLoaded(key) {
-    return this.getTrackedTile(key, (record) => {
-      const ImageData = record._out.data;
-      const ScaledCrop = record._out.crop;
-      const needs = [ImageData, ScaledCrop];
-      return needs.every(x => !!x);
-    });
-  }
-
-  getTrackedTile(key, filter) {
-    const { viewer, targetImage } = this;
-    const { _tilesLoaded } = viewer.tileCache;
-    return _tilesLoaded.reduce((o, t) => {
-      const { cacheImageRecord: record } = t.tile;
-      if (t.tiledImage === targetImage) return o;
-      const t_key = toTileKey(t.tile);
-      if (t_key !== key) return o;
-      const { subpath } = record._out;
-      if (filter(record)) {
-        const ImageData = record._out.data;
-        const ScaledCrop = record._out.crop;
-        const IsScaled = record._out.scaled;
-        o.set(subpath, {
-          ImageData, ScaledCrop, IsScaled
-        });
-      }
-      return o;
-    }, new Map);
+    return this.imageCache.get(key) || new Map();
   }
 }
 
-export { toTileKey, toTileTarget, toTileSource, GLState, toDistance }
+export { toTileKey, toTileTarget, GLState, toDistance, getGetTileUrl }

@@ -1,8 +1,7 @@
 import SimpleEventHandler from "./simpleEventHandler.js"
 import { get_links_alias } from "./links_alias.js"
-import { toTileTarget, toTileSource } from "./channel"
+import { toTileTarget, getGetTileUrl } from "./channel"
 import { getAjaxHeaders } from "./state"
-import { getGetTileUrl } from "./state"
 import { HashState } from "./state"
 import { Render } from './render'
 import { RenderOSD } from './osd'
@@ -15,8 +14,8 @@ const flatten = function(items) {
   });
 };
 
-// Arange openseadragon tileSources in a grid on the page and initialize when done
-const arrange_images = function(viewer, tileSources, hashstate, init) {
+// Arange openseadragon and initialize when done
+const arrange_images = function(viewer, hashstate, init) {
 
   // Channel groups and segmentation masks
   const layers = hashstate.layers;
@@ -41,6 +40,7 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
   var nLoaded = 0;
 
   const aspect_ratio = (cellWidth * numColumns) / (cellHeight * numRows);
+  hashstate.v = [hashstate.v[0], 0.5 * aspect_ratio, 0.5];
 
   // Iterate through the rows
   for (var yi = 0; yi < numRows; yi++) {
@@ -51,49 +51,6 @@ const arrange_images = function(viewer, tileSources, hashstate, init) {
       const { displayHeight, displayWidth } = to_image_shape(image, grid_shape)
       const x = xi * (cellWidth + spacingFraction) + (cellWidth - displayWidth) / 2;
       // Iterate through the layers
-      for (var j=0; j < layers.length; j++) {
-        const layer = layers[j];
-        getAjaxHeaders(hashstate, image).then(function(ajaxHeaders){
-          const useAjax = (image.Provider == 'minerva' || image.Provider == 'minerva-public');
-          const tileWidth = image.TileSize.slice(0,1).pop();
-          const tileHeight = image.TileSize.slice(0,2).pop();
-          // Add an openseadragon tiled image
-          viewer.addTiledImage({
-            loadTilesWithAjax: useAjax,
-            compositeOperation: layer.Blend,
-            crossOriginPolicy: 'anonymous',
-            ajaxHeaders: ajaxHeaders,
-            tileSource: toTileSource(hashstate, viewer, {
-              height: image.Height,
-              width:  image.Width,
-              name: layer.Name,
-              maxLevel: image.MaxLevel,
-              tileWidth: tileWidth,
-              tileHeight: tileHeight,
-              getTileUrl: getGetTileUrl(
-                image.Path, layer.Path, image.MaxLevel, layer.Format
-              )
-            }),
-            x: x,
-            y: y,
-            opacity: 0,
-            preload: true,
-            width: displayWidth,
-            success: function(data) {
-              const item = data.item;
-              if (!tileSources.hasOwnProperty(layer.Path)) {
-                tileSources[layer.Path] = [];
-              }
-              tileSources[layer.Path].push(item);
-              // Initialize hash state
-              nLoaded += 1;
-              if (nLoaded == nTotal) {
-                init(aspect_ratio);
-              }
-            }
-          });
-        });
-      }
       // Add the image title
       const titleElt = document.createElement('p');
       titleElt.className = 'minerva-overlay-title';
@@ -3357,6 +3314,15 @@ const getEmptyTileUrl = (max, format) => {
   }
 }
 
+//set up event handler
+const init = (hashstate, viewer) => {
+  const eventHandler = new SimpleEventHandler(d3.select('body').node());
+  const osd = new RenderOSD(hashstate, viewer, eventHandler);
+  const render = new Render(hashstate, osd);
+  osd.init();
+  render.init();
+}
+
 const to_tile_target = (image, grid_shape, hashstate, viewer) => {
   const { displayWidth } = to_image_shape(image, grid_shape)
   const tileWidth = image.TileSize.slice(0,1).pop();
@@ -3365,6 +3331,7 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
     loadTilesWithAjax: false,
     compositeOperation: 'lighter',
     tileSource: toTileTarget(hashstate, viewer, 'lens', {
+      image,
       colorize: true,
       tileHeight: tileHeight,
       tileWidth: tileWidth,
@@ -3381,6 +3348,7 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
     success: ({ item }) => {
       hashstate.gl_state.setViewer(viewer);
       hashstate.gl_state.setTargetImage(item);
+      init(hashstate, viewer);
     }
   }
 }
@@ -3447,20 +3415,9 @@ const build_page_with_exhibit = function(exhibit, options) {
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     fontColor: 'rgb(255, 255, 255)',
     color: 'rgb(255, 255, 255)'
-  })
+  });
 
-  //set up event handler
-  const eventHandler = new SimpleEventHandler(d3.select('body').node());
-
-  const tileSources = {};
-  const osd = new RenderOSD(hashstate, viewer, tileSources, eventHandler);
-  const render = new Render(hashstate, osd);
-  const init = (aspect_ratio) => {
-    osd.init.call(osd);
-    render.init.call(render, aspect_ratio);
-  }
-
-  arrange_images(viewer, tileSources, hashstate, init);
+  arrange_images(viewer, hashstate, init);
 
   return viewer;
 };

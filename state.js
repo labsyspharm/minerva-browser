@@ -179,6 +179,7 @@ const to_subgroups = (subpath_map, rendered_map, group, all) => {
   const channels = group.Channels.slice(0, n_color);
   const zipped = channels.reduce((o, Name, idx) => {
     o.set(Name, {
+      Format: group.Format || 'jpg',
       Colors: [ group.Colors[idx] ],
       Description: (group.Descriptions || [])[idx] || ''
     });
@@ -197,16 +198,18 @@ const to_subgroups = (subpath_map, rendered_map, group, all) => {
       used.add(Path);
       const Colorize = !rendered_map.get(Name);
       const { Colors, Description } = zipped.get(Name);
+      const { Format } = zipped.get(Name);
       return [...out, {
-        Name, Path, Colors,
+        Name, Path, Colors, Format,
         Colorize, Description
       }];
     }, []);
   }
   // Return group subpath
   const { Name, Path, Colors } = group;
+  const Format =  group.Format || 'jpg';
   return [{
-    Name, Path, Colors,
+    Name, Path, Colors, Format,
     Colorize: false, Description: ''
   }];
 }
@@ -1793,17 +1796,6 @@ export const getAjaxHeaders = function(state, image){
   return Promise.resolve({});
 };
 
-
-// Return a function for Openseadragon's getTileUrl API
-export const getGetTileUrl = function(ipath, lpath, max, format) {
-  // This default function simply requests for rendered jpegs
-  return function(level, x, y) {
-    const fileExt = '.' + format;
-    const fname = (max - level) + '_' + x + '_' + y + fileExt;
-    return ipath + '/' + lpath + '/' + fname;
-  };
-
-};
 
 // Get index of name in a list of names
 export const index_name = function(list, name) {

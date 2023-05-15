@@ -33,21 +33,10 @@ const changeSprings = function(viewer, seconds, stiffness) {
   });
 };
 
-// Set the opacity of active channel groups or segmentation masks
-export const newMarkers = function(tileSources, isVisibleLayer) {
-  Object.keys(tileSources).forEach(chan => {
-    const active = isVisibleLayer(chan);
-    tileSources[chan].forEach(tiledImage => {
-      tiledImage.setPreload(active);
-    });
-  });
-};
-
 // Render openseadragon from given hash state
-export const RenderOSD = function(hashstate, viewer, tileSources, eventHandler) {
+export const RenderOSD = function(hashstate, viewer, eventHandler) {
 
   this.svg_overlay = d3.select(viewer.svgOverlay().node());
-  this.tileSources = tileSources;
   this.hashstate = hashstate;
   this.viewer = viewer;
   this.mouseEvent = {};
@@ -332,7 +321,6 @@ RenderOSD.prototype = {
     if(redraw) {
       // Update OpenSeadragon
       this.activateViewport();
-      newMarkers(this.tileSources, HS.isVisibleLayer.bind(HS));
       HS.gl_state.untrackTiles();
     }
     this.viewer.forceRedraw();

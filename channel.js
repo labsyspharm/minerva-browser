@@ -1,4 +1,4 @@
-const TEXTURE_RANGE = [...new Array(1024).keys()];
+const TEXTURE_RANGE = [...new Array(128).keys()];
 const ACTIVE_TEXTURE_RANGE = [...new Array(16).keys()];
 
 // Return a function for Openseadragon's getTileUrl API

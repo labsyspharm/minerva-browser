@@ -414,22 +414,25 @@ RenderOSD.prototype = {
     }
 
     // Create specific ids for each arrow subelement
-    const a_image_el = $('#'+el);
-    const a_svg_el = $('#'+el+' svg');
     const a_text_el = $('#'+text_el);
+    const a_image_el = document.querySelector('#'+el);
+    const a_svg_el = document.querySelector('#'+el+' svg');
     const a_label_el = $('#'+text_el+' .minerva-arrow-label');
-    const a_radius = a_svg_el[0].getAttribute('width') / 2;
+    const a_radius = a_svg_el.getAttribute('width') / 2;
     const a_y = a_radius * Math.sin(a.Angle * Math.PI /180);
     const a_x = a_radius * Math.cos(a.Angle * Math.PI /180);
 
     // Enable hidden (text-only) arrows
     if (a.HideArrow == true) {
-      a_image_el.addClass('d-none');
+      $(a_image_el).addClass('d-none');
     }
     else {
-      a_image_el.removeClass('d-none');
-      a_svg_el[0].setAttribute('transform', 
-        'translate('+a_x+','+a_y+')rotate('+a.Angle+')');
+      $(a_image_el).removeClass('d-none');
+      const x_px = Math.round(a_x)+'px'
+      const y_px = Math.round(a_y)+'px'
+      const deg = Math.round(a.Angle)+'deg';
+      a_svg_el.style.transform = `translate(${x_px},${y_px}) rotate(${deg})`;
+      a_svg_el.style['transform-origin'] = 'center';
       a_label_el.css('top', '100px');
     }
 

@@ -1427,6 +1427,7 @@ HashState.prototype = {
       z_scale: exhibit['ZPerMicron'] || 0,
       default_group: exhibit.DefaultGroup || '',
       first_group: exhibit.FirstGroup || '',
+      first_viewport: exhibit.FirstViewport || null,
       is_rendered_map: channelList.reduce((o, c) => {
         o.set(c.Name, c.Rendered || false);
         return o;
@@ -1458,10 +1459,17 @@ HashState.prototype = {
       if (l && Object.keys(l).length) return l;
     })(this.lensing);
     const group = mode != 'tag' ? first_group : this.group;
+    let v = this.v;
+    const { first_viewport } = this.design;
+    // Allow setting viewport for table of contents
+    if (first_viewport && mode != 'tag') {
+      const zoom = first_viewport.Zoom;
+      const pan = first_viewport.Pan;
+      v = [zoom, ...pan];
+    }
     const a = this.a;
     const o = this.o;
     const p = this.p;
-    const v = this.v;
 
     const header = this.design.header;
     const d = mode == 'outline' ? encode(header) : this.d;

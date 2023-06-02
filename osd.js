@@ -424,10 +424,10 @@ RenderOSD.prototype = {
 
     // Enable hidden (text-only) arrows
     if (a.HideArrow == true) {
-      a_image_el.css('display', 'none');
+      a_image_el.addClass('d-none');
     }
     else {
-      a_image_el.css('display', 'block');
+      a_image_el.removeClass('d-none');
       a_svg_el[0].setAttribute('transform', 
         'translate('+a_x+','+a_y+')rotate('+a.Angle+')');
       a_label_el.css('top', '100px');

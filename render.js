@@ -1139,12 +1139,12 @@ Render.prototype = {
       HS.pushState();
       window.onpopstate();
     }
+    const empty = '---';
     ((k) => {
         var ul = HS.el.getElementsByClassName(k).item(0);
         var li = document.createElement('li');
         li.addEventListener("click", onClick);
-        const color = '#' + subgroup.Colors[0];
-        li.innerText = name;
+        li.innerText = name || empty;
         ul.appendChild(li);
     })('minerva-channel-legend-adding');
 
@@ -1152,7 +1152,10 @@ Render.prototype = {
         var ul = HS.el.getElementsByClassName(k).item(0);
         var li = document.createElement('li');
         li.addEventListener("click", onClick);
-        li.innerText = subgroup.Description;
+        li.innerText = subgroup.Description || empty;
+        if (li.innerText === empty) {
+          li.style.color = 'transparent';
+        }
         ul.appendChild(li);
     })('minerva-channel-legend-adding-info');
   },

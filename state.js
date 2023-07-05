@@ -236,8 +236,15 @@ const can_mutate_group = (old, group) => {
   return false;
 }
 
+const add_mask_visibility = (masks) => {
+  return masks.map((mask) => {
+    mask.Shown = true;
+    return mask;
+  });
+}
+
 const add_visibility = (cgs) => {
-  return cgs.map((group, idx) => {
+  return cgs.map((group) => {
     group.Shown = group.Channels.map(() => true);
     return group;
   });
@@ -1205,15 +1212,20 @@ HashState.prototype = {
     }, []);
   },
 
-  // Get openseadragon tiled image layers
-  get layers () {
-    const { masks, subgroup_layers } = this;
-    const mask_layers = this.masks.map(mask => {
+  // Get mask layers
+  get mask_layers () {
+    const { masks } = this;
+    return this.masks.map(mask => {
       const m = { ...mask };
       m['Format'] = m['Format'] || 'png';
       m['Colorize'] = false;
       return m;
     });
+  },
+
+  // Get all image layers
+  get layers () {
+    const { mask_layers, subgroup_layers } = this;
     return subgroup_layers.concat(mask_layers);
   },
 
@@ -1275,6 +1287,11 @@ HashState.prototype = {
     return this.lens_group?.Descriptions || [];
   },
 
+  // Get the visibilities of the current lens's channels
+  get lens_channel_shown() {
+    return this.lens_group?.Shown || [];
+  },
+
   // Get the names of the current group's channels
   get channel_names() {
     const g_chans = this.group.Channels;
@@ -1291,8 +1308,20 @@ HashState.prototype = {
     }, []));
   },
 
-  // Get channel names and descriptions 
+  // Get the visibilities of the current group's channels
+  get channel_shown() {
+    return [
+      ...(this.group?.Shown || []),
+      ...this.masks.map(mask => mask.Shown)
+    ];
+  },
+
+  // Get all channel names and descriptions 
   get channel_legend_lines() {
+    const channel_shown = [
+      ...this.channel_shown,
+      ...this.lens_channel_shown
+    ];
     const channel_descriptions = [
       ...this.channel_descriptions,
       ...this.lens_channel_descriptions
@@ -1307,9 +1336,10 @@ HashState.prototype = {
       if (out.find(o => o.name === name)) return out;
       const description = channel_descriptions[i] || '';
       const color = channel_colors[i] || '';
+      const shown = channel_shown[i] || false;
       const rendered = this.isRendered(name);
       const line = { 
-        rendered, name, description, color
+        rendered, name, description, color, shown
       };
       return [...out, line];
     }, []);
@@ -1436,9 +1466,9 @@ HashState.prototype = {
         o.set(c.Name, c.Path);
         return o;
       }, new Map()),
+      masks: add_mask_visibility(masks),
       cgs: add_visibility(cgs),
       stories: stories,
-      masks: masks,
     };
 
     const outline_story = this.newTempStory('outline');

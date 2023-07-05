@@ -1051,7 +1051,7 @@ Render.prototype = {
     const color = legend_line.color;
     const shown_idx = (() => {
       if (legend_line.rendered) return 2;
-      return [0, 1][+HS.group.Shown[c]];
+      return +legend_line.shown;
     })();
 
     const onClick = () => {
@@ -1092,6 +1092,7 @@ Render.prototype = {
 
       var visible_ico = document.createElement('i');
       visible_ico.className = 'fa fa-eye' + ['-slash', '', ''][shown_idx];
+      console.log(shown_idx);
       visible.appendChild(visible_ico);
     }
     else {

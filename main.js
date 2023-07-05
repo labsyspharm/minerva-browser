@@ -17,9 +17,6 @@ const flatten = function(items) {
 // Arange openseadragon and initialize when done
 const arrange_images = function(viewer, hashstate, init) {
 
-  // Channel groups and segmentation masks
-  const layers = hashstate.layers;
-
   const grid = hashstate.grid;
   const grid_shape = to_grid_shape(grid);
 
@@ -36,7 +33,7 @@ const arrange_images = function(viewer, hashstate, init) {
   const { numRows, numColumns } = grid_shape;
   const { cellWidth, cellHeight } = grid_shape;
 
-  const nTotal = numRows * numColumns * layers.length;
+  const nTotal = numRows * numColumns * hashstate.layers.length;
   var nLoaded = 0;
 
   const aspect_ratio = (cellWidth * numColumns) / (cellHeight * numRows);
@@ -50,7 +47,6 @@ const arrange_images = function(viewer, hashstate, init) {
       const image = grid[yi][xi];
       const { displayHeight, displayWidth } = to_image_shape(image, grid_shape)
       const x = xi * (cellWidth + spacingFraction) + (cellWidth - displayWidth) / 2;
-      // Iterate through the layers
       // Add the image title
       const titleElt = document.createElement('p');
       titleElt.className = 'minerva-overlay-title';
@@ -3329,8 +3325,8 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
   const tileHeight = image.TileSize.slice(0,2).pop();
   return {
     loadTilesWithAjax: false,
-    compositeOperation: 'lighter',
-    tileSource: toTileTarget(hashstate, viewer, 'lens', {
+    compositeOperation: 'source-over',
+    tileSource: toTileTarget(hashstate, viewer, {
       image,
       colorize: true,
       tileHeight: tileHeight,
@@ -3349,6 +3345,31 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
       hashstate.gl_state.setViewer(viewer);
       hashstate.gl_state.setTargetImage(item);
       init(hashstate, viewer);
+      // Add all mask layers, if present
+      hashstate.mask_layers.forEach(mask => {
+        // Add a single mask layer
+        viewer.addTiledImage({
+          loadTilesWithAjax: false,
+          compositeOperation: 'source-over',
+          tileSource: {
+            image,
+            colorize: mask.Colorize,
+            tileHeight: tileHeight,
+            tileWidth: tileWidth,
+            height: image.Height,
+            width:  image.Width,
+            maxLevel: image.MaxLevel,
+            getTileUrl: getGetTileUrl(
+              image.Path, mask.Path, image.MaxLevel, mask.Format
+            )
+          },
+          x: 0,
+          y: 0,
+          opacity: 1,
+          width: displayWidth,
+        })
+      });
+
     }
   }
 }
@@ -3359,7 +3380,6 @@ const build_page_with_exhibit = function(exhibit, options) {
   const grid = hashstate.grid;
   const grid_shape = to_grid_shape(grid);
 
-  const layers = hashstate.layers;
   const max_max_cache_count = (([w=0, h=0]) => {
     const rgba = 4;
     const gb = 1024**3;
@@ -3367,7 +3387,7 @@ const build_page_with_exhibit = function(exhibit, options) {
     const t = Math.max(w*h, 256**2) * rgba;
     return (max_memory_gb * 4*gb) / t;
   })(grid[0][0].TileSize);
-  const ideal_cache_count = 20 * layers.length;
+  const ideal_cache_count = 20 * hashstate.layers.length;
   const maxImageCacheCount = Math.max(200, Math.min(
     max_max_cache_count, ideal_cache_count 
   ));
@@ -3375,6 +3395,7 @@ const build_page_with_exhibit = function(exhibit, options) {
   // Initialize openseadragon
   const viewer = OpenSeadragon({
     maxImageCacheCount,
+    compositeOperation: 'source-over',
     id: options.id + '-openseadragon',
     prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.3.1/images/',
     navigatorPosition: 'BOTTOM_RIGHT',
@@ -3385,7 +3406,9 @@ const build_page_with_exhibit = function(exhibit, options) {
     immediateRender: false,
     degrees: exhibit.Rotation || 0
   });
-  const tile_target = to_tile_target(grid[0][0], grid_shape, hashstate, viewer);
+  const image = grid[0][0];
+  const tile_target = to_tile_target(image, grid_shape, hashstate, viewer);
+  // Add all standard image layers
   viewer.addTiledImage(tile_target);
   hashstate.createLens(viewer);
 

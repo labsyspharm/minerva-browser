@@ -485,8 +485,7 @@ const parseImageJob = (imageJob) => {
   return { full_url, key, tile };
 }
 
-const customTileCache = (HS, shape_opts, target) => {
-  const is_target = target !== null;
+const customTileCache = (HS, shape_opts) => {
   return {
     createTileCache: function(record, out) {
       record._out = out;
@@ -674,11 +673,11 @@ const render_layers = (gl_state, shape_opts, viewer, opts) => {
   return { bottom_layer, top_layer };
 }
 
-const toTileTarget = (HS, viewer, target, tileSource) => {
+const toTileTarget = (HS, viewer, tileSource) => {
   const shape_opts = to_shape_opts(tileSource);
   return {
     ...tileSource,
-    ...customTileCache(HS, shape_opts, 'all'),
+    ...customTileCache(HS, shape_opts),
     downloadTileStart: function(imageJob) {
       const { full_url, key, tile } = parseImageJob(imageJob);
       const canvas = document.createElement('canvas');

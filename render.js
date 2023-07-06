@@ -1060,6 +1060,14 @@ Render.prototype = {
       if (group_index != -1) {
         HS.group = toggleChannelShown(HS.group, group_index);
       }
+      if (mask_index != -1) {
+        if (shown_idx > 0) {
+          HS.m = HS.m.filter(m => m != mask_index);
+        }
+        else if (!HS.m.includes(mask_index)){
+          HS.m = [...HS.m, mask_index];
+        }
+      }
       HS.pushState();
       window.onpopstate();
     }
@@ -1093,7 +1101,8 @@ Render.prototype = {
       });
       const text_hide = 'color: transparent';
       const colorize_ico = document.createElement('i');
-      const text_col = ['text-dark', 'text-dark', ''][shown_idx];
+      let text_col = ['text-dark', 'text-dark', ''][shown_idx];
+      if (group_index === -1) text_col = '';
       colorize_ico.style.cssText = ['', '', text_hide][shown_idx];
       colorize_ico.className = `fa fa-eye-dropper ${text_col}`;
       colorize.appendChild(colorize_ico);

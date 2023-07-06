@@ -3328,6 +3328,8 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
     compositeOperation: 'source-over',
     tileSource: toTileTarget(hashstate, viewer, {
       image,
+      path: '',
+      is_mask: false,
       colorize: true,
       tileHeight: tileHeight,
       tileWidth: tileWidth,
@@ -3353,6 +3355,8 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
           compositeOperation: 'source-over',
           tileSource: {
             image,
+            is_mask: true,
+            path: mask.Path,
             colorize: mask.Colorize,
             tileHeight: tileHeight,
             tileWidth: tileWidth,
@@ -3363,13 +3367,15 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
               image.Path, mask.Path, image.MaxLevel, mask.Format
             )
           },
+          success: () => {
+            hashstate.newMasks(viewer);
+          },
           x: 0,
           y: 0,
           opacity: 1,
           width: displayWidth,
         })
       });
-
     }
   }
 }

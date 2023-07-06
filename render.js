@@ -1046,16 +1046,20 @@ Render.prototype = {
   },
 
   // Add channel legend label
-  addChannelLegend: function(legend_line, c) {
+  addChannelLegend: function(legend_line) {
     const HS = this.hashstate;
     const color = legend_line.color;
+    const mask_index = legend_line.mask_index;
+    const group_index = legend_line.group_index;
     const shown_idx = (() => {
       if (legend_line.rendered) return 2;
       return +legend_line.shown;
     })();
 
     const onClick = () => {
-      HS.group = toggleChannelShown(HS.group, c);
+      if (group_index != -1) {
+        HS.group = toggleChannelShown(HS.group, group_index);
+      }
       HS.pushState();
       window.onpopstate();
     }
@@ -1077,9 +1081,13 @@ Render.prototype = {
       label.addEventListener("click", onClick);
       visible.addEventListener("click", onClick);
       colorize.addEventListener("click", (e) => {
-        if (!shown_idx) HS.group = toggleChannelShown(HS.group, c);
+        if (!shown_idx && group_index != -1) {
+          HS.group = toggleChannelShown(HS.group, group_index);
+        }
         $(".minerva-channel-legend-color-picker").addClass("toggled");
-        HS.activeChannel = c;
+        if (group_index != -1) {
+          HS.activeChannel = group_index;
+        }
         this.newView(true);
         e.stopPropagation();
       });
@@ -1092,7 +1100,6 @@ Render.prototype = {
 
       var visible_ico = document.createElement('i');
       visible_ico.className = 'fa fa-eye' + ['-slash', '', ''][shown_idx];
-      console.log(shown_idx);
       visible.appendChild(visible_ico);
     }
     else {
@@ -1119,7 +1126,7 @@ Render.prototype = {
       var li = document.createElement('li');
       const styles = [
         'opacity:'+[0.5,1,1][shown_idx]
-      ].concat((c === HS.activeChannel) ? [
+      ].concat((group_index === HS.activeChannel) ? [
         'border-bottom: '+ '2px solid #' + color
       ] : []);
       li.style.cssText = styles.join('; ');

@@ -456,7 +456,46 @@ const toAngle = (vec) => {
   return Math.atan2(vec[1], vec[0]);
 }
 
+// Set the opacity of active masks
+const newMasks = function(active_masks, viewer) {
+
+  const { world } = viewer;
+  const n_items = world.getItemCount();
+  const indices = [...Array(n_items).keys()];
+
+  // Full list of tiled image masks
+  const mask_t = indices.map(i => {
+    const tiledImage = world.getItemAt(i);
+    const tileSource = tiledImage.source;
+    return { tiledImage, tileSource };
+  }).filter(t => t.tileSource.is_mask);
+
+  // Map tile source paths to tiled images
+  const mask_map =  new Map(mask_t.map(t => {
+    return [t.tileSource.path, t.tiledImage];
+  }));
+
+  // Hide hidden masks
+  mask_t.forEach(t => {
+    t.tiledImage.setOpacity(0);
+  });
+
+  // Organize active masks
+  active_masks.forEach((m, i) => {
+    const order = n_items - 1 - i;
+    if (!mask_map.has(m.Path)) return;
+    const tiledImage = mask_map.get(m.Path);
+    world.setItemIndex(tiledImage, Math.max(order, 0));
+    tiledImage.setOpacity(1);
+  });
+};
+
+
 HashState.prototype = {
+
+  newMasks(viewer) {
+    newMasks(this.active_masks, viewer);
+  },
 
   createLens (viewer) {
     const vp = viewer.viewport;
@@ -1272,7 +1311,7 @@ HashState.prototype = {
   // Get the colors of the current group's channels
   get colors() {
     const g_colors = this.group.Colors;
-    return g_colors.concat(this.active_masks.reduce((c, m) => {
+    return g_colors.concat(this.masks.reduce((c, m) => {
       return c.concat(m.Colors || []);
     }, []));
   },
@@ -1295,7 +1334,7 @@ HashState.prototype = {
   // Get the names of the current group's channels
   get channel_names() {
     const g_chans = this.group.Channels;
-    return g_chans.concat(this.active_masks.reduce((c, m) => {
+    return g_chans.concat(this.masks.reduce((c, m) => {
       return c.concat(m.Channels || []);
     }, []));
   },
@@ -1303,7 +1342,7 @@ HashState.prototype = {
   // Get the descriptions of current group's channels
   get channel_descriptions() {
     const g_chans = this.group.Descriptions || [];
-    return g_chans.concat(this.active_masks.reduce((c, m) => {
+    return g_chans.concat(this.masks.reduce((c, m) => {
       return c.concat(m.Descriptions || []);
     }, []));
   },
@@ -1312,15 +1351,35 @@ HashState.prototype = {
   get channel_shown() {
     return [
       ...(this.group?.Shown || []),
-      ...this.masks.map(mask => mask.Shown)
+      ...this.masks.map((mask, m) => {
+        if (this.m.includes(m)) {
+          return mask.Shown
+        }
+        return false;
+      })
     ];
   },
 
   // Get all channel names and descriptions 
   get channel_legend_lines() {
+    const group_length = this.group?.Shown.length;
     const channel_shown = [
       ...this.channel_shown,
       ...this.lens_channel_shown
+    ];
+    const channel_group_indices = [
+      ...this.channel_shown.map((_, i) => {
+        if (i >= group_length) return -1;
+        return i;
+      }),
+      ...this.lens_channel_shown.map(() => -1)
+    ]
+    const channel_mask_indices  = [
+      ...this.channel_shown.map((_, i) => {
+        if (i < group_length) return -1;
+        return i - group_length;
+      }),
+      ...this.lens_channel_shown.map(() => -1)
     ];
     const channel_descriptions = [
       ...this.channel_descriptions,
@@ -1335,11 +1394,14 @@ HashState.prototype = {
     return channel_names.reduce((out, name, i) => {
       if (out.find(o => o.name === name)) return out;
       const description = channel_descriptions[i] || '';
+      const mask_index = channel_mask_indices[i];
+      const group_index = channel_group_indices[i];
       const color = channel_colors[i] || '';
       const shown = channel_shown[i] || false;
       const rendered = this.isRendered(name);
       const line = { 
-        rendered, name, description, color, shown
+        rendered, name, description, color,
+        shown, mask_index, group_index
       };
       return [...out, line];
     }, []);
@@ -1474,10 +1536,6 @@ HashState.prototype = {
     const outline_story = this.newTempStory('outline');
     this.stories = [outline_story].concat(this.stories);
 
-    if (this.stories.length > 1) {
-      const explore_story = this.newTempStory('explore');
-      this.stories = this.stories.concat([explore_story]);
-    }
   },
 
   // Create an empty story from current hash state
@@ -1506,16 +1564,11 @@ HashState.prototype = {
 
     // Three types of empty story
     const name = {
-      'explore': 'Free Explore',
       'tag': 'Shared Link',
       'outline': 'Introduction'
     }[mode];
 
     const groups = {
-    }[mode];
-
-    const masks = {
-      'explore': this.masks.filter(mask => mask.Name).map(mask => mask.Name),
     }[mode];
 
     const active_masks = {
@@ -1537,7 +1590,7 @@ HashState.prototype = {
         Pan: v.slice(1),
         ActiveMasks: active_masks,
         Group: group.Name,
-        Masks: masks,
+        Masks: [],
         Groups: groups,
         Lensing: first_lens,
         Description: decode(d),

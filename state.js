@@ -1573,7 +1573,7 @@ HashState.prototype = {
 
     const active_masks = {
       'tag': this.active_masks.filter(mask => mask.Name).map(mask => mask.Name),
-    }[mode];
+    }[mode] || [];
 
     // Empty story object of a single waypoint
     return {
@@ -1588,9 +1588,9 @@ HashState.prototype = {
         }],
         Polygon: p,
         Pan: v.slice(1),
+        Masks: this.masks.map(mask => mask.Name),
         ActiveMasks: active_masks,
         Group: group.Name,
-        Masks: [],
         Groups: groups,
         Lensing: first_lens,
         Description: decode(d),

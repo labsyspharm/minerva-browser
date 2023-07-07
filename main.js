@@ -2860,14 +2860,11 @@ const exhibitHTML = `
                         <select class="minerva-group-picker minerva-editControls selectpicker" multiple>
                         </select>
                         <div class="minerva-channel-groups nav flex nav-pills"></div>
+                        <div class="minerva-story-container"></div>
                         <p class="minerva-mask-label mb-1 font-weight-bold pt-2">Add data layer:</p>
                         <select class="minerva-mask-picker minerva-editControls selectpicker" multiple>
                         </select>
-                        <div class="minerva-mask-layers nav flex nav-pills">
-                        </div>
-                    </div>
-                    <div>
-                        <div class="minerva-story-container"></div>
+                        <div class="minerva-mask-layers nav flex nav-pills"></div>
                     </div>
                 </div>
                 <div class="col-1 p-0">

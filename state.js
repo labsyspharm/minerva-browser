@@ -916,6 +916,8 @@ HashState.prototype = {
       else {
         history.pushState(this.design, document.title, url);
       }
+      const href = window.location.origin + url;
+      parent.postMessage({ href }, "*");
 
       this.changed = false;
     }

@@ -10,7 +10,7 @@
     "js-yaml": "^3.14.0",
     "lensing": "https://github.com/thejohnhoffer/lensing/tarball/599d3ec5aa63c3181516d63162aae0b5c0fa13c4",
     "lz-string": "^1.4.4",
-    "openseadragon": "^2.4.2",
+    "openseadragon": "^4.0.0",
     "popper.js": "1.16.0",
     "process": "^0.11.10",
     "sha1": "^1.1.1",
@@ -31,7 +31,7 @@
     "build": "webpack --mode production"
   },
   "name": "minerva-browser",
-  "version": "3.4.1",
+  "version": "3.4.2",
   "description": "A storytelling interface atop openseadragon",
   "main": "index.js",
   "repository": {

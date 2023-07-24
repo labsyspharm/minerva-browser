@@ -14,7 +14,7 @@ specifiers:
   js-yaml: ^3.14.0
   lensing: https://github.com/thejohnhoffer/lensing/tarball/4220b4eecf3148c1906d1f3aa50659e338bbeccf
   lz-string: ^1.4.4
-  openseadragon: ^2.4.2
+  openseadragon: ^4.1.0
   popper.js: 1.16.0
   process: ^0.11.10
   sha1: ^1.1.1
@@ -36,7 +36,7 @@ dependencies:
   js-yaml: 3.14.1
   lensing: '@github.com/thejohnhoffer/lensing/tarball/4220b4eecf3148c1906d1f3aa50659e338bbeccf'
   lz-string: 1.5.0
-  openseadragon: 2.4.2
+  openseadragon: 4.1.0
   popper.js: 1.16.0
   process: 0.11.10
   sha1: 1.1.1
@@ -2760,8 +2760,8 @@ packages:
     resolution: {integrity: sha512-5GFldHPXVG/YZmFzJvKK2zDSzPKhEp0+ZR5SVaoSag9fsL5YgHbUHDfnG5494ISANDcK4KwPXAx2xqVEydmd7w==}
     dev: true
 
-  /openseadragon/2.4.2:
-    resolution: {integrity: sha512-398KbZwRtOYA6OmeWRY4Q0737NTacQ9Q6whmr9Lp1MNQO3p0eBz5LIASRne+4gwequcSM1vcHcjfy3dIndQziw==}
+  /openseadragon/4.1.0:
+    resolution: {integrity: sha512-XMMzf5apmshvIvxvqMwiW9dJ07dol4zudvV1oFnoZuIpSZP3c3tlFjGbyOKHGhb1k4jmHQ7b7koG9vCHdKvC/A==}
     dev: false
 
   /p-limit/2.3.0:

@@ -84,9 +84,9 @@
  * SOFTWARE.
  */
 
-//! Built on 2023-04-28
+//! Built on 2022-12-16
 
-//! Git commit: unknown
+//! Git commit: v4.0.0-0-8e6196a
 
 //! License: http://openseadragon.github.io/license/
 

@@ -71,7 +71,7 @@ const render_alpha_tile = (props, uniforms, tile, via) => {
               gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
   });
   // Actually draw the arrays
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.drawElements(gl.TRIANGLES, 3*via.n_triangles, gl.UNSIGNED_SHORT, 0);
   return gl.canvas;
 }
 
@@ -117,7 +117,7 @@ const render_linear_tile = (props, uniforms, tile, via) => {
               gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
   });
   // Actually draw the arrays
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.drawElements(gl.TRIANGLES, 3*via.n_triangles, gl.UNSIGNED_SHORT, 0);
   return gl.canvas;
 }
 
@@ -175,13 +175,44 @@ const VERTEX_SHADER = `#version 300 es
 in vec2 a_uv;
 out vec2 uv;
 
-void main() {
-// Texture coordinates
-uv = a_uv;
+uniform float u_lens_scale;
+uniform float u_blend_alpha;
+uniform float u_lens_rad;
+uniform vec2 u_shape;
+uniform float u_level;
+uniform vec2 u_origin;
+uniform vec2 u_lens;
 
-// Clip coordinates
-vec2 full_pos = vec2(1., -1.) * (2. * a_uv - 1.);
-gl_Position = vec4(full_pos, 0., 1.);
+vec2 scale_tile(vec2 v) {
+  float scale = pow(2., u_level);
+  return v / scale;
+}
+
+vec2 global_to_tile(vec2 v) {
+  vec2 vs = scale_tile(v);
+  vec2 c = vs - u_origin;
+  return vec2(c.x, c.y);
+}
+
+void main() {
+
+  // Resize lens
+  vec2 new_uv = vec2(a_uv);
+  float rad = u_lens_rad / u_lens_scale;
+  vec2 full_lens = rad * new_uv / u_shape;
+
+  // Position lens
+  vec2 lens_off = global_to_tile(u_lens)/u_shape;
+  new_uv = lens_off + scale_tile(full_lens);
+
+  // Texture coordinates
+  uv = vec2(new_uv);
+
+  // Clip coordinates
+  vec2 cv = vec2(new_uv);
+  cv = vec2(1., -1.) * (cv * 2. -1.);
+
+  gl_Position = vec4(cv, 0., 1.);
 }`
 const SHADERS = [{
   FRAGMENT_SHADER: `#version 300 es
@@ -308,9 +339,8 @@ const SHADERS = [{
     uvec4 tex = texel(sam, u_shape, uv, u_t0_crop);
 
     // Render empty lens background
-    vec2 global_v = tile_to_global(uv);
     int lens = lens_status(u_lens, uv);
-    if (lens == 0) {
+    if (lens == 0 && false) { // TODO
       return vec4(0.0);
     }
     vec4 rgba = vec4(tex) / 255.;
@@ -324,14 +354,40 @@ const SHADERS = [{
 }
 ]
 
-const to_vertices = () => {
+const to_circle = (n) => {
+  const rad = 1.0;
+  const x0 = 0.0;
+  const y0 = 0.0;
+  const pointIndices = [...Array(n).keys()];
+  return pointIndices.reduce((o, i)=> {
+     const angle = 2 * Math.PI * i / n;
+     const x = x0 + rad * Math.cos(angle);
+     const y = y0 + rad * Math.sin(angle);
+     return [...o, x, y];
+  }, []);
+}
+
+const to_vertices = (n_iter) => {
+  const tri = [0, 1, 2];
+  const third = 2**n_iter;
+  const n_verts = 3*third;
+  const points = to_circle(n_verts);
+  const indices = [...Array(n_iter).keys()].reduce((ov, v) => {
+    const fracs = 3 * (2**v)
+    const step = third / (2**v);
+    return [...Array(fracs).keys()].reduce((od, d) => {
+      const offset = v => (step * d + v) % n_verts;
+      return tri.reduce((ot, n) => {
+        return [...ot, offset(n*step/2)];
+      }, od);
+    }, ov);
+  }, [0, third, n_verts - third]);
   const one_point_size = 2 * Float32Array.BYTES_PER_ELEMENT;
-  const points_list_size = 4 * one_point_size;
+  const points_list_size = points.length * one_point_size;
   return {
     one_point_size, points_list_size,
-    points_buffer: new Float32Array([
-      0, 1, 0, 0, 1, 1, 1, 0
-    ])
+    points_buffer: new Float32Array(points),
+    index_buffer: new Uint16Array(indices),
   };
 }
 
@@ -363,14 +419,24 @@ const toBuffers = (tex, active_tex, program, via) => {
   const u8 = gl.getUniformLocation(program, 'u8');
   gl.uniform1ui(u8, 255);
 
-  // Assign vertex inputs
-  gl.bindBuffer(gl.ARRAY_BUFFER, via.buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, via.points_buffer, gl.STATIC_DRAW);
-
-  // Enable vertex buffer
+  // Set up vertex array
+  var vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
   gl.enableVertexAttribArray(a_uv);
-  gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, 0, via.one_point_size,
-                         0 * via.points_list_size);
+  gl.bindBuffer(gl.ARRAY_BUFFER, via.buffer);
+  gl.vertexAttribPointer(a_uv, 2, gl.FLOAT, false, via.one_point_size, 0);
+
+  // Set up vertex indices
+  const index_buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+  gl.bufferData(
+      gl.ELEMENT_ARRAY_BUFFER,
+      via.index_buffer,
+      gl.STATIC_DRAW
+  );
+
+  gl.bindVertexArray(vao);
+  gl.bufferData(gl.ARRAY_BUFFER, via.points_buffer, gl.STATIC_DRAW);
 
   tex.forEach((i) => {
     // Set Texture
@@ -410,6 +476,9 @@ const update_shape = (gl, w, h) => {
 }
 
 const initialize_gl = (tile_canvas, program, uniforms, tex, active_tex, tile, shape_opts, cleanup) => {
+  const n_iter = 4;
+  const n_verts = 3*2**(n_iter);
+  const n_triangles = n_verts - 2;
   const r1 = (Math.random() + 1).toString(36).substring(2);
   const r2 = (Math.random() + 1).toString(36).substring(2);
   const gl = tile_canvas.getContext('webgl2');
@@ -419,9 +488,10 @@ const initialize_gl = (tile_canvas, program, uniforms, tex, active_tex, tile, sh
   gl.useProgram(program);
   const textures = tex.map(() => gl.createTexture());
   const texture_uniforms = toBuffers(tex, active_tex, program, {
-    gl, ...to_vertices(), buffer: gl.createBuffer(), textures
+    gl, ...to_vertices(n_iter), 
+    buffer: gl.createBuffer(), textures
   });
-  const via = { gl, texture_uniforms, textures, program };
+  const via = { gl, texture_uniforms, textures, program, n_triangles };
   return { via, uniforms };
 }
 
@@ -612,11 +682,6 @@ const is_within_lens = (HS, lens_scale, lens_center, cache_gl, tile) => {
   });
 }
 
-const need_lens = (HS, lens_scale, lens_center, cache_gl, tile) => {
-  if (!HS.gl_state.showVisibleLens) return false;
-  return is_within_lens(HS, lens_scale, lens_center, cache_gl, tile);
-}
-
 const render_layers = (ctx, gl_state, shape_opts, viewer, isLens, opts) => {
   const { tile, key } = opts;
   const cache_gl = set_cache_gl(gl_state, tile, shape_opts, isLens);
@@ -656,27 +721,13 @@ const toTileTarget = (HS, viewer, isLens, tileSource) => {
       imageJob.userData.promise.controller.abort();
     },
     getTileCacheDataAsContext2D: function(record) {
-      const needsLens = (tile, cache_gl) => {
-        const lens_scale = HS.gl_state.toLensScale(viewer);
-        const lens_center = HS.gl_state.toLensCenter(viewer);
-        return need_lens(HS, lens_scale, lens_center, cache_gl, tile);
-      }
       const { tile, key, ctx } =  record._out
       const cache_gl = set_cache_gl(HS.gl_state, tile, shape_opts, isLens);
-      const has_lens = needsLens(tile, cache_gl);
       // Render lens layer if needed
-      /*if (isLens) {
-        if (has_lens || true) {
-          const opts = { tile, key };
-          render_layers(ctx, HS.gl_state, shape_opts, viewer, isLens, opts);
-        }
-        else {
-          // create and return new blank canvas
-//          const canvas = document.createElement('canvas');
-//          canvas.height = ctx.canvas.height;;
-//          canvas.width = ctx.canvas.width;
-        }
-      }*/
+      if (isLens) {
+        const opts = { tile, key };
+        render_layers(ctx, HS.gl_state, shape_opts, viewer, isLens, opts);
+      }
       return ctx;
     }
   }

@@ -322,7 +322,6 @@ RenderOSD.prototype = {
       this.activateViewport();
       HS.gl_state.untrackMainTiles();
       HS.gl_state.untrackLensTiles();
-      // TODO      HS.newMasks(this.viewer)
     }
     this.viewer.forceRedraw();
   },

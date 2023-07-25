@@ -3398,7 +3398,7 @@ const build_page_with_exhibit = function(exhibit, options) {
   // Define all required layers
   const gl_targets = [
 //    false, true  //TODO
-    false, true
+    true 
   ];
   const n_total_layers = (
     hashstate.mask_layers.length + gl_targets.length

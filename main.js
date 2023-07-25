@@ -14,6 +14,28 @@ const flatten = function(items) {
   });
 };
 
+class Initializer {
+
+  constructor(n_total_layers, hashstate, viewer) {
+    this.n_total_layers = n_total_layers;
+    this.hashstate = hashstate;
+    this.viewer = viewer;
+    this.n_loaded = 0;
+  }
+
+  init() {
+    this.n_loaded += 1;
+    const { hashstate, viewer } = this;
+    if (this.n_loaded >= this.n_total_layers) {
+      const eventHandler = new SimpleEventHandler(d3.select('body').node());
+      const osd = new RenderOSD(hashstate, viewer, eventHandler);
+      const render = new Render(hashstate, osd);
+      osd.init();
+      render.init();
+    }
+  }
+}
+
 // Arange openseadragon and initialize when done
 const arrange_images = function(viewer, hashstate, init) {
 
@@ -3237,7 +3259,6 @@ const makeTwinViewer = function(e) {
     var viewer2;
     youngerWindow.addEventListener('DOMContentLoaded', (e) => {
         viewer2 = youngerWindow.viewer;
-        console.log(youngerWindow.viewer);
         var viewer1Leading = false;
         var viewer2Leading = false;
 
@@ -3307,23 +3328,14 @@ const getEmptyTileUrl = (max, format) => {
   }
 }
 
-//set up event handler
-const init = (hashstate, viewer) => {
-  const eventHandler = new SimpleEventHandler(d3.select('body').node());
-  const osd = new RenderOSD(hashstate, viewer, eventHandler);
-  const render = new Render(hashstate, osd);
-  osd.init();
-  render.init();
-}
-
-const to_tile_target = (image, grid_shape, hashstate, viewer) => {
+const to_tile_target = (init, image, grid_shape, hashstate, viewer, isLens) => {
   const { displayWidth } = to_image_shape(image, grid_shape)
   const tileWidth = image.TileSize.slice(0,1).pop();
   const tileHeight = image.TileSize.slice(0,2).pop();
   return {
     loadTilesWithAjax: false,
     compositeOperation: 'source-over',
-    tileSource: toTileTarget(hashstate, viewer, {
+    tileSource: toTileTarget(hashstate, viewer, isLens, {
       image,
       path: '',
       is_mask: false,
@@ -3338,41 +3350,11 @@ const to_tile_target = (image, grid_shape, hashstate, viewer) => {
     }),
     x: 0,
     y: 0,
-    opacity: 1,
+    opacity: 1.0,
     width: displayWidth,
     success: ({ item }) => {
-      hashstate.gl_state.setViewer(viewer);
-      hashstate.gl_state.setTargetImage(item);
-      init(hashstate, viewer);
-      // Add all mask layers, if present
-      hashstate.mask_layers.forEach(mask => {
-        // Add a single mask layer
-        viewer.addTiledImage({
-          loadTilesWithAjax: false,
-          compositeOperation: 'source-over',
-          tileSource: {
-            image,
-            is_mask: true,
-            path: mask.Path,
-            colorize: mask.Colorize,
-            tileHeight: tileHeight,
-            tileWidth: tileWidth,
-            height: image.Height,
-            width:  image.Width,
-            maxLevel: image.MaxLevel,
-            getTileUrl: getGetTileUrl(
-              image.Path, mask.Path, image.MaxLevel, mask.Format
-            )
-          },
-          success: () => {
-            hashstate.newMasks(viewer);
-          },
-          x: 0,
-          y: 0,
-          opacity: 1,
-          width: displayWidth,
-        })
-      });
+      hashstate.gl_state.setTargetImage(item, isLens)
+      init.init();
     }
   }
 }
@@ -3410,10 +3392,53 @@ const build_page_with_exhibit = function(exhibit, options) {
     degrees: exhibit.Rotation || 0
   });
   const image = grid[0][0];
-  const tile_target = to_tile_target(image, grid_shape, hashstate, viewer);
+  hashstate.gl_state.setViewer(viewer);
+  // Define all required layers
+  const gl_targets = [
+//    false, true  //TODO
+    false, true
+  ];
+  const n_total_layers = (
+    hashstate.mask_layers.length + gl_targets.length
+  );
+  // Prepare to initialize
+  const init = new Initializer(n_total_layers, hashstate, viewer);
   // Add all standard image layers
-  viewer.addTiledImage(tile_target);
+  gl_targets.forEach(isLens => {
+    const target = to_tile_target(init, image, grid_shape, hashstate, viewer, isLens);
+    viewer.addTiledImage(target);
+  })
   hashstate.createLens(viewer);
+  // Add all mask layers, if present
+  hashstate.mask_layers.forEach(mask => {
+    // Add a single mask layer
+    viewer.addTiledImage({
+      loadTilesWithAjax: false,
+      compositeOperation: 'source-over',
+      tileSource: {
+        image,
+        is_mask: true,
+        path: mask.Path,
+        colorize: mask.Colorize,
+        tileHeight: tileHeight,
+        tileWidth: tileWidth,
+        height: image.Height,
+        width:  image.Width,
+        maxLevel: image.MaxLevel,
+        getTileUrl: getGetTileUrl(
+          image.Path, mask.Path, image.MaxLevel, mask.Format
+        )
+      },
+      success: () => {
+        hashstate.newMasks(viewer);
+        init.init();
+      },
+      x: 0,
+      y: 0,
+      opacity: 1.0,
+      width: displayWidth,
+    })
+  })
 
   // Constantly reset each arrow transform property
 	function updateOverlays() {
@@ -3443,7 +3468,7 @@ const build_page_with_exhibit = function(exhibit, options) {
     color: 'rgb(255, 255, 255)'
   });
 
-  arrange_images(viewer, hashstate, init);
+  arrange_images(viewer, hashstate);
 
   return viewer;
 };

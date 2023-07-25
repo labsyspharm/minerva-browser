@@ -520,6 +520,20 @@ const render_to_cache = (gl_state, key, tile, isLens, cache_gl) => {
       tile_square, blend_alpha, max_level,
       lens_rad, lens_scale, lens_center
     };
+    // new canvas with 2d context
+    /*
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    const { width, height } = props.data;
+    ctx.clearRect(0, 0, width, height);
+    canvas.width = width;
+    canvas.height = height;
+    ctx.beginPath();
+    ctx.arc(width/2, height/2, 256, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(0, 255, 0, 1)';
+    ctx.fill();
+    return canvas; 
+    */
     return render_alpha_tile({ data }, cache_gl.uniforms, tile, cache_gl.via);
   }
   return render_linear_tile(props, cache_gl.uniforms, tile, cache_gl.via);
@@ -651,7 +665,7 @@ const toTileTarget = (HS, viewer, isLens, tileSource) => {
       const cache_gl = set_cache_gl(HS.gl_state, tile, shape_opts, isLens);
       const has_lens = needsLens(tile, cache_gl);
       // Render lens layer if needed
-      if (isLens) {
+      /*if (isLens) {
         if (has_lens || true) {
           const opts = { tile, key };
           render_layers(ctx, HS.gl_state, shape_opts, viewer, isLens, opts);
@@ -662,7 +676,7 @@ const toTileTarget = (HS, viewer, isLens, tileSource) => {
 //          canvas.height = ctx.canvas.height;;
 //          canvas.width = ctx.canvas.width;
         }
-      }
+      }*/
       return ctx;
     }
   }
@@ -886,7 +900,6 @@ class GLState {
 
   nextCache(cache, key, sub, n_tex, isLens) {
     const ckey = toChannelTileKey(sub, key, isLens);
-    console.log(ckey)
     const to_output = (item, cached) => {
       const index = item[0];
       return { index, cached };

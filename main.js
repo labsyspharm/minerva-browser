@@ -3321,10 +3321,10 @@ const to_grid_shape = (grid) => {
   };
 } 
 
-const getEmptyTileUrl = (max, format) => {
-  const getTileUrl = getGetTileUrl('foo', 'bar', max, format);
+const getEmptyTileUrl = (max, name, format) => {
+  const getTileUrl = getGetTileUrl('target', name, max, format);
   return (level, x, y) => {
-    return getTileUrl(level, x, y).split('/').pop();
+    return getTileUrl(level, x, y);
   }
 }
 
@@ -3332,21 +3332,23 @@ const to_tile_target = (init, image, grid_shape, hashstate, viewer, isLens) => {
   const { displayWidth } = to_image_shape(image, grid_shape)
   const tileWidth = image.TileSize.slice(0,1).pop();
   const tileHeight = image.TileSize.slice(0,2).pop();
+  const kind = ['main', 'lens'][+isLens];
+  const name = `render-layer-${kind}`;
   return {
     loadTilesWithAjax: false,
     compositeOperation: 'source-over',
     tileSource: toTileTarget(hashstate, viewer, isLens, {
       image,
       path: '',
+      name: name,
       is_mask: false,
       colorize: true,
       tileHeight: tileHeight,
       tileWidth: tileWidth,
       height: image.Height,
       width:  image.Width,
-      name: "rendering-layer",
       maxLevel: image.MaxLevel,
-      getTileUrl: getEmptyTileUrl(image.MaxLevel, 'jpg')
+      getTileUrl: getEmptyTileUrl(image.MaxLevel, name, 'jpg')
     }),
     x: 0,
     y: 0,
@@ -3430,7 +3432,7 @@ const build_page_with_exhibit = function(exhibit, options) {
         )
       },
       success: () => {
-        hashstate.newMasks(viewer);
+        // TODO        hashstate.newMasks(viewer);
         init.init();
       },
       x: 0,

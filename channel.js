@@ -319,7 +319,7 @@ const FRAGMENT_SHADPER_ALPHA = `#version 300 es
     uvec4 tex = texel(sam, u_shape, uv, u_t0_crop);
 
     vec3 rgb = vec3(tex.rgb) / 255.;
-    return vec4(rgb, u_blend_alpha);
+    return vec4(rgb*u_blend_alpha, u_blend_alpha);
   }
 
   void main() {

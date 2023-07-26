@@ -114,24 +114,21 @@ const render_linear_tile = (props, tile, via) => {
   return gl.canvas;
 }
 
-const to_tile_props = (shown, gl_state, key, graphics, isLens) => {
+const to_tile_props = (render, useds, graphics, isLens) => {
   const { 
     tile_square, max_level 
   } = graphics.shape_opts;
-  const n_tex = graphics.textures.length;
-  const channel_info = shown.paths.reduce((o, sub, i) => {
-    const channel = shown.channels[i];
-    const readOnly = channel === null;
-    const next = gl_state.nextCache(key, sub, n_tex, isLens, readOnly);
-    // Invalid cache
-    const invalid = [ !o, !next ].some(x => x);
+  const channel_info = render.paths.reduce((o, sub, i) => {
+    const used = useds[i];
+    const channel = render.channels[i];
     // No tile rendering if invalid
-    if (invalid) return null;
-    o.channel_cached.push(next.cached);
-    o.channel_index.push(next.index);
-    o.colors.push(shown.colors[i]);
-    o.modes.push(shown.modes[i]);
-    o.crops.push(shown.crops[i]);
+    if (!o || !used) return null;
+    // Render cached status and index
+    o.channel_cached.push(used.cached);
+    o.channel_index.push(used.index);
+    o.colors.push(render.colors[i]);
+    o.modes.push(render.modes[i]);
+    o.crops.push(render.crops[i]);
     o.channels.push(channel);
     return o;
   },{
@@ -146,7 +143,7 @@ const to_tile_props = (shown, gl_state, key, graphics, isLens) => {
   // Channels to render
   const data = {
     ...channel_info, tile_square,
-    width: shown.w, height: shown.h
+    width: render.w, height: render.h
   }
   return { data };
 }
@@ -567,15 +564,13 @@ const parseImageJob = (imageJob) => {
 const customTileCache = (HS, isLens, shape_opts) => {
   return {
     createTileCache: function(record, out) {
+      const { tile } = out;
+      HS.gl_state.allKeys.add(tile.cacheKey);
       record._out = out;
     },
     destroyTileCache: function(record) {
-      const { key } = record._out;
-      const cache_in = HS.gl_state.graphicsCache;
-      console.log(
-        cache_in.length,
-        HS.gl_state.graphicsCache.length
-      )
+      const { tile } = record._out;
+      HS.gl_state.allKeys.delete(tile.cacheKey);
       record._out = null;
     },
     getTileCacheData: function(record) {
@@ -597,7 +592,7 @@ const to_shape_opts = (tileSource) => {
   };
 }
 
-const render_to_cache = (props, graphics, gl_state, key, tile, isLens) => {
+const render_to_cache = (props, graphics, gl_state, tile, isLens) => {
   if (isLens) {
     const { tile_square, max_level } = graphics.shape_opts;
     const lens_scale = gl_state.toLensScale(gl_state.viewer);
@@ -690,9 +685,7 @@ const is_within_lens = (HS, lens_scale, lens_center, graphics, tile) => {
   });
 }
 
-const render_layers = (ctx, tile, key, shown, gl_state, shape_opts, viewer, isLens) => {
-  const graphics = set_graphics(gl_state, tile, shape_opts, isLens);
-  const props = to_tile_props(shown, gl_state, key, graphics, isLens);
+const render_layers = (ctx, tile, props, graphics, gl_state, shape_opts, viewer, isLens) => {
 
   // Nothing drawn for invalid cache or channels
   if (props.data === null || props.data.channels.length < 1) {
@@ -707,7 +700,7 @@ const render_layers = (ctx, tile, key, shown, gl_state, shape_opts, viewer, isLe
   layer.height = h;
   layer.width = w;
   
-  const out = render_to_cache(props, graphics, gl_state, key, tile, isLens);
+  const out = render_to_cache(props, graphics, gl_state, tile, isLens);
   ctx.drawImage(out, 0, 0, w, h, 0, 0, w, h);
   return true;
 }
@@ -734,11 +727,14 @@ const toTileTarget = (HS, viewer, isLens, tileSource) => {
       // TODO
     },
     getTileCacheDataAsContext2D: function(record) {
-      const { ctx, tile, key } =  record._out
+      const { ctx, tile, key, useds } =  record._out
+      const gl_state = HS.gl_state;
       if (isLens) {
-        const shown = HS.gl_state.toRenderingSettings(null, tile, isLens);
+        const graphics = set_graphics(gl_state, tile, shape_opts, isLens);
+        const render = gl_state.toRenderingSettings(null, graphics, tile, key, isLens);
+        const props = to_tile_props(render, useds, graphics, isLens);
         render_layers(
-          ctx, tile, key, shown, HS.gl_state, shape_opts, viewer, isLens
+          ctx, tile, props, graphics, HS.gl_state, shape_opts, viewer, isLens
         );
       }
       return ctx;
@@ -845,8 +841,8 @@ const to_alpha_uniforms = (program, gl, active_tex) => {
 class GLState {
 
   constructor(HS) {
-    this.graphicsCache = [];
-    this.invalidated = new Set(); //TODO
+    this.allKeys = new Set();
+    this.graphicsCache = []; //TODO
     this.graphicsMap = new Map();
     this.targetImageMain = null;
     this.targetImageLens = null;
@@ -868,9 +864,8 @@ class GLState {
     set_graphics(this, tile, shape_opts, isLens);
     const promise = Promise.all(sources.map((source) => {
       const { Format, Path: subpath } = source;
-      const ckey = toChannelTileKey(subpath, key, isLens);
-      const check = this.checkCache(ckey);
       // Skip loading if in a valid WebGL cache
+      const check = { valid: true , found: null }; //TODO
       if (check.valid === true && check.found !== null) {
         return Promise.resolve({
           tile, subpath, key,
@@ -895,65 +890,47 @@ class GLState {
       });
       // Load new image texture and render the layer
       const newImages = new Map(entries);
-      const shown = this.toRenderingSettings(newImages, tile, isLens);
+      const graphics = set_graphics(this, tile, shape_opts, isLens);
+      const render = this.toRenderingSettings(newImages, graphics, tile, key, isLens);
+      const useds = this.nextCache(tile.cacheKey, render.paths);
+      const props = to_tile_props(render, useds, graphics, isLens);
       const ctx = document.createElement("canvas").getContext('2d');
       render_layers(
-        ctx, tile, key, shown, this, shape_opts, viewer, isLens
+        ctx, tile, props, graphics, this, shape_opts, viewer, isLens
       );
+      // Marked as cached
+      useds.forEach(used => used.cached = true);
+      // Track texture used
       opts.imageJob.finish({
-        ...opts, ctx 
+        ...opts, ctx, useds
       });
     }).catch((e) => {
       opts.imageJob.finish(null, null, e?.message);
     })
   }
 
-  checkCache(ckey) {
-    // Check if cache invalidated //TODO
-    if (this.invalidated.has(ckey)) {
-      return { valid: false, found: null };
-    }
-    // Check if cache non-empty
-    const found = this.graphicsCache.find(item => {
-      return item[1] === ckey;
-    });
-    // Empty or non-empty valid cache
-    return { valid: true, found: found || null };
+  get usedTextures() {
+    if (!this.viewer) return [];
+    const cache = this.viewer.tileCache;
+    // All used texture locations
+    return [...this.allKeys].reduce((o, cacheKey) => {
+      const imageRecord = cache.getImageRecord(cacheKey);
+      const { useds } = imageRecord._out;
+      return [...o, ...useds.map(i => i.index)];
+    }, []);
   }
 
-  nextCache(key, sub, n_tex, isLens, readOnly) {
-    const in_cache = this.graphicsCache;
-    const ckey = toChannelTileKey(sub, key, isLens);
-    const to_output = (item, cached) => {
-      const index = item[0];
-      return { index, cached };
-    }
-    const check = this.checkCache(ckey);
-    // Invalid Cache //TODO
-    const invalid = (
-      !check.valid || (!check.found && readOnly)
-    );
-    if (invalid) return null;
-    // Non-empty cache 
-    if (check.found !== null) {
-      return to_output(check.found, true);
-    }
-    // Valid but empty cache
-    const len = Math.floor(n_tex);
-    if (in_cache.length < len) {
-      const alpha_map = new Map(in_cache);
-      const index = [...Array(len).keys()].find(index => {
-        return !alpha_map.has(index);
-      });
-      this.graphicsCache.unshift([ index, ckey ]);
-    }
-    else {
-      const [index, gone_ckey] = this.graphicsCache.pop();
-      // Invalidate expired cached tiles
-      this.graphicsCache.unshift([ index, ckey ]);
-      this.invalidated.add(gone_ckey); //TODO
-    }
-    return to_output(this.graphicsCache[0], false);
+  nextCache(cacheKey, sources) {
+    const n_needed = sources.length;
+    const in_cache = new Set(this.usedTextures);
+    // Select available texture indices
+    const indices = TEXTURE_RANGE.filter(k => {
+      return in_cache.has(k) === false;
+    }).slice(0, n_needed);
+    // Return all indices
+    return indices.map((index) => {
+      return { index, cached: false };
+    });
   }
 
   setViewer(viewer) {
@@ -996,7 +973,8 @@ class GLState {
     })(viewer.viewport);
   }
 
-  toRenderingSettings(newImages, tile, isLens) {
+  toRenderingSettings(newImages, graphics, tile, key, isLens) {
+    const readOnly = newImages === null;
     const [ w, h ] = to_tile_shape(tile);
     const images = newImages || new Map();
     const sources = this.loaded_sources(isLens);
@@ -1018,6 +996,7 @@ class GLState {
     const paths = sources.map(sub => {
       return sub.Path;
     });
+    // Generate new texture indices
     return { crops, channels, colors, modes, paths, w, h };
   }
 

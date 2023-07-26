@@ -526,6 +526,7 @@ HashState.prototype = {
       }
     });
     viewer.addHandler('canvas-drag', (e) => {
+      this.gl_state.untrackLensTiles();
       const { lensResizeBasis, lensAlphaBasis } = this.state;
       const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
       const resizing = (lensResizeBasis !== null && lensAlphaBasis !== null);

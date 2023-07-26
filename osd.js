@@ -202,6 +202,7 @@ RenderOSD.prototype = {
     this.viewer.addHandler('animation-finish', function(e) {
       const THIS = e.userData;
       const HS = THIS.hashstate;
+      HS.gl_state.untrackLensTiles();
       const scale = THIS.viewer.viewport.getZoom();
       const pan = THIS.viewer.viewport.getCenter();
       HS.v = [

@@ -11,8 +11,8 @@ const getGetTileUrl = function(ipath, lpath, max, format) {
   };
 };
 
-const render_alpha_tile = (props, uniforms, tile, via) => {
-  const { gl } = via;
+const render_alpha_tile = (props, tile, via) => {
+  const { gl, uniforms } = via;
   gl.clearColor(0.0, 0.0, 0.0, 0.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
   if (props === null) {
@@ -75,9 +75,9 @@ const render_alpha_tile = (props, uniforms, tile, via) => {
   return gl.canvas;
 }
 
-const render_linear_tile = (props, uniforms, tile, via) => {
-  const { gl } = via;
+const render_linear_tile = (props, tile, via) => {
   const { data } = props;
+  const { gl, uniforms } = via;
   if (data.channels.length < 1) {
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -124,7 +124,7 @@ const render_linear_tile = (props, uniforms, tile, via) => {
 const to_tile_props = (shown, gl_state, key, cache_gl, isLens) => {
   const { 
     tile_square, max_level 
-  } = cache_gl.shape_opts;
+  } = cache_gl.via.shape_opts;
 
   const n_tex = cache_gl.via.textures.length;
   const channel_info = shown.paths.reduce((o, sub) => {
@@ -171,7 +171,20 @@ const CROP_SHADER = `
   }
 `
 
-const VERTEX_SHADER = `#version 300 es
+const VERTEX_SHADER_SQUARE = `#version 300 es
+in vec2 a_uv;
+out vec2 uv;
+
+void main() {
+// Texture coordinates
+uv = a_uv;
+
+// Clip coordinates
+vec2 full_pos = vec2(1., -1.) * (2. * a_uv - 1.);
+gl_Position = vec4(full_pos, 0., 1.);
+}
+`
+const VERTEX_SHADER_CIRCLE = `#version 300 es
 in vec2 a_uv;
 out vec2 uv;
 
@@ -214,8 +227,7 @@ void main() {
 
   gl_Position = vec4(cv, 0., 1.);
 }`
-const SHADERS = [{
-  FRAGMENT_SHADER: `#version 300 es
+const FRAGMENT_SHADPER_LINEAR = `#version 300 es
   precision highp int;
   precision highp float;
   precision highp usampler2D;
@@ -291,10 +303,9 @@ const SHADERS = [{
 
   void main() {
     color = linear_blend();
-  }`,
-  VERTEX_SHADER 
-  }, {
-  FRAGMENT_SHADER: `#version 300 es
+  }
+`
+const FRAGMENT_SHADPER_ALPHA = `#version 300 es
   precision highp int;
   precision highp float;
   precision highp usampler2D;
@@ -302,9 +313,6 @@ const SHADERS = [{
   uniform vec2 u_lens;
   uniform vec2 u_shape;
   uniform vec2 u_origin;
-  uniform float u_level;
-  uniform float u_lens_rad;
-  uniform float u_lens_scale;
   uniform float u_blend_alpha;
   uniform vec4 u_t0_crop;
   uniform usampler2D u_t0;
@@ -312,46 +320,27 @@ const SHADERS = [{
   in vec2 uv;
   out vec4 color;
 
-  // From uv coordinates to global
-  vec2 tile_to_global(vec2 v) {
-    float scale = pow(2., u_level);
-    vec2 tile_flip = vec2(v.x, v.y) * u_shape;
-    return (u_origin + tile_flip) * scale;
-  }
-
-  // Compare to lens radius
-  int lens_status(vec2 lens, vec2 v) {
-    vec2 global_v = tile_to_global(v);
-    float d = distance(lens, global_v);
-    float rad = u_lens_rad / u_lens_scale;
-    float border = 3. / u_lens_scale;
-    // Exceeds lens border
-    if (abs(d) > rad) {
-      return 0;
-    };
-    return 1;
-  }
-
   ${CROP_SHADER}
 
   // Colorize continuous u8 signal
   vec4 color_channel(usampler2D sam) {
     uvec4 tex = texel(sam, u_shape, uv, u_t0_crop);
 
-    // Render empty lens background
-    int lens = lens_status(u_lens, uv);
-    if (lens == 0 && false) { // TODO
-      return vec4(0.0);
-    }
-    vec4 rgba = vec4(tex) / 255.;
-    return vec4(rgba.rgb, u_blend_alpha);
+    vec3 rgb = vec3(tex.rgb) / 255.;
+    return vec4(rgb, u_blend_alpha);
   }
 
   void main() {
     color = color_channel(u_t0);
-  }`,
-  VERTEX_SHADER 
-}
+  }
+`
+const SHADERS = [{
+    VERTEX_SHADER: VERTEX_SHADER_SQUARE,
+    FRAGMENT_SHADER: FRAGMENT_SHADPER_LINEAR
+  }, {
+    VERTEX_SHADER: VERTEX_SHADER_CIRCLE,
+    FRAGMENT_SHADER: FRAGMENT_SHADPER_ALPHA
+  }
 ]
 
 const to_circle = (n) => {
@@ -367,10 +356,30 @@ const to_circle = (n) => {
   }, []);
 }
 
-const to_vertices = (n_iter) => {
+const to_square_polygon = () => {
+  const n_verts = 4;
+  const n_triangles = 2;
+  const points = [
+    0, 0,
+    1, 0,
+    0, 1,
+    1, 1,
+  ]
+  const one_point_size = 2 * Float32Array.BYTES_PER_ELEMENT;
+  const points_list_size = points.length * one_point_size;
+  return {
+    n_triangles,
+    one_point_size, points_list_size,
+    points_buffer: new Float32Array(points),
+    index_buffer: new Uint16Array([0, 1, 2, 2, 1, 3]),
+  };
+}
+
+const to_circle_polygon = (n_iter) => {
   const tri = [0, 1, 2];
   const third = 2**n_iter;
   const n_verts = 3*third;
+  const n_triangles = n_verts - 2;
   const points = to_circle(n_verts);
   const indices = [...Array(n_iter).keys()].reduce((ov, v) => {
     const fracs = 3 * (2**v)
@@ -385,6 +394,7 @@ const to_vertices = (n_iter) => {
   const one_point_size = 2 * Float32Array.BYTES_PER_ELEMENT;
   const points_list_size = points.length * one_point_size;
   return {
+    n_triangles,
     one_point_size, points_list_size,
     points_buffer: new Float32Array(points),
     index_buffer: new Uint16Array(indices),
@@ -475,10 +485,9 @@ const update_shape = (gl, w, h) => {
   gl.viewport(0, 0, w, h);
 }
 
-const initialize_gl = (tile_canvas, program, uniforms, tex, active_tex, tile, shape_opts, cleanup) => {
-  const n_iter = 4;
-  const n_verts = 3*2**(n_iter);
-  const n_triangles = n_verts - 2;
+const to_cache_gl = (
+  tile_canvas, program, uniforms, vertices, tex, active_tex, tile, shape_opts, cleanup
+) => {
   const r1 = (Math.random() + 1).toString(36).substring(2);
   const r2 = (Math.random() + 1).toString(36).substring(2);
   const gl = tile_canvas.getContext('webgl2');
@@ -488,11 +497,14 @@ const initialize_gl = (tile_canvas, program, uniforms, tex, active_tex, tile, sh
   gl.useProgram(program);
   const textures = tex.map(() => gl.createTexture());
   const texture_uniforms = toBuffers(tex, active_tex, program, {
-    gl, ...to_vertices(n_iter), 
-    buffer: gl.createBuffer(), textures
+    gl, ...vertices, buffer: gl.createBuffer(), textures
   });
-  const via = { gl, texture_uniforms, textures, program, n_triangles };
-  return { via, uniforms };
+  const n_triangles = vertices.n_triangles;
+  const via = { 
+    gl, texture_uniforms, textures, program,
+    shape_opts, uniforms, n_triangles
+  };
+  return { via };
 }
 
 const hex2gl = (hex) => {
@@ -514,7 +526,7 @@ const set_cache_gl = (gl_state, tile, shape_opts, isLens) => {
       SHADERS[0], TEXTURE_RANGE, ACTIVE_TEXTURE_RANGE
     ],
     [
-      SHADERS[1], TEXTURE_RANGE, [0] 
+      SHADERS[1], TEXTURE_RANGE, [0]
     ]
   ][isLens? 1 : 0];
   const tile_canvas = document.createElement('canvas');
@@ -524,9 +536,13 @@ const set_cache_gl = (gl_state, tile, shape_opts, isLens) => {
     to_linear_uniforms(program, gl, active_tex),
     to_alpha_uniforms(program, gl, active_tex), 
   ][isLens? 1 : 0];
-
+  const vertices = [
+    to_square_polygon(),
+    to_circle_polygon(4),
+  ][isLens? 1 : 0];
   const cache_gl = to_cache_gl(
-    tile_canvas, program, uniforms, tex, active_tex, tile, shape_opts,
+    tile_canvas, program, uniforms, vertices,
+    tex, active_tex, tile, shape_opts,
     () => caches_gl.delete(key)
   );
   caches_gl.set(key, cache_gl);
@@ -579,7 +595,7 @@ const render_to_cache = (gl_state, key, tile, isLens, cache_gl) => {
   const shown = gl_state.to_shown(key || '', isLens);
   const props = to_tile_props(shown, gl_state, key, cache_gl, isLens);
   if (isLens) {
-    const { tile_square, max_level } = cache_gl.shape_opts;
+    const { tile_square, max_level } = cache_gl.via.shape_opts;
     const lens_scale = gl_state.toLensScale(gl_state.viewer);
     const lens_center = gl_state.toLensCenter(gl_state.viewer);
     const blend_alpha = gl_state.HS.lensAlpha;
@@ -604,9 +620,9 @@ const render_to_cache = (gl_state, key, tile, isLens, cache_gl) => {
     ctx.fill();
     return canvas; 
     */
-    return render_alpha_tile({ data }, cache_gl.uniforms, tile, cache_gl.via);
+    return render_alpha_tile({ data }, tile, cache_gl.via);
   }
-  return render_linear_tile(props, cache_gl.uniforms, tile, cache_gl.via);
+  return render_linear_tile(props, tile, cache_gl.via);
 }
 
 const scale_to_global = (max_level, tile) => {
@@ -659,7 +675,7 @@ const toDistance = (a, b) => {
 }
 
 const is_within_lens = (HS, lens_scale, lens_center, cache_gl, tile) => {
-  const { shape_opts } = cache_gl;
+  const { shape_opts } = cache_gl.via;
   const to_scale = scale_to_global(shape_opts.max_level, tile);
   const to_global = tile_to_global(to_scale, shape_opts, tile);
   const tbox = to_tile_box(to_scale, to_global, tile);
@@ -723,11 +739,6 @@ const toTileTarget = (HS, viewer, isLens, tileSource) => {
     getTileCacheDataAsContext2D: function(record) {
       const { tile, key, ctx } =  record._out
       const cache_gl = set_cache_gl(HS.gl_state, tile, shape_opts, isLens);
-      // Render lens layer if needed
-      if (isLens) {
-        const opts = { tile, key };
-        render_layers(ctx, HS.gl_state, shape_opts, viewer, isLens, opts);
-      }
       return ctx;
     }
   }
@@ -874,18 +885,12 @@ const to_alpha_uniforms = (program, gl, active_tex) => {
   };
 }
 
-const to_cache_gl = (tile_canvas, program, uniforms, tex, active_tex, tile, shape_opts, cleanup) => {
-  const { via } = initialize_gl(
-    tile_canvas, program, uniforms, tex, active_tex, tile, shape_opts, cleanup
-  );
-  return { via, shape_opts, uniforms };
-}
-
 class GLState {
 
   constructor(HS) {
     this.main = [];
     this.lens = [];
+    this.group = [];
     this.failed = new Map();
     this.imageCache = new Map()
     this.caches_gl = new Map();
@@ -975,7 +980,7 @@ class GLState {
   }
 
   nextChannel(key, sub, n_tex, isLens) {
-    const cache = ['main', 'lens'][+isLens];
+    const cache = ['group', 'group'][+isLens];
     return this.nextCache(cache, key, sub, n_tex, isLens);
   }
 

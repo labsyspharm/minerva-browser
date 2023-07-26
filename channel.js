@@ -1,6 +1,7 @@
 const nTex = 1024;
+const nChan = 16;
 const TEXTURE_RANGE = [...new Array(nTex).keys()];
-const ACTIVE_TEXTURE_RANGE = [...new Array(16).keys()];
+const ACTIVE_TEXTURE_RANGE = [...new Array(nChan).keys()];
 
 // Return a function for Openseadragon's getTileUrl API
 const getGetTileUrl = function(ipath, lpath, max, format) {
@@ -96,15 +97,12 @@ const render_linear_tile = (props, tile, via) => {
     gl.uniform3fv(u_colors[i], data.colors[i] || black);
     gl.uniform2ui(u_modes[i], ...(data.modes[i] || [0, 0]));
     // Load the data
-    const texi = channel_index[i];
     const from = data.channels[i];
     if (from === undefined) return;
     // Allow caching of channels
     gl.activeTexture(gl['TEXTURE'+i]);
-    gl.bindTexture(gl.TEXTURE_2D, via.textures[texi]);
+    gl.bindTexture(gl.TEXTURE_2D, via.textures[i]);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-    // Don't re-upload if is cached
-    if (channel_cached[i]) return;
     // Actually re-upload the tile texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8UI, w, h, 0,
               gl.RGBA_INTEGER, gl.UNSIGNED_BYTE, from);
@@ -516,7 +514,7 @@ const set_graphics = (gl_state, tile, shape_opts, isLens) => {
   }
   const [shaders, tex, active_tex] = [
     [
-      SHADERS[0], TEXTURE_RANGE, ACTIVE_TEXTURE_RANGE
+      SHADERS[0], ACTIVE_TEXTURE_RANGE, ACTIVE_TEXTURE_RANGE
     ],
     [
       SHADERS[1], TEXTURE_RANGE, [0]
@@ -892,7 +890,7 @@ class GLState {
       const newImages = new Map(entries);
       const graphics = set_graphics(this, tile, shape_opts, isLens);
       const render = this.toRenderingSettings(newImages, graphics, tile, key, isLens);
-      const useds = this.nextCache(tile.cacheKey, render.paths);
+      const useds = this.nextCache(tile.cacheKey, render.paths, isLens);
       const props = to_tile_props(render, useds, graphics, isLens);
       const ctx = document.createElement("canvas").getContext('2d');
       render_layers(
@@ -920,12 +918,23 @@ class GLState {
     }, []);
   }
 
-  nextCache(cacheKey, sources) {
+  nextCache(cacheKey, sources, isLens) {
+    // Nothing cached for background 
+    if (!isLens) {
+      return sources.map((_, index) => {
+        return { index, cached: false };
+      });
+    };
+    // Only cache for lens
     const n_needed = sources.length;
     const in_cache = new Set(this.usedTextures);
     // Select available texture indices
     const indices = TEXTURE_RANGE.filter(k => {
-      return in_cache.has(k) === false;
+      // Reserve first textures for channels
+      if (k >= ACTIVE_TEXTURE_RANGE.length) {
+        return in_cache.has(k) === false;
+      }
+      return false;
     }).slice(0, n_needed);
     // Return all indices
     return indices.map((index) => {

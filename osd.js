@@ -189,6 +189,7 @@ RenderOSD.prototype = {
     this.viewer.addHandler('animation', function(e) {
       const THIS = e.userData;
       const HS = THIS.hashstate;
+      HS.gl_state.redrawLensTiles();
       const scale = THIS.viewer.viewport.getZoom();
       const pan = THIS.viewer.viewport.getCenter();
       HS.v = [
@@ -202,7 +203,6 @@ RenderOSD.prototype = {
     this.viewer.addHandler('animation-finish', function(e) {
       const THIS = e.userData;
       const HS = THIS.hashstate;
-      HS.gl_state.untrackLensTiles();
       const scale = THIS.viewer.viewport.getZoom();
       const pan = THIS.viewer.viewport.getCenter();
       HS.v = [
@@ -320,11 +320,9 @@ RenderOSD.prototype = {
     // Redraw design
     if(redraw) {
       // Update OpenSeadragon
+      HS.gl_state.reloadTiles();
       this.activateViewport();
-      HS.gl_state.untrackMainTiles();
-      HS.gl_state.untrackLensTiles();
     }
-    this.viewer.forceRedraw();
   },
 
   // add a lasso polygon to svg overlay

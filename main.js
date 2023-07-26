@@ -1,6 +1,6 @@
 import SimpleEventHandler from "./simpleEventHandler.js"
 import { get_links_alias } from "./links_alias.js"
-import { toTileTarget, getGetTileUrl } from "./channel"
+import { nTex, toTileTarget, getGetTileUrl } from "./channel"
 import { getAjaxHeaders } from "./state"
 import { HashState } from "./state"
 import { Render } from './render'
@@ -3367,18 +3367,17 @@ const build_page_with_exhibit = function(exhibit, options) {
   const grid = hashstate.grid;
   const grid_shape = to_grid_shape(grid);
 
-  const max_max_cache_count = (([w=0, h=0]) => {
-    const rgba = 4;
-    const gb = 1024**3;
-    const max_memory_gb = 4; // GiB;
-    const t = Math.max(w*h, 256**2) * rgba;
-    return (max_memory_gb * 4*gb) / t;
-  })(grid[0][0].TileSize);
-  const ideal_cache_count = 20 * hashstate.layers.length;
-  const maxImageCacheCount = Math.max(200, Math.min(
-    max_max_cache_count, ideal_cache_count 
-  ));
-
+  // Limit the number of OSD tiles
+  const tiles_per_screen = 8;
+  const max_group = hashstate.cgs.reduce((o,i) => {
+    return Math.max(o, i.Channels.length);
+  }, 1);
+  const max_channel_count = (
+    tiles_per_screen * max_group
+  );
+  const maxImageCacheCount = Math.max(
+    32, Math.round(nTex / max_channel_count)
+  )
   // Initialize openseadragon
   const viewer = OpenSeadragon({
     maxImageCacheCount,

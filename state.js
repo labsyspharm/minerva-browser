@@ -526,14 +526,12 @@ HashState.prototype = {
       }
     });
     viewer.addHandler('canvas-drag', (e) => {
-      this.gl_state.untrackLensTiles();
       const { lensResizeBasis, lensAlphaBasis } = this.state;
       const [x, y] = [Math.round(e.position.x), Math.round(e.position.y)];
       const resizing = (lensResizeBasis !== null && lensAlphaBasis !== null);
       if (this.state.lensHeld) {
         e.preventDefaultAction = true;
         this.updateLensUI([x, y]);
-        viewer.forceRedraw();
       }
       else if (this.state.lensResizeHeld || this.state.lensAlphaHeld) {
         e.preventDefaultAction = true;
@@ -567,7 +565,6 @@ HashState.prototype = {
           return;
         }
         this.updateLensUI(this.lensCenter);
-        viewer.forceRedraw();
       }
     });
   },
@@ -595,6 +592,7 @@ HashState.prototype = {
     const no_lens = this.lensing === null;
     const { lensUI } = this.state;
     update_container({ ...lensUI, alpha, rad, x, y, no_lens });
+    this.gl_state.redrawLensTiles();
   },
 
   updateLensAlpha (newAlpha) {

@@ -3382,7 +3382,6 @@ const build_page_with_exhibit = function(exhibit, options) {
   // Initialize openseadragon
   const viewer = OpenSeadragon({
     maxImageCacheCount,
-    debugMode: true,
     compositeOperation: 'source-over',
     id: options.id + '-openseadragon',
     prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.3.1/images/',
@@ -3398,7 +3397,6 @@ const build_page_with_exhibit = function(exhibit, options) {
   hashstate.gl_state.setViewer(viewer);
   // Define all required layers
   const gl_targets = [
-//    false, true  //TODO
     false, true 
   ];
   const n_total_layers = (

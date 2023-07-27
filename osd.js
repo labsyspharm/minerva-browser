@@ -322,6 +322,7 @@ RenderOSD.prototype = {
       // Update OpenSeadragon
       HS.gl_state.reloadTiles();
       this.activateViewport();
+      HS.newMasks(this.viewer)
     }
   },
 

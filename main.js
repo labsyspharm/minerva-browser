@@ -3429,7 +3429,7 @@ const build_page_with_exhibit = function(exhibit, options) {
         )
       },
       success: () => {
-        // TODO        hashstate.newMasks(viewer);
+        hashstate.newMasks(viewer);
         init.init();
       },
       x: 0,

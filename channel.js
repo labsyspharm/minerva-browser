@@ -1,4 +1,4 @@
-const nTex = 1024;
+const nTex = 512; // At least 32
 const TEXTURE_RANGE = [...new Array(nTex).keys()];
 const ACTIVE_TEXTURE_RANGE = [...new Array(16).keys()];
 

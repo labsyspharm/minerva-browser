@@ -1,7 +1,6 @@
 const nTex = 1024;
-const nChan = 16;
 const TEXTURE_RANGE = [...new Array(nTex).keys()];
-const ACTIVE_TEXTURE_RANGE = [...new Array(nChan).keys()];
+const ACTIVE_TEXTURE_RANGE = [...new Array(16).keys()];
 
 // Return a function for Openseadragon's getTileUrl API
 const getGetTileUrl = function(ipath, lpath, max, format) {
@@ -112,36 +111,44 @@ const render_linear_tile = (props, tile, via) => {
   return gl.canvas;
 }
 
-const to_tile_props = (render, useds, graphics, isLens) => {
+const to_image_shape = (render) => {
+}
+
+const to_tile_props = (render, shape, useds, graphics, isLens) => {
   const { 
     tile_square, max_level 
   } = graphics.shape_opts;
-  const channel_info = render.paths.reduce((o, sub, i) => {
+  // Ensure all information can be zipped
+  const { channels, colors, modes, crops } = render;
+  const indices = render.paths.reduce((o, _, i) => {
+    const channel = channels[i];
+    const color = colors[i];
+    const mode = modes[i];
+    const crop = crops[i];
     const used = useds[i];
-    const channel = render.channels[i];
-    // No tile rendering if invalid
-    if (!o || !used) return null;
-    // Render cached status and index
-    o.channel_cached.push(used.cached);
-    o.channel_index.push(used.index);
-    o.colors.push(render.colors[i]);
-    o.modes.push(render.modes[i]);
-    o.crops.push(render.crops[i]);
-    o.channels.push(channel);
-    return o;
-  },{
-    channel_cached: [], channel_index: [],
-    channels: [], crops: [],
-    colors: [], modes: []
-  });
-  // No channels to render
-  if (channel_info === null) {
+    // Check all found
+    const missing = [
+      color, mode, crop, used
+    ].some(x => x === undefined);
+    // Skip any first invalid
+    if (missing) return o;
+    return [...o, i];
+  }, []);
+  // No tiles to render
+  if (indices.length === 0 || !shape?.width || !shape?.height) {
     return { data : null };
+  }
+  const channel_info = {
+    channels: indices.map(i => channels[i] || null),
+    channel_cached: indices.map(i => useds[i].cached),
+    channel_index: indices.map(i => useds[i].index),
+    colors: indices.map(i => colors[i]),
+    modes: indices.map(i => modes[i]),
+    crops: indices.map(i => crops[i])
   }
   // Channels to render
   const data = {
-    ...channel_info, tile_square,
-    width: render.w, height: render.h
+    ...channel_info, ...shape, tile_square,
   }
   return { data };
 }
@@ -725,12 +732,12 @@ const toTileTarget = (HS, viewer, isLens, tileSource) => {
       // TODO
     },
     getTileCacheDataAsContext2D: function(record) {
-      const { ctx, tile, key, useds } =  record._out
+      const { ctx, tile, key, shape, useds } =  record._out
       const gl_state = HS.gl_state;
       if (isLens) {
         const graphics = set_graphics(gl_state, tile, shape_opts, isLens);
         const render = gl_state.toRenderingSettings(null, graphics, tile, key, isLens);
-        const props = to_tile_props(render, useds, graphics, isLens);
+        const props = to_tile_props(render, shape, useds, graphics, isLens);
         render_layers(
           ctx, tile, props, graphics, HS.gl_state, shape_opts, viewer, isLens
         );
@@ -867,8 +874,8 @@ class GLState {
       if (check.valid === true && check.found !== null) {
         return Promise.resolve({
           tile, subpath, key,
-          ImageData: null,
-        })
+          imageData: null
+        });
       }
       const getTileUrl = getGetTileUrl(
         Path, subpath, MaxLevel, Format
@@ -888,10 +895,15 @@ class GLState {
       });
       // Load new image texture and render the layer
       const newImages = new Map(entries);
+      // Assume all images are the same shape
+      const shape = [...newImages.values()].reduce((o, i) => {
+        const { width, height } = i.ImageData;
+        return { width, height };
+      }, null);
       const graphics = set_graphics(this, tile, shape_opts, isLens);
       const render = this.toRenderingSettings(newImages, graphics, tile, key, isLens);
       const useds = this.nextCache(tile.cacheKey, render.paths, isLens);
-      const props = to_tile_props(render, useds, graphics, isLens);
+      const props = to_tile_props(render, shape, useds, graphics, isLens);
       const ctx = document.createElement("canvas").getContext('2d');
       render_layers(
         ctx, tile, props, graphics, this, shape_opts, viewer, isLens
@@ -900,7 +912,8 @@ class GLState {
       useds.forEach(used => used.cached = true);
       // Track texture used
       opts.imageJob.finish({
-        ...opts, ctx, useds
+        ...opts, ctx, useds,
+        shape: shape
       });
     }).catch((e) => {
       opts.imageJob.finish(null, null, e?.message);
@@ -997,7 +1010,7 @@ class GLState {
       return [is_lens, has_color];
     });
     const channels = sources.map(sub => {
-      return images.get(sub.Path)?.ImageData || null;
+      return images.get(sub.Path)?.ImageData;
     });
     const crops = sources.map(sub => {
       return [0, 0, w, h];

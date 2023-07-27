@@ -3328,6 +3328,38 @@ const getEmptyTileUrl = (max, name, format) => {
   }
 }
 
+const to_mask_image = (init, image, grid_shape, hashstate, viewer, mask) => {
+  const { displayWidth } = to_image_shape(image, grid_shape)
+  const tileWidth = image.TileSize.slice(0,1).pop();
+  const tileHeight = image.TileSize.slice(0,2).pop();
+  return {
+      loadTilesWithAjax: false,
+      compositeOperation: 'source-over',
+      tileSource: {
+        image,
+        is_mask: true,
+        path: mask.Path,
+        colorize: mask.Colorize,
+        tileHeight: tileHeight,
+        tileWidth: tileWidth,
+        height: image.Height,
+        width:  image.Width,
+        maxLevel: image.MaxLevel,
+        getTileUrl: getGetTileUrl(
+          image.Path, mask.Path, image.MaxLevel, mask.Format
+        )
+      },
+      success: () => {
+        hashstate.newMasks(viewer);
+        init.init();
+      },
+      x: 0,
+      y: 0,
+      opacity: 1.0,
+      width: displayWidth,
+    }
+}
+
 const to_tile_target = (init, image, grid_shape, hashstate, viewer, isLens) => {
   const { displayWidth } = to_image_shape(image, grid_shape)
   const tileWidth = image.TileSize.slice(0,1).pop();
@@ -3411,32 +3443,8 @@ const build_page_with_exhibit = function(exhibit, options) {
   // Add all mask layers, if present
   hashstate.mask_layers.forEach(mask => {
     // Add a single mask layer
-    viewer.addTiledImage({
-      loadTilesWithAjax: false,
-      compositeOperation: 'source-over',
-      tileSource: {
-        image,
-        is_mask: true,
-        path: mask.Path,
-        colorize: mask.Colorize,
-        tileHeight: tileHeight,
-        tileWidth: tileWidth,
-        height: image.Height,
-        width:  image.Width,
-        maxLevel: image.MaxLevel,
-        getTileUrl: getGetTileUrl(
-          image.Path, mask.Path, image.MaxLevel, mask.Format
-        )
-      },
-      success: () => {
-        hashstate.newMasks(viewer);
-        init.init();
-      },
-      x: 0,
-      y: 0,
-      opacity: 1.0,
-      width: displayWidth,
-    })
+    const mask_image = to_mask_image(init, image, grid_shape, hashstate, viewer, mask)
+    viewer.addTiledImage(mask_image)
   })
 
   // Constantly reset each arrow transform property

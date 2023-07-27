@@ -535,7 +535,7 @@ HashState.prototype = {
       }
       else if (this.state.lensResizeHeld || this.state.lensAlphaHeld) {
         e.preventDefaultAction = true;
-        if (this.state.lensAlphaHeld) {
+        if (this.state.lensAlphaHeld && this.state.lensAlphaBasis) {
           const ref = this.state.lensAlphaBasis;
           const new_ref = toReferenceVector(this.lensCenter, [x, y]);
           const alpha_angle = toAngleTrajectory(ref, new_ref);
@@ -547,7 +547,7 @@ HashState.prototype = {
           this.state.lensAlphaBasis = new_ref;
           this.updateLensAlpha(new_alpha);
         }
-        else if (this.state.lensResizeHeld) {
+        else if (this.state.lensResizeHeld && this.state.lensResizeBasis) {
           const ref = this.state.lensResizeBasis;
           const resize_dir = resizeDirection(ref, [e.delta.x, e.delta.y]);
           const resize_vector = toTrajectory(ref, [e.delta.x, e.delta.y]);

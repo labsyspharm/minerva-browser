@@ -943,11 +943,7 @@ class GLState {
     const in_cache = new Set(this.usedTextures);
     // Select available texture indices
     const indices = TEXTURE_RANGE.filter(k => {
-      // Reserve first textures for channels
-      if (k >= ACTIVE_TEXTURE_RANGE.length) {
-        return in_cache.has(k) === false;
-      }
-      return false;
+      return in_cache.has(k) === false;
     }).slice(0, n_needed);
     // Return all indices
     return indices.map((index) => {

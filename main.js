@@ -3400,15 +3400,10 @@ const build_page_with_exhibit = function(exhibit, options) {
   const grid_shape = to_grid_shape(grid);
 
   // Limit the number of OSD tiles
-  // One group only, as only lens is cached
-  const max_cached_group = 1;
-  //const max_cached_group = hashstate.cgs.reduce((o,i) => {
-  //  return Math.max(o, i.Channels.length);
-  //}, 1);
+  const max_lens_channels = 1;
   const maxImageCacheCount = Math.max(
-    32, Math.round(nTex / max_cached_group)
+    32, Math.round(nTex / max_lens_channels)
   )
-  console.log(maxImageCacheCount);
   // Initialize openseadragon
   const viewer = OpenSeadragon({
     maxImageCacheCount,

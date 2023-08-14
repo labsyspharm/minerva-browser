@@ -1138,9 +1138,13 @@ Render.prototype = {
       ].concat((group_index === HS.activeChannel) ? [
         'border-bottom: '+ '2px solid #' + color
       ] : []);
+      const empty = '---';
       li.style.cssText = styles.join('; ');
       li.addEventListener("click", onClick);
-      li.innerText = description;
+      li.innerText = description || empty;
+      if (!description) {
+        li.style.color = 'transparent';
+      }
       ul.appendChild(li);
     })('minerva-channel-legend-info');
 
@@ -1170,7 +1174,7 @@ Render.prototype = {
         var li = document.createElement('li');
         li.addEventListener("click", onClick);
         li.innerText = subgroup.Description || empty;
-        if (li.innerText === empty) {
+        if (!subgroup.Description) {
           li.style.color = 'transparent';
         }
         ul.appendChild(li);

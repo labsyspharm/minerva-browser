@@ -279,13 +279,6 @@ ${to_linear_uniform_declarations()}
 
   vec4 linear_blend() {
 ${to_linear_blend_calls()}
-    v0 = v0 + color_channel(u_t1, u_t1_color, u_t1_crop, u_t1_mode);
-    v0 = v0 + color_channel(u_t2, u_t2_color, u_t2_crop, u_t2_mode);
-    v0 = v0 + color_channel(u_t3, u_t3_color, u_t3_crop, u_t3_mode);
-    v0 = v0 + color_channel(u_t4, u_t4_color, u_t4_crop, u_t4_mode);
-    v0 = v0 + color_channel(u_t5, u_t5_color, u_t5_crop, u_t5_mode);
-    v0 = v0 + color_channel(u_t6, u_t6_color, u_t6_crop, u_t6_mode);
-    v0 = v0 + color_channel(u_t7, u_t7_color, u_t7_crop, u_t7_mode);
     return v0;
   }
 

@@ -153,6 +153,26 @@ const to_tile_props = (render, shape, useds, graphics, isLens) => {
   return { data };
 }
 
+const to_linear_uniform_declarations = () => {
+  return ACTIVE_TEXTURE_RANGE.map((i) => {
+    const tex = `u_t${i}`
+    return `  uniform vec4 ${tex}_crop;
+  uniform uvec2 ${tex}_mode;
+  uniform vec3 ${tex}_color;
+  uniform usampler2D ${tex};`
+  }).join('\n');
+}
+
+const to_linear_blend_calls = () => {
+  return [
+    'vec4 v0 = color_channel(u_t0, u_t0_color, u_t0_crop, u_t0_mode);',
+    ...ACTIVE_TEXTURE_RANGE.slice(1).map((i) => {
+      const tex = `u_t${i}`
+      return `    v0 = v0 + color_channel(${tex}, ${tex}_color, ${tex}_crop, ${tex}_mode);`
+    })
+  ].join('\n');
+}
+
 const CROP_SHADER = `
   float linear(vec2 ran, float x) {
     float m = ran[1] - ran[0];
@@ -232,38 +252,7 @@ const FRAGMENT_SHADPER_LINEAR = `#version 300 es
   precision highp usampler2D;
 
   uniform vec2 u_shape;
-  uniform vec4 u_t0_crop;
-  uniform vec4 u_t1_crop;
-  uniform vec4 u_t2_crop;
-  uniform vec4 u_t3_crop;
-  uniform vec4 u_t4_crop;
-  uniform vec4 u_t5_crop;
-  uniform vec4 u_t6_crop;
-  uniform vec4 u_t7_crop;
-  uniform uvec2 u_t0_mode;
-  uniform uvec2 u_t1_mode;
-  uniform uvec2 u_t2_mode;
-  uniform uvec2 u_t3_mode;
-  uniform uvec2 u_t4_mode;
-  uniform uvec2 u_t5_mode;
-  uniform uvec2 u_t6_mode;
-  uniform uvec2 u_t7_mode;
-  uniform vec3 u_t0_color;
-  uniform vec3 u_t1_color;
-  uniform vec3 u_t2_color;
-  uniform vec3 u_t3_color;
-  uniform vec3 u_t4_color;
-  uniform vec3 u_t5_color;
-  uniform vec3 u_t6_color;
-  uniform vec3 u_t7_color;
-  uniform usampler2D u_t0;
-  uniform usampler2D u_t1;
-  uniform usampler2D u_t2;
-  uniform usampler2D u_t3;
-  uniform usampler2D u_t4;
-  uniform usampler2D u_t5;
-  uniform usampler2D u_t6;
-  uniform usampler2D u_t7;
+${to_linear_uniform_declarations()}
 
   in vec2 uv;
   out vec4 color;
@@ -289,7 +278,7 @@ const FRAGMENT_SHADPER_LINEAR = `#version 300 es
   }
 
   vec4 linear_blend() {
-    vec4 v0 = color_channel(u_t0, u_t0_color, u_t0_crop, u_t0_mode);
+${to_linear_blend_calls()}
     v0 = v0 + color_channel(u_t1, u_t1_color, u_t1_crop, u_t1_mode);
     v0 = v0 + color_channel(u_t2, u_t2_color, u_t2_crop, u_t2_mode);
     v0 = v0 + color_channel(u_t3, u_t3_color, u_t3_crop, u_t3_mode);
@@ -304,6 +293,7 @@ const FRAGMENT_SHADPER_LINEAR = `#version 300 es
     color = linear_blend();
   }
 `
+console.log(FRAGMENT_SHADPER_LINEAR)
 const FRAGMENT_SHADPER_ALPHA = `#version 300 es
   precision highp int;
   precision highp float;

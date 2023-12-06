@@ -2261,7 +2261,7 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
 
 .minerva-legend > .minerva-channel-groups-legend {
   grid-column: 3;
-  grid-row: 1 / -1;
+  grid-row: 1;
 }
 
 .minerva-root input[type="range"] {

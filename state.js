@@ -1518,6 +1518,7 @@ HashState.prototype = {
       z_scale: exhibit['ZPerMicron'] || 0,
       default_group: exhibit.DefaultGroup || '',
       first_group: exhibit.FirstGroup || '',
+      first_arrows: exhibit.FirstArrows || [],
       first_viewport: exhibit.FirstViewport || null,
       is_rendered_map: channelList.reduce((o, c) => {
         o.set(c.Name, c.Rendered || false);
@@ -1547,7 +1548,7 @@ HashState.prototype = {
     })(this.lensing);
     const group = mode != 'tag' ? first_group : this.group;
     let v = this.v;
-    const { first_viewport } = this.design;
+    const { first_arrows, first_viewport } = this.design;
     // Allow setting viewport for table of contents
     if (first_viewport && mode != 'tag') {
       const zoom = first_viewport.Zoom;
@@ -1570,6 +1571,11 @@ HashState.prototype = {
     const groups = {
     }[mode];
 
+    const arrows = {
+      'outline': first_arrows
+    }[mode] || [{
+      Point: a
+    }];
     const active_masks = {
       'tag': this.active_masks.filter(mask => mask.Name).map(mask => mask.Name),
     }[mode] || [];
@@ -1582,9 +1588,7 @@ HashState.prototype = {
       Waypoints: [remove_undefined({
         Mode: mode,
         Zoom: v[0],
-        Arrows: [{
-          Point: a
-        }],
+        Arrows: arrows,
         Polygon: p,
         Pan: v.slice(1),
         Masks: this.masks.map(mask => mask.Name),

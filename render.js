@@ -219,6 +219,16 @@ Render.prototype = {
 
   init: function(aspect_ratio) {
 
+    const isMobile = () => {
+      const fixed_el = document.querySelector('.minerva-root');
+      return (fixed_el?.clientWidth || 0) <= 750;
+    }
+
+    // Set mobile view
+    if (isMobile()) {
+      $(".minerva-legend").addClass("toggled");
+      $(".minerva-sidebar-menu").addClass("toggled");
+    }
     const HS = this.hashstate;
     // Go to true center
     HS.v = [HS.v[0], 0.5 * aspect_ratio, 0.5];
@@ -279,12 +289,18 @@ Render.prototype = {
     $('.minerva-toggle-sidebar').click(function(e) {
       e.preventDefault();
       $(".minerva-sidebar-menu").toggleClass("toggled");
+      if (isMobile()) {
+        $(".minerva-legend").addClass("toggled");
+      }
     });
 
     // Button to toggle legend
     $('.minerva-toggle-legend').click(function(e) {
       e.preventDefault();
       $(".minerva-legend").toggleClass("toggled");
+      if (isMobile()) {
+        $(".minerva-sidebar-menu").addClass("toggled");
+      }
     });
 
     // Left arrow decreases waypoint by 1

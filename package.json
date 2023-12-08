@@ -8,7 +8,7 @@
     "d3-svg-legend": "^2.25.6",
     "jquery": "3.5.1",
     "js-yaml": "^3.14.0",
-    "lensing": "https://github.com/thejohnhoffer/lensing/tarball/4220b4eecf3148c1906d1f3aa50659e338bbeccf",
+    "lensing": "https://github.com/thejohnhoffer/lensing/tarball/64dfc0961f084de55d12b2620950cde1b7311e5c",
     "lz-string": "^1.4.4",
     "openseadragon": "^4.1.0",
     "popper.js": "1.16.0",
@@ -31,7 +31,7 @@
     "build": "webpack --mode production"
   },
   "name": "minerva-browser",
-  "version": "3.3.8",
+  "version": "3.3.9",
   "description": "A storytelling interface atop openseadragon",
   "main": "index.js",
   "repository": {

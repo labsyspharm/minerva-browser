@@ -243,6 +243,17 @@ Render.prototype = {
 
   init: function() {
 
+    const isMobile = () => {
+      const fixed_el = document.querySelector('.minerva-fixed');
+      return (fixed_el?.clientWidth || 0) <= 750;
+    }
+
+    // Set mobile view
+    if (isMobile()) {
+      $(".minerva-legend").addClass("toggled");
+      $(".minerva-sidebar-menu").addClass("toggled");
+    }
+
     const HS = this.hashstate;
     // Go to true center
     HS.newExhibit();
@@ -321,11 +332,6 @@ Render.prototype = {
     // Modals to copy shareable link and edit description
     $('#copy_link_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
     $('.minerva-edit_description_modal').on('hidden.bs.modal', HS.cancelDrawing.bind(HS));
-
-    const isMobile = () => {
-      const fixed_el = document.querySelector('.minerva-fixed');
-      return (fixed_el?.clientWidth || 0) <= 750;
-    }
 
     // Button to toggle sidebar
     $('.minerva-toggle-sidebar').click((e) => {

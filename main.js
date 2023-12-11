@@ -2237,17 +2237,34 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
   margin-left: 0px;
-  width: 280px;
+  width: 400px;
   left: 3px;
   top: 1rem;
 }
 
 .minerva-root .minerva-sidebar-menu.minimal {
-  margin-left: -194px;
+  margin-left: -314px;
 }
 
 .minerva-root .minerva-sidebar-menu.toggled {
-  margin-left: -246px;
+  margin-left: -366px;
+}
+
+@media only screen and (max-width: 750px) {
+
+  .minerva-root .minerva-sidebar-menu {
+    width: 280px;
+    padding: 0;
+  }
+
+  .minerva-root .minerva-sidebar-menu.minimal {
+    margin-left: -276px;
+  }
+
+  .minerva-root .minerva-sidebar-menu.toggled {
+    margin-left: -276px;
+  }
+
 }
 
 .minerva-root .minerva-legend {
@@ -2578,7 +2595,7 @@ const exhibitHTML = `
         </div>
         <div class="minerva-sidebar-menu container position-absolute">
             <div class="row">
-                <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll">
+                <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll; overflow-x: hidden">
                     <div class="row">
                         <div class="col-10">
                             <h3 class="minerva-imageName m-0"></h3>

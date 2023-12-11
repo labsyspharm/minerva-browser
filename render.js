@@ -227,7 +227,7 @@ Render.prototype = {
     // Set mobile view
     if (isMobile()) {
       $(".minerva-legend").addClass("toggled");
-      $(".minerva-sidebar-menu").addClass("toggled");
+      //$(".minerva-sidebar-menu").addClass("toggled");
     }
     const HS = this.hashstate;
     // Go to true center

@@ -2237,17 +2237,17 @@ a.minerva-root .badge-dark:focus, a.minerva-root .badge-dark.focus { outline: 0;
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
   margin-left: 0px;
-  width: 400px;
+  width: 280px;
   left: 3px;
   top: 1rem;
 }
 
 .minerva-root .minerva-sidebar-menu.minimal {
-  margin-left: -314px;
+  margin-left: -194px;
 }
 
 .minerva-root .minerva-sidebar-menu.toggled {
-  margin-left: -366px;
+  margin-left: -246px;
 }
 
 .minerva-root .minerva-legend {

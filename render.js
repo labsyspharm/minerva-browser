@@ -1110,6 +1110,9 @@ Render.prototype = {
       let text_col = ['text-dark', 'text-dark', ''][shown_idx];
       if (group_index === -1) text_col = '';
       colorize_ico.style.cssText = ['', '', text_hide][shown_idx];
+      if (mask_index != -1) {
+        colorize_ico.style.cssText = text_hide;
+      }
       colorize_ico.className = `fa fa-eye-dropper ${text_col}`;
       colorize.appendChild(colorize_ico);
 

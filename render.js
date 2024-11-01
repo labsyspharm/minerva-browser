@@ -811,7 +811,7 @@ Render.prototype = {
     const masks = HS.masks.filter(mask => {
       return mask_names.includes(mask.Name);
     });
-    if (masks.length || HS.edit) {
+    if (masks.length && HS.waypoint.Mode == 'outline') {
       $('.minerva-mask-label').show()
     }
     else {
@@ -839,7 +839,9 @@ Render.prototype = {
     aEl.setAttribute('aria-selected', ariaSelected);
 
     // Append mask layer to mask layers
-    HS.el.getElementsByClassName('minerva-mask-layers')[0].appendChild(aEl);
+    if (HS.waypoint.Mode == 'outline') {
+      HS.el.getElementsByClassName('minerva-mask-layers')[0].appendChild(aEl);
+    }
     
     // Activate or deactivate Mask Layer
     $(aEl).click(this, function(e) {

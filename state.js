@@ -1047,7 +1047,10 @@ HashState.prototype = {
 
   // The mask definitions
   get masks() {
-    return this.design.masks || [];
+    const masks = this.waypoint.Masks || [];
+    return (this.design.masks || []).filter((mask) => {
+      return masks.includes(mask.Name);
+    });
   },
   set masks(_masks) {
     var design = this.design;
@@ -1576,9 +1579,6 @@ HashState.prototype = {
     }[mode] || [{
       Point: a
     }];
-    const active_masks = {
-      'tag': this.active_masks.filter(mask => mask.Name).map(mask => mask.Name),
-    }[mode] || [];
 
     // Empty story object of a single waypoint
     return {
@@ -1591,8 +1591,14 @@ HashState.prototype = {
         Arrows: arrows,
         Polygon: p,
         Pan: v.slice(1),
-        Masks: this.masks.map(mask => mask.Name),
-        ActiveMasks: active_masks,
+        Masks: (exhibit.Masks || []).map(mask => mask.Name).filter(
+          mask_name => {
+            return (this.waypoints.length == 0) || this.waypoints.some(
+              wp => (wp.Masks || []).includes(mask_name)
+            );
+          }
+        ),
+        ActiveMasks: [],
         Group: group.Name,
         Groups: groups,
         Lensing: first_lens,

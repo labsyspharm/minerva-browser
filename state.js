@@ -1591,12 +1591,10 @@ HashState.prototype = {
         Arrows: arrows,
         Polygon: p,
         Pan: v.slice(1),
-        Masks: (exhibit.Masks || []).map(mask => mask.Name).filter(
-          mask_name => {
-            return (this.waypoints.length == 0) || this.waypoints.some(
-              wp => (wp.Masks || []).includes(mask_name)
-            );
-          }
+        Masks: (
+          // Show all masks if no waypoints
+          this.waypoints.length !== 0 ? [] :
+          (exhibit.Masks || []).map(mask => mask.Name)
         ),
         ActiveMasks: [],
         Group: group.Name,

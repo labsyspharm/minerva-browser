@@ -2841,9 +2841,6 @@ const exhibitHTML = `
             <div class="row">
                 <div class="col-11 bg-trans minerva-waypoint-content p-3" style="max-height: 80vh; overflow-y: scroll">
                     <div class="row">
-                        <div class="col-10">
-                            <h3 class="minerva-imageName m-0"></h3>
-                        </div>
                         <div class="col-2">
                             <a class="btn text-light d-none minerva-home-button"
                                 href="/">
@@ -2852,6 +2849,9 @@ const exhibitHTML = `
                             <a class="btn text-light d-none minerva-toc-button">
                                 <i class="fas fa-list-ul"></i>
                             </a>
+                        </div>
+                        <div class="col-10">
+                            <h3 class="minerva-imageName m-0"></h3>
                         </div>
                     </div>
                     <hr class="my-1">

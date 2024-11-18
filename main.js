@@ -3425,7 +3425,7 @@ const build_page_with_exhibit = function(exhibit, options) {
     false, true 
   ];
   const n_total_layers = (
-    hashstate.mask_layers.length + gl_targets.length
+    hashstate.all_mask_layers.length + gl_targets.length
   );
   // Prepare to initialize
   const init = new Initializer(n_total_layers, hashstate, viewer);
@@ -3436,7 +3436,7 @@ const build_page_with_exhibit = function(exhibit, options) {
   })
   hashstate.createLens(viewer);
   // Add all mask layers, if present
-  hashstate.mask_layers.forEach(mask => {
+  hashstate.all_mask_layers.forEach(mask => {
     // Add a single mask layer
     const mask_image = to_mask_image(init, image, grid_shape, hashstate, viewer, mask)
     viewer.addTiledImage(mask_image)

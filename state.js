@@ -1253,10 +1253,9 @@ HashState.prototype = {
     }, []);
   },
 
-  // Get mask layers
-  get mask_layers () {
-    const { masks } = this;
-    return this.masks.map(mask => {
+  // Get all mask layers
+  get all_mask_layers () {
+    return (this.design.masks || []).map(mask => {
       const m = { ...mask };
       m['Format'] = m['Format'] || 'png';
       m['Colorize'] = false;

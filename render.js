@@ -969,7 +969,16 @@ Render.prototype = {
     
     // Update Channel Group
     $(aEl).click(this, function(e) {
-      HS.g = g;
+      if ( s_w && group.Channels.length <= 1 ) {
+        // Update Waypoint
+        HS.s = s_w[0];
+        HS.w = s_w[1];
+      }
+      else {
+        // Clear masks
+        HS.m = [];
+        HS.g = g;
+      }
       HS.pushState();
       window.onpopstate();
     });

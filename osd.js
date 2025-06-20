@@ -465,7 +465,9 @@ RenderOSD.prototype = {
     const current = this.viewer.getOverlayById(el);
     const HS = this.hashstate;
 
-    const not_outline = (HS.waypoint.Mode != 'outline');
+    const not_outline = (
+      HS.waypoint.Mode != 'outline' || HS.hideOverviewOverlays
+    );
     const not_current = (HS.s != s || HS.w != w);
 
     // Hide if not part of the outline and not current story/waypoint

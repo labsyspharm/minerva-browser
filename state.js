@@ -1783,6 +1783,10 @@ HashState.prototype = {
     }
   },
 
+  get hideOverviewOverlays () {
+    return this.exhibit.HideOverviewOverlays || false;
+  },
+
   // Return both waypoint-defined arrows and user-defined arrows
   get allArrows() {
     return this.stories.reduce((all, story, s) => {
